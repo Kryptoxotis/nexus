@@ -19,7 +19,7 @@ const GIFT_CARD_KEY = crypto.randomBytes(32);
 // Helper function to encrypt gift card data
 function encryptGiftCard(data) {
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher('aes-256-cbc', GIFT_CARD_KEY);
+  const cipher = crypto.createCipheriv('aes-256-cbc', crypto.scryptSync(GIFT_CARD_KEY, 'salt', 32), iv);
   let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
@@ -30,7 +30,7 @@ function decryptGiftCard(encryptedData) {
   try {
     const parts = encryptedData.split(':');
     const iv = Buffer.from(parts[0], 'hex');
-    const decipher = crypto.createDecipher('aes-256-cbc', GIFT_CARD_KEY);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.scryptSync(GIFT_CARD_KEY, 'salt', 32), iv);
     let decrypted = decipher.update(parts[1], 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return JSON.parse(decrypted);
@@ -48,6 +48,15 @@ db.serialize(() => {
     stock INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+  
+  // Add sample gift card products
+  db.run(`INSERT OR IGNORE INTO products (id, name, price, category, stock) VALUES 
+    (9998, '$25 Gift Card', 25.00, 'Gift Card', 999),
+    (9999, '$50 Gift Card', 50.00, 'Gift Card', 999)`);
+    
+  // Add sample promotion
+  db.run(`INSERT OR IGNORE INTO promotions (id, name, description, discount_type, discount_value, min_purchase, start_date, end_date, is_active) VALUES 
+    (1, '10% Off $50+', 'Get 10% off your purchase of $50 or more', 'percentage', 10, 50, '2024-01-01 00:00:00', '2025-12-31 23:59:59', 1)`);
 
   db.run(`CREATE TABLE IF NOT EXISTS members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,6 +64,8 @@ db.serialize(() => {
     email TEXT UNIQUE,
     phone TEXT,
     membership_type TEXT DEFAULT 'basic',
+    loyalty_points INTEGER DEFAULT 0,
+    total_spent REAL DEFAULT 0,
     joined_date DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -74,8 +85,25 @@ db.serialize(() => {
     total REAL NOT NULL,
     payment_method TEXT DEFAULT 'cash',
     gift_card_used TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    member_id INTEGER,
+    points_earned INTEGER DEFAULT 0,
+    discount_applied REAL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (member_id) REFERENCES members (id)
   )`);
+
+  // Add new tax columns if they don't exist
+  db.run(`ALTER TABLE transactions ADD COLUMN subtotal REAL DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding subtotal column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE transactions ADD COLUMN tax_amount REAL DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding tax_amount column:', err.message);
+    }
+  });
 
   db.run(`CREATE TABLE IF NOT EXISTS gift_cards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,11 +111,29 @@ db.serialize(() => {
     encrypted_data TEXT NOT NULL,
     balance REAL NOT NULL,
     original_amount REAL NOT NULL,
-    status TEXT DEFAULT 'active',
+    status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     used_at DATETIME,
     recipient_name TEXT,
-    notes TEXT
+    notes TEXT,
+    transaction_id INTEGER,
+    FOREIGN KEY (transaction_id) REFERENCES transactions (id)
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    discount_type TEXT DEFAULT 'percentage',
+    discount_value REAL NOT NULL,
+    min_purchase REAL DEFAULT 0,
+    max_discount REAL DEFAULT 0,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    is_active BOOLEAN DEFAULT 1,
+    usage_limit INTEGER DEFAULT 0,
+    times_used INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 });
 
@@ -158,6 +204,21 @@ app.post('/api/members', (req, res) => {
   );
 });
 
+app.put('/api/members/:id', (req, res) => {
+  const { name, email, phone, membership_type } = req.body;
+  
+  db.run('UPDATE members SET name = ?, email = ?, phone = ?, membership_type = ? WHERE id = ?',
+    [name, email, phone, membership_type, req.params.id],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ success: true, changes: this.changes });
+    }
+  );
+});
+
 app.delete('/api/members/:id', (req, res) => {
   db.run('DELETE FROM members WHERE id = ?', req.params.id, function(err) {
     if (err) {
@@ -203,17 +264,90 @@ app.delete('/api/events/:id', (req, res) => {
 });
 
 app.post('/api/transactions', (req, res) => {
-  const { items, total, payment_method, gift_card_used } = req.body;
-  db.run('INSERT INTO transactions (items, total, payment_method, gift_card_used) VALUES (?, ?, ?, ?)',
-    [JSON.stringify(items), total, payment_method, gift_card_used],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json({ id: this.lastID, success: true });
+  const { items, subtotal, tax_amount, total, payment_method, gift_card_used, member_id, promotion_id } = req.body;
+  
+  let finalTotal = total;
+  let pointsEarned = Math.floor(total); // 1 point per dollar
+  let discountApplied = 0;
+  
+  // Apply promotion if provided
+  if (promotion_id) {
+    db.get('SELECT * FROM promotions WHERE id = ? AND is_active = 1 AND start_date <= datetime("now") AND end_date >= datetime("now")', 
+      [promotion_id], (err, promotion) => {
+        if (!err && promotion && total >= promotion.min_purchase) {
+          if (promotion.discount_type === 'percentage') {
+            discountApplied = Math.min((total * promotion.discount_value / 100), promotion.max_discount || total);
+          } else {
+            discountApplied = Math.min(promotion.discount_value, total);
+          }
+          finalTotal = Math.max(0, total - discountApplied);
+        }
+        
+        completeTransaction();
+      });
+  } else {
+    completeTransaction();
+  }
+  
+  function completeTransaction() {
+    // Create gift card if it's in the cart
+    let giftCardPromise = Promise.resolve();
+    const giftCardItems = items.filter(item => item.product.category === 'Gift Card');
+    
+    if (giftCardItems.length > 0) {
+      const giftCardPromises = giftCardItems.map(item => {
+        return new Promise((resolve, reject) => {
+          for (let i = 0; i < item.quantity; i++) {
+            const cardNumber = 'GC' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase();
+            const cardData = {
+              amount: item.product.price,
+              created_at: new Date().toISOString(),
+              security_code: Math.random().toString(36).substr(2, 8).toUpperCase()
+            };
+            const encryptedData = encryptGiftCard(cardData);
+            
+            db.run('INSERT INTO gift_cards (card_number, encrypted_data, balance, original_amount, recipient_name, status) VALUES (?, ?, ?, ?, ?, ?)',
+              [cardNumber, encryptedData, item.product.price, item.product.price, 'Customer', 'active'],
+              function(err) {
+                if (err) reject(err);
+                else resolve(cardNumber);
+              }
+            );
+          }
+        });
+      });
+      
+      giftCardPromise = Promise.all(giftCardPromises);
     }
-  );
+    
+    giftCardPromise.then(() => {
+      db.run('INSERT INTO transactions (items, subtotal, tax_amount, total, payment_method, gift_card_used, member_id, points_earned, discount_applied) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [JSON.stringify(items), subtotal || 0, tax_amount || 0, finalTotal, payment_method, gift_card_used, member_id, pointsEarned, discountApplied],
+        function(err) {
+          if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+          }
+          
+          // Update member points if member transaction
+          if (member_id) {
+            db.run('UPDATE members SET loyalty_points = loyalty_points + ?, total_spent = total_spent + ? WHERE id = ?',
+              [pointsEarned, finalTotal, member_id]);
+          }
+          
+          res.json({ 
+            id: this.lastID, 
+            success: true, 
+            points_earned: pointsEarned,
+            discount_applied: discountApplied,
+            final_total: finalTotal
+          });
+        }
+      );
+    }).catch(err => {
+      res.status(500).json({ error: 'Gift card creation failed' });
+    });
+  }
 });
 
 // Gift Card API Endpoints
@@ -422,6 +556,86 @@ app.get('/api/reports/inventory', (req, res) => {
         out_of_stock_items: outOfStockItems
       }
     });
+  });
+});
+
+// Promotions API Endpoints
+app.get('/api/promotions', (req, res) => {
+  db.all('SELECT * FROM promotions ORDER BY created_at DESC', (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+app.get('/api/promotions/active', (req, res) => {
+  db.all('SELECT * FROM promotions WHERE is_active = 1 AND start_date <= datetime("now") AND end_date >= datetime("now")', (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+app.post('/api/promotions', (req, res) => {
+  const { name, description, discount_type, discount_value, min_purchase, max_discount, start_date, end_date } = req.body;
+  
+  db.run('INSERT INTO promotions (name, description, discount_type, discount_value, min_purchase, max_discount, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [name, description, discount_type, discount_value, min_purchase, max_discount, start_date, end_date],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ id: this.lastID, success: true });
+    }
+  );
+});
+
+// Loyalty API Endpoints
+app.get('/api/members/search', (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    res.json([]);
+    return;
+  }
+  
+  db.all('SELECT * FROM members WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? LIMIT 10',
+    [`%${q}%`, `%${q}%`, `%${q}%`], (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    });
+});
+
+app.post('/api/members/:id/redeem-points', (req, res) => {
+  const { points } = req.body;
+  const memberId = req.params.id;
+  
+  db.get('SELECT loyalty_points FROM members WHERE id = ?', [memberId], (err, member) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    
+    if (!member || member.loyalty_points < points) {
+      res.status(400).json({ error: 'Insufficient points' });
+      return;
+    }
+    
+    db.run('UPDATE members SET loyalty_points = loyalty_points - ? WHERE id = ?',
+      [points, memberId], function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ success: true, points_redeemed: points });
+      });
   });
 });
 
