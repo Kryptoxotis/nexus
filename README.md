@@ -9,14 +9,27 @@ A comprehensive Point of Sale system that handles payments and manages multiple 
 - **Inventory Management**: Add, delete, and track products with stock levels
 - **Membership Database**: Customer management with different membership tiers
 - **Events & Calendar**: Schedule and manage events with booking capacity
-- **Multi-Payment Support**: Cash, card, and digital wallet options
+- **Multi-Payment Support**: Cash, card, digital wallet, and gift card options
 - **PIN Security**: All database operations protected with PIN authentication (12345)
+
+### 🎁 Gift Card System
+- **Secure Generation**: Encrypted gift cards with unique numbers (GC + timestamp + random)
+- **PIN-Protected Management**: Create, validate, and cancel gift cards securely
+- **Real-time Validation**: Instant balance checking and fraud prevention
+- **POS Integration**: Seamless gift card payments with automatic redemption
+- **Hassle-free Usage**: Simple card number entry with instant validation
+
+### 📊 Advanced Reporting & Analytics  
+- **Sales Reports**: Comprehensive transaction analysis with date filtering
+- **Inventory Analytics**: Real-time stock tracking with category breakdown
+- **Revenue Insights**: Payment method analysis and trend tracking
+- **Alert System**: Low stock and out-of-stock notifications
+- **Data Export**: CSV and JSON export for external analysis
+- **Visual Dashboard**: Modern charts and statistics overview
 
 ### Planned Features
 - **Multi-location Support**: Manage multiple business locations
 - **Multi-cashier Support**: Up to 6 concurrent cashiers per location  
-- **Gift Card System**: Secure gift card management
-- **Reporting System**: Location-based reports and analytics
 - **Real-time Synchronization**: Live updates across all cashiers
 
 ## Technology Stack
@@ -52,23 +65,39 @@ All database add/delete operations require PIN: **12345**
 
 1. **Point of Sale**
    - Select products and add to cart
-   - Choose payment method (cash/card/digital)
-   - Process transactions
+   - Apply gift cards with real-time validation
+   - Choose payment method (cash/card/digital/gift card)
+   - Process transactions with automatic stock updates
 
 2. **Inventory Management** 
    - Add new products (requires PIN)
    - Delete products (requires PIN)
    - Track stock levels with low-stock warnings
+   - Category-based organization
 
 3. **Membership Management**
    - Add customers (requires PIN)
    - Delete members (requires PIN)
    - Manage membership tiers (basic, premium, gold, platinum)
+   - Contact information tracking
 
 4. **Events & Calendar**
    - Schedule events (requires PIN)
    - Delete events (requires PIN)
    - Track capacity and bookings
+   - Event status monitoring
+
+5. **🎁 Gift Card Management**
+   - Create encrypted gift cards (requires PIN)
+   - Validate card numbers and balances
+   - Cancel/deactivate cards (requires PIN)
+   - Track usage and transaction history
+
+6. **📊 Reports & Analytics**
+   - Generate sales reports with date filtering
+   - View inventory analytics and alerts
+   - Export data in CSV/JSON formats
+   - Monitor payment method trends
 
 ## Database Schema
 
@@ -87,8 +116,8 @@ All database add/delete operations require PIN: **12345**
 ## Development Status
 
 ✅ **Phase 1**: Single-location POS with database management
-🔄 **Phase 2**: Multi-location support and gift cards
-🔄 **Phase 3**: Advanced reporting and analytics
+✅ **Phase 2**: Gift cards and advanced reporting system  
+🔄 **Phase 3**: Multi-location support with 6-cashier capability
 🔄 **Phase 4**: Real-time synchronization and scaling
 
 ## Contributing
