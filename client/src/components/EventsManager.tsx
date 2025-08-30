@@ -22,8 +22,10 @@ import {
   Alert,
   IconButton,
   Chip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
-import { Add, Delete, Event as EventIcon, CalendarToday } from '@mui/icons-material';
+import { Add, Delete, Event as EventIcon, CalendarToday, ViewList, CalendarMonth } from '@mui/icons-material';
 import PinDialog from './PinDialog';
 
 interface Event {
@@ -46,6 +48,8 @@ const EventsManager: React.FC<EventsManagerProps> = ({ pinRequired = true }) => 
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'add' | 'delete'; eventId?: number }>({ type: 'add' });
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -170,6 +174,159 @@ const EventsManager: React.FC<EventsManagerProps> = ({ pinRequired = true }) => 
     return Math.max(0, event.capacity - event.booked);
   };
 
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(day);
+    }
+    return days;
+  };
+
+  const getEventsForDate = (date: Date, day: number) => {
+    const targetDate = new Date(date.getFullYear(), date.getMonth(), day);
+    return events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      return eventDate.toDateString() === targetDate.toDateString();
+    });
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newMonth = new Date(currentMonth);
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+    setCurrentMonth(newMonth);
+  };
+
+  const renderCalendarView = () => {
+    const days = getDaysInMonth(currentMonth);
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    return (
+      <Box>
+        {/* Calendar Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Button onClick={() => navigateMonth('prev')} variant="outlined" size="small">
+            ← Previous
+          </Button>
+          <Typography variant="h6">
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </Typography>
+          <Button onClick={() => navigateMonth('next')} variant="outlined" size="small">
+            Next →
+          </Button>
+        </Box>
+
+        {/* Calendar Grid */}
+        <Paper variant="outlined">
+          <Grid container>
+            {/* Day headers */}
+            {dayNames.map((dayName) => (
+              <Grid size={{ xs: 12/7 }} key={dayName}>
+                <Box 
+                  p={1} 
+                  textAlign="center" 
+                  sx={{ 
+                    backgroundColor: 'grey.100',
+                    fontWeight: 'bold',
+                    borderBottom: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Typography variant="caption">{dayName}</Typography>
+                </Box>
+              </Grid>
+            ))}
+            
+            {/* Calendar days */}
+            {days.map((day, index) => {
+              const dayEvents = day ? getEventsForDate(currentMonth, day) : [];
+              
+              return (
+                <Grid size={{ xs: 12/7 }} key={index}>
+                  <Box
+                    p={1}
+                    minHeight={100}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: day ? 'background.paper' : 'grey.50',
+                      cursor: day ? 'pointer' : 'default',
+                      '&:hover': day ? { backgroundColor: 'grey.50' } : {},
+                    }}
+                    onClick={() => {
+                      if (day) {
+                        const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                        const isoString = selectedDate.toISOString().slice(0, 16);
+                        setNewEvent({ ...newEvent, event_date: isoString });
+                        handleAddEvent();
+                      }
+                    }}
+                  >
+                    {day && (
+                      <>
+                        <Typography variant="body2" mb={0.5}>
+                          {day}
+                        </Typography>
+                        {dayEvents.map((event) => (
+                          <Box
+                            key={event.id}
+                            sx={{
+                              backgroundColor: 'primary.main',
+                              color: 'primary.contrastText',
+                              borderRadius: 1,
+                              p: 0.5,
+                              mb: 0.5,
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              '&:hover': { backgroundColor: 'primary.dark' }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Could add event details popup here
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2 }}>
+                              {event.title}
+                            </Typography>
+                            <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                              {new Date(event.event_date).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </>
+                    )}
+                  </Box>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Paper>
+      </Box>
+    );
+  };
+
   return (
     <Container maxWidth="lg">
       <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -195,13 +352,34 @@ const EventsManager: React.FC<EventsManagerProps> = ({ pinRequired = true }) => 
             <Typography variant="h6">
               Events ({events.length})
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleAddEvent}
-            >
-              Add Event
-            </Button>
+            <Box display="flex" gap={2} alignItems="center">
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={(e, newView) => {
+                  if (newView !== null) {
+                    setViewMode(newView);
+                  }
+                }}
+                size="small"
+              >
+                <ToggleButton value="table">
+                  <ViewList sx={{ mr: 1 }} />
+                  Table
+                </ToggleButton>
+                <ToggleButton value="calendar">
+                  <CalendarMonth sx={{ mr: 1 }} />
+                  Calendar
+                </ToggleButton>
+              </ToggleButtonGroup>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleAddEvent}
+              >
+                Add Event
+              </Button>
+            </Box>
           </Box>
 
           {events.length === 0 ? (
@@ -209,73 +387,79 @@ const EventsManager: React.FC<EventsManagerProps> = ({ pinRequired = true }) => 
               No events found. Schedule your first event!
             </Typography>
           ) : (
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Event Title</TableCell>
-                    <TableCell>Date & Time</TableCell>
-                    <TableCell>Capacity</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Available Spots</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {events.map((event) => {
-                    const status = getEventStatus(event);
-                    const availableSpots = getAvailableSpots(event);
-                    
-                    return (
-                      <TableRow key={event.id}>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="subtitle1">{event.title}</Typography>
-                            {event.description && (
-                              <Typography variant="body2" color="text.secondary">
-                                {event.description}
-                              </Typography>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell>{formatDateTime(event.event_date)}</TableCell>
-                        <TableCell>
-                          {event.booked}/{event.capacity}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={status.label}
-                            color={status.color}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            component="span"
-                            sx={{
-                              color: availableSpots === 0 ? 'error.main' : 'text.primary',
-                              fontWeight: availableSpots <= 5 ? 'bold' : 'normal',
-                            }}
-                          >
-                            {availableSpots}
-                            {availableSpots <= 5 && availableSpots > 0 && ' (Few left)'}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            color="error"
-                            onClick={() => handleDeleteEvent(event.id)}
-                            size="small"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </TableCell>
+            <>
+              {viewMode === 'table' ? (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Event Title</TableCell>
+                        <TableCell>Date & Time</TableCell>
+                        <TableCell>Capacity</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Available Spots</TableCell>
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {events.map((event) => {
+                        const status = getEventStatus(event);
+                        const availableSpots = getAvailableSpots(event);
+                        
+                        return (
+                          <TableRow key={event.id}>
+                            <TableCell>
+                              <Box>
+                                <Typography variant="subtitle1">{event.title}</Typography>
+                                {event.description && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    {event.description}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell>{formatDateTime(event.event_date)}</TableCell>
+                            <TableCell>
+                              {event.booked}/{event.capacity}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={status.label}
+                                color={status.color}
+                                size="small"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Box
+                                component="span"
+                                sx={{
+                                  color: availableSpots === 0 ? 'error.main' : 'text.primary',
+                                  fontWeight: availableSpots <= 5 ? 'bold' : 'normal',
+                                }}
+                              >
+                                {availableSpots}
+                                {availableSpots <= 5 && availableSpots > 0 && ' (Few left)'}
+                              </Box>
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                color="error"
+                                onClick={() => handleDeleteEvent(event.id)}
+                                size="small"
+                              >
+                                <Delete />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                renderCalendarView()
+              )}
+            </>
           )}
         </CardContent>
       </Card>

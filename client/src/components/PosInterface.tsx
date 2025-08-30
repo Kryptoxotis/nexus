@@ -63,9 +63,12 @@ const TAX_RATE = 0.0825; // 8.25% Texas tax rate
 
 const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | 'All'>('All');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
   const [showGiftCardDialog, setShowGiftCardDialog] = useState(false);
   const [giftCardNumber, setGiftCardNumber] = useState('');
   const [giftCardBalance, setGiftCardBalance] = useState(0);
@@ -91,11 +94,27 @@ const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
     }
   }, [memberSearch]);
 
+  useEffect(() => {
+    if (selectedCategory === 'All') {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(products.filter(product => product.category === selectedCategory));
+    }
+  }, [selectedCategory, products]);
+
   const fetchProducts = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/products');
       const data = await response.json();
       setProducts(data);
+      
+      // Extract unique categories
+      const categorySet = new Set<string>(data.map((product: Product) => product.category));
+      const uniqueCategories: string[] = Array.from(categorySet);
+      setCategories(uniqueCategories);
+      
+      // Set initial filtered products
+      setFilteredProducts(data);
     } catch (err) {
       console.error('Failed to fetch products:', err);
     }
@@ -249,6 +268,8 @@ const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
     }
 
     try {
+      let actualGiftCardAmount = 0;
+      
       // If using gift card, redeem it first
       if (giftCardUsed && giftCardAmount > 0) {
         const redeemResponse = await fetch('http://localhost:5000/api/gift-cards/redeem', {
@@ -262,10 +283,16 @@ const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
           }),
         });
 
-        if (!redeemResponse.ok) {
+        if (redeemResponse.ok) {
+          actualGiftCardAmount = giftCardAmount;
+        } else {
+          // Gift card failed, but continue with transaction
           const error = await redeemResponse.json();
-          setAlert({ type: 'error', message: `Gift card error: ${error.error}` });
-          return;
+          setAlert({ 
+            type: 'warning', 
+            message: `Gift card could not be processed: ${error.error}. Transaction will continue without gift card.` 
+          });
+          actualGiftCardAmount = 0;
         }
       }
 
@@ -278,9 +305,10 @@ const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
           items: cart,
           subtotal: getSubtotal(),
           tax_amount: getTaxAmount(),
-          total: getTotal() + giftCardAmount, // Total before gift card deduction for server processing
+          total: getTotal() + actualGiftCardAmount, // Total before gift card deduction for server processing
           payment_method: paymentMethod,
-          gift_card_used: giftCardUsed,
+          gift_card_used: actualGiftCardAmount > 0 ? giftCardUsed : null,
+          gift_card_amount: actualGiftCardAmount,
           member_id: selectedMember?.id,
           promotion_id: selectedPromotion?.id,
         }),
@@ -289,6 +317,15 @@ const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
       if (response.ok) {
         const result = await response.json();
         let successMessage = 'Transaction completed successfully!';
+        const remainingBalance = getTotal();
+        
+        if (actualGiftCardAmount > 0) {
+          successMessage += ` Gift card applied: $${actualGiftCardAmount.toFixed(2)}.`;
+          if (remainingBalance > 0) {
+            successMessage += ` Remaining balance: $${remainingBalance.toFixed(2)} (${paymentMethod}).`;
+          }
+        }
+        
         if (result.points_earned && selectedMember) {
           successMessage += ` ${selectedMember.name} earned ${result.points_earned} points!`;
         }
@@ -339,11 +376,87 @@ const PosInterface: React.FC<PosInterfaceProps> = ({ pinRequired = true }) => {
         <Grid size={{ xs: 12, md: 8 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Products
-              </Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h6">
+                  Products
+                </Typography>
+                <FormControl sx={{ minWidth: 250 }}>
+                  <InputLabel>Filter by Category</InputLabel>
+                  <Select
+                    value={selectedCategory}
+                    label="Filter by Category"
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  >
+                    <MenuItem value="All">
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(45deg, #00ff88, #8e44ad, #3498db)',
+                          }}
+                        />
+                        <em>All Categories</em>
+                      </Box>
+                    </MenuItem>
+                    {categories.map((category, index) => (
+                      <MenuItem key={category} value={category}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              backgroundColor: [
+                                '#00ff88', // Neon green
+                                '#1dd1a1', // Teal green  
+                                '#2ecc71', // Emerald green
+                                '#8e44ad', // Rich purple
+                                '#9b59b6', // Amethyst purple
+                                '#3498db', // Bright blue
+                                '#5dade2', // Sky blue
+                                '#85c1e9', // Light blue
+                                '#bb6bd9', // Light purple
+                                '#58d68d', // Light emerald
+                              ][index % 10],
+                            }}
+                          />
+                          {category}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              
+              {/* Category Pills */}
+              <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+                <Chip
+                  label="All"
+                  onClick={() => setSelectedCategory('All')}
+                  color={selectedCategory === 'All' ? 'primary' : 'default'}
+                  variant={selectedCategory === 'All' ? 'filled' : 'outlined'}
+                  size="small"
+                />
+                {categories.map((category) => (
+                  <Chip
+                    key={category}
+                    label={category}
+                    onClick={() => setSelectedCategory(category)}
+                    color={selectedCategory === category ? 'secondary' : 'default'}
+                    variant={selectedCategory === category ? 'filled' : 'outlined'}
+                    size="small"
+                  />
+                ))}
+              </Box>
               <Grid container spacing={2}>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
                     <Card
                       variant="outlined"

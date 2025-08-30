@@ -27,15 +27,18 @@ import {
   MenuItem,
   Chip,
 } from '@mui/material';
-import { Add, Delete, Edit, People, Email, Phone } from '@mui/icons-material';
+import { Add, Delete, Edit, People, Email, Phone, CardGiftcard, AccountCircle, AddCircle, RemoveCircle } from '@mui/icons-material';
 import PinDialog from './PinDialog';
 
 interface Member {
   id: number;
+  unique_id?: string;
   name: string;
   email: string;
   phone: string;
   membership_type: string;
+  loyalty_points: number;
+  total_spent: number;
   joined_date: string;
 }
 
@@ -47,10 +50,15 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
   const [members, setMembers] = useState<Member[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showMemberDetailDialog, setShowMemberDetailDialog] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ type: 'add' | 'edit' | 'delete'; memberId?: number }>({ type: 'add' });
+  const [pendingAction, setPendingAction] = useState<{ type: 'add' | 'edit' | 'delete' | 'detail'; memberId?: number }>({ type: 'add' });
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [pointsAdjustment, setPointsAdjustment] = useState('');
+  const [pointsReason, setPointsReason] = useState('');
+  const [giftCardAmount, setGiftCardAmount] = useState('');
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
@@ -98,6 +106,11 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
     } else {
       deleteMember(memberId);
     }
+  };
+
+  const handleMemberDetail = (member: Member) => {
+    setSelectedMember(member);
+    setShowMemberDetailDialog(true);
   };
 
   const executePendingAction = async () => {
@@ -189,16 +202,75 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
     addMember();
   };
 
+  const adjustMemberPoints = async () => {
+    if (!selectedMember || !pointsAdjustment) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/members/${selectedMember.id}/points`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          points_change: parseInt(pointsAdjustment),
+          reason: pointsReason || 'Manual adjustment',
+        }),
+      });
+
+      if (response.ok) {
+        setAlert({ type: 'success', message: 'Points updated successfully!' });
+        setPointsAdjustment('');
+        setPointsReason('');
+        fetchMembers();
+        // Update selected member
+        const updatedMember = { ...selectedMember, loyalty_points: selectedMember.loyalty_points + parseInt(pointsAdjustment) };
+        setSelectedMember(updatedMember);
+      } else {
+        setAlert({ type: 'error', message: 'Failed to update points' });
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: 'Connection error' });
+    }
+  };
+
+  const createMemberGiftCard = async () => {
+    if (!selectedMember || !giftCardAmount) return;
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/gift-cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(giftCardAmount),
+          recipient_name: selectedMember.name,
+          notes: `Gift card created for member: ${selectedMember.name}`,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAlert({ type: 'success', message: `Gift card created! Card number: ${result.card_number}` });
+        setGiftCardAmount('');
+      } else {
+        setAlert({ type: 'error', message: 'Failed to create gift card' });
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: 'Connection error' });
+    }
+  };
+
   const getMembershipColor = (type: string) => {
     switch (type) {
       case 'premium':
-        return 'primary';
+        return 'info';
       case 'gold':
         return 'warning';
       case 'platinum':
         return 'secondary';
       default:
-        return 'default';
+        return 'success';
     }
   };
 
@@ -252,13 +324,21 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
                     <TableCell>Name</TableCell>
                     <TableCell>Contact</TableCell>
                     <TableCell>Membership Type</TableCell>
+                    <TableCell>Points</TableCell>
                     <TableCell>Joined Date</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {members.map((member) => (
-                    <TableRow key={member.id}>
+                    <TableRow 
+                      key={member.id}
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': { backgroundColor: 'action.hover' }
+                      }}
+                      onClick={() => handleMemberDetail(member)}
+                    >
                       <TableCell>{member.name}</TableCell>
                       <TableCell>
                         <Box>
@@ -281,11 +361,27 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
                           size="small"
                         />
                       </TableCell>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Typography variant="body2" fontWeight="bold" color="primary.main">
+                            {member.loyalty_points || 0}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            pts
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Total spent: ${(member.total_spent || 0).toFixed(2)}
+                        </Typography>
+                      </TableCell>
                       <TableCell>{formatDate(member.joined_date)}</TableCell>
                       <TableCell align="right">
                         <IconButton
                           color="primary"
-                          onClick={() => handleEditMember(member)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditMember(member);
+                          }}
                           size="small"
                           sx={{ mr: 1 }}
                         >
@@ -293,7 +389,10 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
                         </IconButton>
                         <IconButton
                           color="error"
-                          onClick={() => handleDeleteMember(member.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMember(member.id);
+                          }}
                           size="small"
                         >
                           <Delete />
@@ -418,6 +517,185 @@ const MembershipManager: React.FC<MembershipManagerProps> = ({ pinRequired = tru
             Update Member
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Member Detail Dialog */}
+      <Dialog 
+        open={showMemberDetailDialog} 
+        onClose={() => setShowMemberDetailDialog(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        {selectedMember && (
+          <>
+            <DialogTitle>
+              <Box display="flex" alignItems="center" gap={2}>
+                <AccountCircle color="primary" />
+                <Box>
+                  <Typography variant="h6">{selectedMember.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    ID: {selectedMember.unique_id} • {selectedMember.membership_type.toUpperCase()}
+                  </Typography>
+                </Box>
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              <Grid container spacing={3}>
+                {/* Member Info Card */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card variant="outlined" sx={{ 
+                    p: 2, 
+                    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                    border: '1px solid #3498db'
+                  }}>
+                    <Typography variant="h6" gutterBottom sx={{ 
+                      background: 'linear-gradient(45deg, #3498db, #5dade2)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      Member Information
+                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">Email</Typography>
+                      <Typography variant="body1">{selectedMember.email}</Typography>
+                    </Box>
+                    {selectedMember.phone && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary">Phone</Typography>
+                        <Typography variant="body1">{selectedMember.phone}</Typography>
+                      </Box>
+                    )}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">Joined</Typography>
+                      <Typography variant="body1">{formatDate(selectedMember.joined_date)}</Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">Total Spent</Typography>
+                      <Typography variant="h6" color="primary">
+                        ${(selectedMember.total_spent || 0).toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Card>
+                </Grid>
+
+                {/* Points Management Card */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card variant="outlined" sx={{ 
+                    p: 2, 
+                    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                    border: '1px solid #8e44ad'
+                  }}>
+                    <Typography variant="h6" gutterBottom sx={{ 
+                      background: 'linear-gradient(45deg, #8e44ad, #9b59b6)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      Loyalty Points
+                    </Typography>
+                    <Box sx={{ mb: 3, textAlign: 'center' }}>
+                      <Typography variant="h4" color="secondary.main" fontWeight="bold">
+                        {selectedMember.loyalty_points || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Available Points
+                      </Typography>
+                    </Box>
+                    
+                    <Typography variant="body2" gutterBottom>
+                      Adjust Points
+                    </Typography>
+                    <Box display="flex" gap={1} mb={2}>
+                      <TextField
+                        size="small"
+                        type="number"
+                        placeholder="±points"
+                        value={pointsAdjustment}
+                        onChange={(e) => setPointsAdjustment(e.target.value)}
+                        sx={{ flexGrow: 1 }}
+                      />
+                      <Button 
+                        variant="outlined" 
+                        onClick={adjustMemberPoints}
+                        disabled={!pointsAdjustment}
+                        startIcon={pointsAdjustment.startsWith('-') ? <RemoveCircle /> : <AddCircle />}
+                      >
+                        Apply
+                      </Button>
+                    </Box>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      placeholder="Reason (optional)"
+                      value={pointsReason}
+                      onChange={(e) => setPointsReason(e.target.value)}
+                      sx={{ mb: 2 }}
+                    />
+                  </Card>
+                </Grid>
+
+                {/* Gift Card Creation */}
+                <Grid size={{ xs: 12 }}>
+                  <Card variant="outlined" sx={{ 
+                    p: 2, 
+                    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                    border: '1px solid #1dd1a1'
+                  }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <CardGiftcard sx={{ color: '#1dd1a1' }} />
+                      <Typography variant="h6" sx={{ 
+                        background: 'linear-gradient(45deg, #00ff88, #1dd1a1)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                      }}>
+                        Create Gift Card
+                      </Typography>
+                    </Box>
+                    <Box display="flex" gap={2} alignItems="center">
+                      <TextField
+                        label="Gift Card Amount"
+                        type="number"
+                        value={giftCardAmount}
+                        onChange={(e) => setGiftCardAmount(e.target.value)}
+                        inputProps={{ step: '0.01', min: '1' }}
+                        sx={{ width: 200 }}
+                        InputProps={{
+                          startAdornment: <Typography>$</Typography>,
+                        }}
+                      />
+                      <Button
+                        variant="contained"
+                        onClick={createMemberGiftCard}
+                        disabled={!giftCardAmount}
+                        startIcon={<CardGiftcard />}
+                      >
+                        Create Gift Card
+                      </Button>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Gift card will be created with member's name as recipient
+                    </Typography>
+                  </Card>
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowMemberDetailDialog(false)}>Close</Button>
+              <Button 
+                onClick={() => {
+                  setShowMemberDetailDialog(false);
+                  handleEditMember(selectedMember);
+                }} 
+                variant="contained" 
+                startIcon={<Edit />}
+              >
+                Edit Member
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
 
       {/* PIN Dialog */}

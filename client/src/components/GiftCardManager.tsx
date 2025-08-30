@@ -38,6 +38,15 @@ interface GiftCard {
   notes: string;
 }
 
+interface Member {
+  id: number;
+  unique_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  membership_type: string;
+}
+
 interface GiftCardManagerProps {
   pinRequired?: boolean;
 }
@@ -56,10 +65,21 @@ const GiftCardManager: React.FC<GiftCardManagerProps> = ({ pinRequired = true })
     notes: '',
   });
   const [validateCardNumber, setValidateCardNumber] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberSearchResults, setMemberSearchResults] = useState<Member[]>([]);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   useEffect(() => {
     fetchGiftCards();
   }, []);
+
+  useEffect(() => {
+    if (memberSearch.length > 2) {
+      searchMembers();
+    } else {
+      setMemberSearchResults([]);
+    }
+  }, [memberSearch]);
 
   const fetchGiftCards = async () => {
     try {
@@ -68,6 +88,16 @@ const GiftCardManager: React.FC<GiftCardManagerProps> = ({ pinRequired = true })
       setGiftCards(data);
     } catch (err) {
       console.error('Failed to fetch gift cards:', err);
+    }
+  };
+
+  const searchMembers = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/members/search?q=${encodeURIComponent(memberSearch)}`);
+      const data = await response.json();
+      setMemberSearchResults(data);
+    } catch (err) {
+      console.error('Failed to search members:', err);
     }
   };
 
@@ -372,12 +402,96 @@ const GiftCardManager: React.FC<GiftCardManagerProps> = ({ pinRequired = true })
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField
-                label="Recipient Name"
-                fullWidth
-                value={newGiftCard.recipient_name}
-                onChange={(e) => setNewGiftCard({ ...newGiftCard, recipient_name: e.target.value })}
-              />
+              <Typography variant="body2" gutterBottom>
+                Recipient
+              </Typography>
+              {selectedMember ? (
+                <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1, mb: 1 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">
+                        {selectedMember.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        ID: {selectedMember.unique_id} | {selectedMember.email}
+                      </Typography>
+                      {selectedMember.phone && (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Phone: {selectedMember.phone}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button 
+                      size="small" 
+                      onClick={() => {
+                        setSelectedMember(null);
+                        setMemberSearch('');
+                        setNewGiftCard({ ...newGiftCard, recipient_name: '' });
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Box>
+                  <TextField
+                    size="small"
+                    placeholder="Search by name, ID, email, or phone..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    fullWidth
+                    sx={{ mb: 1 }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {memberSearchResults.map((member) => (
+                    <Box
+                      key={member.id}
+                      sx={{
+                        p: 1.5,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        mb: 0.5,
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                      onClick={() => {
+                        setSelectedMember(member);
+                        setMemberSearch('');
+                        setMemberSearchResults([]);
+                        setNewGiftCard({ ...newGiftCard, recipient_name: member.name });
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight="bold">
+                        {member.name} ({member.membership_type})
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        ID: {member.unique_id} | {member.email}
+                      </Typography>
+                      {member.phone && (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Phone: {member.phone}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                  <TextField
+                    label="Or enter name manually"
+                    fullWidth
+                    value={newGiftCard.recipient_name}
+                    onChange={(e) => setNewGiftCard({ ...newGiftCard, recipient_name: e.target.value })}
+                    sx={{ mt: 1 }}
+                  />
+                </Box>
+              )}
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField

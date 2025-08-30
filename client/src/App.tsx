@@ -10,11 +10,11 @@ import {
   Button,
   Box,
   CssBaseline,
-  createTheme,
   ThemeProvider,
   Switch,
   FormControlLabel,
 } from '@mui/material';
+import theme from './theme';
 import {
   PointOfSale,
   Inventory,
@@ -25,6 +25,7 @@ import {
   Assessment,
   Security,
   SecurityUpdateGood,
+  Star,
 } from '@mui/icons-material';
 import PosInterface from './components/PosInterface';
 import InventoryManager from './components/InventoryManager';
@@ -32,93 +33,11 @@ import MembershipManager from './components/MembershipManager';
 import EventsManager from './components/EventsManager';
 import GiftCardManager from './components/GiftCardManager';
 import ReportsManager from './components/ReportsManager';
+import LoyaltyManager from './components/LoyaltyManager';
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#00ff88',
-      dark: '#00cc6a',
-      light: '#66ffaa',
-    },
-    secondary: {
-      main: '#ff4081',
-    },
-    background: {
-      default: '#0a0a0a',
-      paper: '#1a1a1a',
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#b0b0b0',
-    },
-    success: {
-      main: '#00ff88',
-      light: '#66ffaa',
-      dark: '#00cc6a',
-    },
-    error: {
-      main: '#ff1744',
-    },
-    warning: {
-      main: '#ffa726',
-    },
-  },
-  typography: {
-    h4: {
-      fontWeight: 600,
-      color: '#ffffff',
-    },
-    h5: {
-      fontWeight: 500,
-      color: '#00ff88',
-    },
-    h6: {
-      fontWeight: 500,
-      color: '#ffffff',
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          background: 'linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%)',
-          border: '1px solid #333',
-          borderRadius: '12px',
-          transition: 'all 0.3s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-4px) scale(1.02)',
-            boxShadow: '0 12px 24px rgba(0, 255, 136, 0.2)',
-            border: '1px solid #00ff88',
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        contained: {
-          background: 'linear-gradient(45deg, #00ff88 30%, #00cc6a 90%)',
-          boxShadow: '0 3px 5px 2px rgba(0, 255, 136, .3)',
-          transition: 'all 0.3s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 6px 10px 4px rgba(0, 255, 136, .4)',
-          },
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          background: 'linear-gradient(90deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)',
-          boxShadow: '0 2px 10px rgba(0, 255, 136, 0.3)',
-        },
-      },
-    },
-  },
-});
+// Theme imported from separate file
 
-type View = 'home' | 'pos' | 'inventory' | 'members' | 'events' | 'gift-cards' | 'reports';
+type View = 'home' | 'pos' | 'inventory' | 'members' | 'events' | 'gift-cards' | 'reports' | 'loyalty';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -138,6 +57,8 @@ const App: React.FC = () => {
         return <GiftCardManager pinRequired={pinRequired} />;
       case 'reports':
         return <ReportsManager />;
+      case 'loyalty':
+        return <LoyaltyManager pinRequired={pinRequired} />;
       default:
         return (
           <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -298,6 +219,31 @@ const App: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
+
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 3,
+                    },
+                  }}
+                  onClick={() => setCurrentView('loyalty')}
+                >
+                  <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                    <Star sx={{ fontSize: 48, color: 'secondary.main', mb: 2 }} />
+                    <Typography variant="h6" gutterBottom>
+                      Loyalty & Promotions
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Manage rewards and promotional campaigns
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
             </Grid>
           </Container>
         );
@@ -320,14 +266,6 @@ const App: React.FC = () => {
                 checked={!pinRequired}
                 onChange={(e) => setPinRequired(!e.target.checked)}
                 color="primary"
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: '#00ff88',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                    backgroundColor: '#00ff88',
-                  },
-                }}
               />
             }
             label={

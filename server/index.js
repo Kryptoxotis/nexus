@@ -58,8 +58,47 @@ db.serialize(() => {
   db.run(`INSERT OR IGNORE INTO promotions (id, name, description, discount_type, discount_value, min_purchase, start_date, end_date, is_active) VALUES 
     (1, '10% Off $50+', 'Get 10% off your purchase of $50 or more', 'percentage', 10, 50, '2024-01-01 00:00:00', '2025-12-31 23:59:59', 1)`);
 
+  // Add sample membership tiers
+  db.run(`INSERT OR IGNORE INTO membership_tiers (id, name, price, description, benefits, duration_months) VALUES 
+    (1, 'Basic', 0, 'Free basic membership', 'Access to basic facilities', 12),
+    (2, 'Premium', 99.99, 'Premium membership with added benefits', 'Priority booking, 10% discounts', 12),
+    (3, 'Gold', 199.99, 'Gold membership with exclusive perks', 'Free guest passes, 15% discounts, priority support', 12),
+    (4, 'Platinum', 299.99, 'Ultimate membership experience', 'Unlimited guest passes, 20% discounts, VIP access, dedicated support', 12)`);
+
+  // Add sample categories
+  db.run(`INSERT OR IGNORE INTO categories (id, name, description) VALUES 
+    (1, 'Memberships', 'Membership passes and subscriptions'),
+    (2, 'Gift Shop', 'Retail merchandise and souvenirs'),
+    (3, 'Passes', 'Day passes and event tickets'),
+    (4, 'Snacks', 'Snacks and beverages'),
+    (5, 'Food', 'Full meals and dining options')`);
+
+  // Add membership products linked to membership tiers
+  db.run(`INSERT OR IGNORE INTO products (id, name, price, category, category_id, stock) VALUES 
+    (9001, 'Basic Membership', 0, 'Memberships', 1, 9999),
+    (9002, 'Premium Membership', 99.99, 'Memberships', 1, 9999),
+    (9003, 'Gold Membership', 199.99, 'Memberships', 1, 9999),
+    (9004, 'Platinum Membership', 299.99, 'Memberships', 1, 9999)`);
+
+  // Update existing products with categories
+  db.run(`UPDATE products SET category_id = 2 WHERE category LIKE '%gift%' OR category LIKE '%merchandise%'`);
+  db.run(`UPDATE products SET category_id = 4 WHERE category LIKE '%snack%' OR category LIKE '%drink%' OR category LIKE '%beverage%'`);
+  db.run(`UPDATE products SET category_id = 5 WHERE category LIKE '%food%' OR category LIKE '%meal%'`);
+  db.run(`UPDATE products SET category_id = 3 WHERE category LIKE '%pass%' OR category LIKE '%ticket%'`);
+
+  // Generate unique IDs for existing members
+  db.all(`SELECT id FROM members WHERE unique_id IS NULL`, (err, rows) => {
+    if (!err && rows) {
+      rows.forEach(row => {
+        const uniqueId = 'MEM' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase();
+        db.run(`UPDATE members SET unique_id = ? WHERE id = ?`, [uniqueId, row.id]);
+      });
+    }
+  });
+
   db.run(`CREATE TABLE IF NOT EXISTS members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    unique_id TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     email TEXT UNIQUE,
     phone TEXT,
@@ -102,6 +141,43 @@ db.serialize(() => {
   db.run(`ALTER TABLE transactions ADD COLUMN tax_amount REAL DEFAULT 0`, (err) => {
     if (err && !err.message.includes('duplicate column name')) {
       console.error('Error adding tax_amount column:', err.message);
+    }
+  });
+
+  // Add unique_id column to members if it doesn't exist
+  db.run(`ALTER TABLE members ADD COLUMN unique_id TEXT UNIQUE`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding unique_id column:', err.message);
+    }
+  });
+
+  // Create membership tiers table
+  db.run(`CREATE TABLE IF NOT EXISTS membership_tiers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    price REAL NOT NULL,
+    description TEXT,
+    benefits TEXT,
+    duration_months INTEGER DEFAULT 12,
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Create product categories table
+  db.run(`CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    parent_id INTEGER,
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES categories (id)
+  )`);
+
+  // Add category_id to products
+  db.run(`ALTER TABLE products ADD COLUMN category_id INTEGER REFERENCES categories(id)`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding category_id column:', err.message);
     }
   });
 
@@ -157,9 +233,9 @@ app.get('/api/products', (req, res) => {
 });
 
 app.post('/api/products', (req, res) => {
-  const { name, price, category, stock } = req.body;
-  db.run('INSERT INTO products (name, price, category, stock) VALUES (?, ?, ?, ?)',
-    [name, price, category, stock],
+  const { name, price, category, category_id, stock } = req.body;
+  db.run('INSERT INTO products (name, price, category, category_id, stock) VALUES (?, ?, ?, ?, ?)',
+    [name, price, category, category_id, stock],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -192,14 +268,18 @@ app.get('/api/members', (req, res) => {
 
 app.post('/api/members', (req, res) => {
   const { name, email, phone, membership_type } = req.body;
-  db.run('INSERT INTO members (name, email, phone, membership_type) VALUES (?, ?, ?, ?)',
-    [name, email, phone, membership_type],
+  
+  // Generate unique member ID
+  const uniqueId = 'MEM' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase();
+  
+  db.run('INSERT INTO members (unique_id, name, email, phone, membership_type) VALUES (?, ?, ?, ?, ?)',
+    [uniqueId, name, email, phone, membership_type],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ id: this.lastID, success: true });
+      res.json({ id: this.lastID, unique_id: uniqueId, success: true });
     }
   );
 });
@@ -637,6 +717,128 @@ app.post('/api/members/:id/redeem-points', (req, res) => {
         res.json({ success: true, points_redeemed: points });
       });
   });
+});
+
+// Categories API Endpoints
+app.get('/api/categories', (req, res) => {
+  db.all('SELECT * FROM categories WHERE is_active = 1 ORDER BY name', (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+app.post('/api/categories', (req, res) => {
+  const { name, description, parent_id } = req.body;
+  
+  db.run('INSERT INTO categories (name, description, parent_id) VALUES (?, ?, ?)',
+    [name, description, parent_id || null],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ id: this.lastID, success: true });
+    }
+  );
+});
+
+app.put('/api/categories/:id', (req, res) => {
+  const { name, description, parent_id } = req.body;
+  
+  db.run('UPDATE categories SET name = ?, description = ?, parent_id = ? WHERE id = ?',
+    [name, description, parent_id || null, req.params.id],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ success: true, changes: this.changes });
+    }
+  );
+});
+
+app.delete('/api/categories/:id', (req, res) => {
+  db.run('UPDATE categories SET is_active = 0 WHERE id = ?', req.params.id, function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ success: true });
+  });
+});
+
+// Membership Tiers API Endpoints
+app.get('/api/membership-tiers', (req, res) => {
+  db.all('SELECT * FROM membership_tiers WHERE is_active = 1 ORDER BY price', (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+app.post('/api/membership-tiers', (req, res) => {
+  const { name, price, description, benefits, duration_months } = req.body;
+  
+  db.run('INSERT INTO membership_tiers (name, price, description, benefits, duration_months) VALUES (?, ?, ?, ?, ?)',
+    [name, price, description, benefits, duration_months],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ id: this.lastID, success: true });
+    }
+  );
+});
+
+app.put('/api/membership-tiers/:id', (req, res) => {
+  const { name, price, description, benefits, duration_months } = req.body;
+  
+  db.run('UPDATE membership_tiers SET name = ?, price = ?, description = ?, benefits = ?, duration_months = ? WHERE id = ?',
+    [name, price, description, benefits, duration_months, req.params.id],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ success: true, changes: this.changes });
+    }
+  );
+});
+
+// Member search endpoint for unique ID, email, or phone
+app.get('/api/members/search/:query', (req, res) => {
+  const query = req.params.query;
+  
+  db.all('SELECT * FROM members WHERE unique_id LIKE ? OR email LIKE ? OR phone LIKE ? OR name LIKE ? ORDER BY name',
+    [`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
+// Products by category endpoint
+app.get('/api/products/category/:categoryId', (req, res) => {
+  db.all('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = ? ORDER BY p.name',
+    [req.params.categoryId],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
 });
 
 app.listen(PORT, () => {
