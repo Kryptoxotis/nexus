@@ -134,9 +134,19 @@ const App: React.FC = () => {
             <MenuIcon />
           </IconButton>
           
-          <Receipt sx={{ mr: 2, color: '#00ff88', fontSize: 28 }} />
+          <Box 
+            component="img" 
+            src="/nexus-logo.png" 
+            alt="Nexus Logo" 
+            sx={{ 
+              height: 32, 
+              width: 'auto', 
+              mr: 2,
+              filter: 'drop-shadow(0 0 8px rgba(0, 255, 136, 0.3))'
+            }} 
+          />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Nexus POS
+            Nexus
             {currentMenuItem && (
               <Chip
                 icon={<currentMenuItem.icon />}
