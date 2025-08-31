@@ -842,5 +842,5 @@ app.get('/api/products/category/:categoryId', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Nexus POS Server running on port ${PORT}`);
+  console.log(`Nexus Server running on port ${PORT}`);
 });
