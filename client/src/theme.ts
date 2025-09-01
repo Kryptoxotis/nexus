@@ -4,9 +4,9 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#00ff88', // Bright neon green
-      dark: '#00cc6a',
-      light: '#66ffaa',
+      main: '#00d4ff', // Electric blue from logo
+      dark: '#0099cc',
+      light: '#66e6ff',
       contrastText: '#000000',
     },
     secondary: {
@@ -16,14 +16,14 @@ const theme = createTheme({
       contrastText: '#ffffff',
     },
     info: {
-      main: '#2ecc71', // Emerald green
-      light: '#58d68d',
-      dark: '#239b56',
+      main: '#00d4ff', // Electric blue matching primary
+      light: '#66e6ff',
+      dark: '#0099cc',
     },
     success: {
-      main: '#1dd1a1', // Teal green
-      light: '#55efc4',
-      dark: '#00b894',
+      main: '#00ff88', // Electric green from logo
+      light: '#66ffaa',
+      dark: '#00cc6a',
     },
     warning: {
       main: '#9b59b6', // Amethyst purple
@@ -51,7 +51,7 @@ const theme = createTheme({
     },
     h5: {
       fontWeight: 500,
-      color: '#00ff88',
+      color: '#00d4ff',
     },
     h6: {
       fontWeight: 500,
@@ -68,9 +68,9 @@ const theme = createTheme({
           transition: 'all 0.3s ease-in-out',
           '&:hover': {
             transform: 'translateY(-4px) scale(1.02)',
-            boxShadow: '0 12px 24px rgba(29, 209, 161, 0.2), 0 6px 12px rgba(142, 68, 173, 0.1)',
+            boxShadow: '0 12px 24px rgba(0, 212, 255, 0.2), 0 6px 12px rgba(0, 255, 136, 0.1)',
             border: '1px solid',
-            borderImage: 'linear-gradient(45deg, #00ff88, #1dd1a1, #8e44ad) 1',
+            borderImage: 'linear-gradient(45deg, #00d4ff, #00ff88, #66e6ff) 1',
           },
         },
       },
@@ -83,22 +83,22 @@ const theme = createTheme({
           fontWeight: 600,
         },
         contained: {
-          background: 'linear-gradient(135deg, #00ff88 0%, #1dd1a1 50%, #2ecc71 100%)',
-          boxShadow: '0 3px 5px 2px rgba(0, 255, 136, .3)',
+          background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #66e6ff 100%)',
+          boxShadow: '0 3px 5px 2px rgba(0, 212, 255, .3)',
           transition: 'all 0.3s ease-in-out',
           '&:hover': {
-            background: 'linear-gradient(135deg, #66ffaa 0%, #55efc4 50%, #58d68d 100%)',
+            background: 'linear-gradient(135deg, #66e6ff 0%, #66ffaa 50%, #99f0ff 100%)',
             transform: 'translateY(-2px)',
-            boxShadow: '0 6px 10px 4px rgba(0, 255, 136, .4)',
+            boxShadow: '0 6px 10px 4px rgba(0, 212, 255, .4)',
           },
         },
         outlined: {
-          borderColor: '#1dd1a1',
-          color: '#1dd1a1',
+          borderColor: '#00d4ff',
+          color: '#00d4ff',
           '&:hover': {
             borderColor: '#00ff88',
             color: '#00ff88',
-            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+            backgroundColor: 'rgba(0, 212, 255, 0.1)',
           },
         },
       },
@@ -114,10 +114,10 @@ const theme = createTheme({
           },
         },
         colorPrimary: {
-          background: 'linear-gradient(45deg, #00ff88, #1dd1a1)',
+          background: 'linear-gradient(45deg, #00d4ff, #00ff88)',
           color: '#000000',
           '&:hover': {
-            background: 'linear-gradient(45deg, #66ffaa, #55efc4)',
+            background: 'linear-gradient(45deg, #66e6ff, #66ffaa)',
           },
         },
         colorSecondary: {
@@ -128,11 +128,11 @@ const theme = createTheme({
           },
         },
         colorInfo: {
-          background: 'linear-gradient(45deg, #3498db, #5dade2)',
-          color: '#ffffff',
+          background: 'linear-gradient(45deg, #00d4ff, #66e6ff)',
+          color: '#000000',
         },
         colorSuccess: {
-          background: 'linear-gradient(45deg, #2ecc71, #58d68d)',
+          background: 'linear-gradient(45deg, #00ff88, #66ffaa)',
           color: '#000000',
         },
         colorWarning: {
@@ -146,9 +146,9 @@ const theme = createTheme({
         root: {
           '& .MuiTableCell-head': {
             background: 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 100%)',
-            color: '#1dd1a1',
+            color: '#00d4ff',
             fontWeight: 600,
-            borderBottom: '2px solid #2ecc71',
+            borderBottom: '2px solid #00ff88',
           },
         },
       },
@@ -157,7 +157,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           background: 'linear-gradient(90deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)',
-          boxShadow: '0 2px 10px rgba(0, 255, 136, 0.3)',
+          boxShadow: '0 2px 10px rgba(0, 212, 255, 0.3)',
         },
       },
     },
@@ -166,10 +166,10 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
-              borderColor: '#3498db',
+              borderColor: '#00d4ff',
             },
             '&:hover fieldset': {
-              borderColor: '#1dd1a1',
+              borderColor: '#00ff88',
             },
             '&.Mui-focused fieldset': {
               borderColor: '#00ff88',
@@ -177,7 +177,7 @@ const theme = createTheme({
             },
           },
           '& .MuiInputLabel-root': {
-            color: '#9b59b6',
+            color: '#00d4ff',
             '&.Mui-focused': {
               color: '#00ff88',
             },
@@ -189,7 +189,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#8e44ad',
+            borderColor: '#00d4ff',
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: '#00ff88',

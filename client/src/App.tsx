@@ -112,7 +112,7 @@ const App: React.FC = () => {
           background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid',
-          borderBottomImage: 'linear-gradient(90deg, transparent, #00ff88, transparent)',
+          borderBottomImage: 'linear-gradient(90deg, transparent, #00d4ff, #00ff88, transparent)',
         }}
       >
         <Toolbar sx={{ minHeight: '70px !important' }}>
@@ -142,7 +142,7 @@ const App: React.FC = () => {
               height: 32, 
               width: 'auto', 
               mr: 2,
-              filter: 'drop-shadow(0 0 8px rgba(0, 255, 136, 0.3))'
+              filter: 'drop-shadow(0 0 8px rgba(0, 212, 255, 0.4)) drop-shadow(0 0 4px rgba(0, 255, 136, 0.3))'
             }} 
           />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
