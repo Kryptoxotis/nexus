@@ -161,22 +161,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun initSupabase() {
-        // TODO: Load these from BuildConfig or secrets.properties
-        // For now, set them manually or from a config file
-        try {
-            val properties = java.util.Properties()
-            val secretsFile = java.io.File(applicationContext.filesDir.parentFile?.parentFile?.parentFile?.parentFile, "secrets.properties")
-            if (secretsFile.exists()) {
-                properties.load(secretsFile.inputStream())
-                SupabaseClientProvider.supabaseUrl = properties.getProperty("SUPABASE_URL", "")
-                SupabaseClientProvider.supabaseAnonKey = properties.getProperty("SUPABASE_ANON_KEY", "")
-            }
-
-            // Also try to set Google Web Client ID
-            AuthManager.googleWebClientId = properties.getProperty("GOOGLE_WEB_CLIENT_ID", "")
-        } catch (e: Exception) {
-            android.util.Log.w("NFCPass:MainActivity", "Could not load secrets.properties: ${e.message}")
-        }
+        SupabaseClientProvider.supabaseUrl = BuildConfig.SUPABASE_URL
+        SupabaseClientProvider.supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
+        AuthManager.googleWebClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
     }
 
     private fun checkNfcSupport() {
