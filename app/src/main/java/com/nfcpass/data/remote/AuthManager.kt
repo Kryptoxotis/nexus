@@ -17,7 +17,7 @@ import com.nfcpass.data.remote.dto.ProfileDto
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.IDToken
-import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -204,7 +204,7 @@ class AuthManager(private val context: Context) {
         return try {
             val supabase = SupabaseClientProvider.getClient()
             val userId = supabase.auth.currentUserOrNull()?.id ?: return null
-            supabase.postgrest["profiles"]
+            supabase.from("profiles")
                 .select { filter { eq("user_id", userId) } }
                 .decodeSingleOrNull<ProfileDto>()
         } catch (e: Exception) {
@@ -220,7 +220,7 @@ class AuthManager(private val context: Context) {
         try {
             val supabase = SupabaseClientProvider.getClient()
             val userId = supabase.auth.currentUserOrNull()?.id ?: return
-            supabase.postgrest["profiles"]
+            supabase.from("profiles")
                 .update({ set("current_role", role) }) {
                     filter { eq("user_id", userId) }
                 }

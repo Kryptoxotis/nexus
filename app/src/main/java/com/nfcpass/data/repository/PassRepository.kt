@@ -8,7 +8,7 @@ import com.nfcpass.data.remote.dto.PassDto
 import com.nfcpass.domain.model.Pass
 import com.nfcpass.domain.model.Result
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -189,7 +189,7 @@ class PassRepository(
             Log.d(TAG, "Syncing passes from Supabase for user: $userId")
 
             val supabase = SupabaseClientProvider.getClient()
-            val remotePasses = supabase.postgrest["passes"]
+            val remotePasses = supabase.from("passes")
                 .select { filter { eq("user_id", userId) } }
                 .decodeList<PassDto>()
 
@@ -247,7 +247,7 @@ class PassRepository(
             if (pass.userId == DEFAULT_USER_ID) return
 
             val supabase = SupabaseClientProvider.getClient()
-            supabase.postgrest["passes"].upsert(PassDto(
+            supabase.from("passes").upsert(PassDto(
                 id = pass.id,
                 userId = pass.userId,
                 passId = pass.passId,
@@ -268,7 +268,7 @@ class PassRepository(
     private suspend fun deletePassFromSupabase(passId: String) {
         try {
             val supabase = SupabaseClientProvider.getClient()
-            supabase.postgrest["passes"].delete {
+            supabase.from("passes").delete {
                 filter { eq("id", passId) }
             }
         } catch (e: Exception) {
