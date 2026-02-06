@@ -1,16 +1,31 @@
-# nexus
+# Nexus
 
-A new Flutter project.
+Android NFC pass wallet with Google authentication, multi-account switching, and Supabase sync.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+- **NFC HCE Emulation** - Emulate NFC passes (Type 4 Tag, NDEF) for contactless access
+- **Google Sign-In** - Authenticate via Google with Supabase backend
+- **Multi-Account** - Switch between multiple Google accounts without re-authentication
+- **Offline-First** - Room DB is the source of truth; syncs with Supabase when online
+- **Business/Personal Roles** - Choose your account type for different experiences
+- **Cross-Platform Sync** - Passes sync between mobile and the [Nexus Web Dashboard](https://github.com/Kryptoxotis/nexus-web)
 
-A few resources to get you started if this is your first Flutter project:
+## Tech Stack
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Kotlin + Jetpack Compose
+- Room Database (offline storage)
+- Supabase (auth, database, realtime)
+- Android NFC HCE API
+- Google Credential Manager
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Setup
+
+1. Clone this repo
+2. Copy `secrets.properties.template` to `secrets.properties`
+3. Fill in your Supabase URL, Anon Key, and Google Web Client ID
+4. Open in Android Studio and run
+
+## Web Dashboard
+
+See [nexus-web](https://github.com/Kryptoxotis/nexus-web) for the companion web app.
