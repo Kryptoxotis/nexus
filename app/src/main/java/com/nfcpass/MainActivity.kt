@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
                                         repository.migrateLocalPasses(userId)
                                         repository.syncFromSupabase()
                                     }
+                                    passViewModel.refreshPasses()
                                 }
                                 when (state) {
                                     is AuthState.NeedsProfileSetup -> {
@@ -145,15 +146,22 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Handle sign out - navigate to login
+                // Refresh passes when auth state changes
                 LaunchedEffect(authState) {
-                    if (authState is AuthState.NotAuthenticated) {
-                        val currentRoute = navController.currentBackStackEntry?.destination?.route
-                        if (currentRoute != null && currentRoute != "login") {
-                            navController.navigate("login") {
-                                popUpTo(0) { inclusive = true }
+                    when (authState) {
+                        is AuthState.Authenticated -> {
+                            passViewModel.refreshPasses()
+                        }
+                        is AuthState.NotAuthenticated -> {
+                            passViewModel.refreshPasses()
+                            val currentRoute = navController.currentBackStackEntry?.destination?.route
+                            if (currentRoute != null && currentRoute != "login") {
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
                         }
+                        else -> {}
                     }
                 }
             }

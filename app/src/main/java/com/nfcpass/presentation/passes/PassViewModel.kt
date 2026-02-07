@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nfcpass.data.repository.PassRepository
 import com.nfcpass.domain.model.Pass
 import com.nfcpass.domain.model.Result
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,16 +27,32 @@ class PassViewModel(
     private val _uiState = MutableStateFlow<PassUiState>(PassUiState.Idle)
     val uiState: StateFlow<PassUiState> = _uiState.asStateFlow()
 
+    private var passesJob: Job? = null
+    private var activePassJob: Job? = null
+
     init {
-        // Observe passes from repository
-        viewModelScope.launch {
+        startObserving()
+    }
+
+    /**
+     * Re-subscribes to pass flows with the current user ID.
+     * Call this after auth state changes (login, logout, account switch).
+     */
+    fun refreshPasses() {
+        startObserving()
+    }
+
+    private fun startObserving() {
+        passesJob?.cancel()
+        activePassJob?.cancel()
+
+        passesJob = viewModelScope.launch {
             repository.observeUserPasses().collect { passList ->
                 _passes.value = passList
             }
         }
 
-        // Observe active pass
-        viewModelScope.launch {
+        activePassJob = viewModelScope.launch {
             repository.observeActivePass().collect { pass ->
                 _activePass.value = pass
             }
