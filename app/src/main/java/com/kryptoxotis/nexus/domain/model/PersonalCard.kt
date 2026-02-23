@@ -21,6 +21,7 @@ data class PersonalCard(
     val content: String? = null,
     val icon: String? = null,
     val color: String? = null,
+    val imageUrl: String? = null,
     val isActive: Boolean = false,
     val orderIndex: Int = 0,
     val createdAt: String,

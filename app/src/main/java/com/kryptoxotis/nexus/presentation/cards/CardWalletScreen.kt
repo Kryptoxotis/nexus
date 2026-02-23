@@ -22,7 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
@@ -395,9 +397,25 @@ private fun ActiveCardHero(card: PersonalCard, onClick: () -> Unit) {
                         colors = listOf(NexusOrange, NexusBlue)
                     )
                 )
-                .padding(24.dp)
         ) {
-            Column {
+            if (card.imageUrl != null) {
+                AsyncImage(
+                    model = card.imageUrl,
+                    contentDescription = "Card image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    contentScale = ContentScale.Crop
+                )
+                // Dark scrim over image for text readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .background(Color.Black.copy(alpha = 0.4f))
+                )
+            }
+            Column(modifier = Modifier.padding(24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -481,21 +499,32 @@ private fun CardItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val icon = when (card.cardType) {
-                CardType.LINK -> Icons.Default.Link
-                CardType.FILE -> Icons.Default.AttachFile
-                CardType.CONTACT -> Icons.Default.Contacts
-                CardType.SOCIAL_MEDIA -> Icons.Default.Share
-                CardType.CUSTOM -> Icons.Default.CreditCard
-            }
+            if (card.imageUrl != null) {
+                AsyncImage(
+                    model = card.imageUrl,
+                    contentDescription = "Card image",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(6.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                val icon = when (card.cardType) {
+                    CardType.LINK -> Icons.Default.Link
+                    CardType.FILE -> Icons.Default.AttachFile
+                    CardType.CONTACT -> Icons.Default.Contacts
+                    CardType.SOCIAL_MEDIA -> Icons.Default.Share
+                    CardType.CUSTOM -> Icons.Default.CreditCard
+                }
 
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = if (isActive) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = if (isActive) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 
