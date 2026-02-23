@@ -326,7 +326,8 @@ private fun CardQuickActionSheet(
             }
         }
 
-        if (qrBitmap != null) {
+        val bitmap = qrBitmap
+        if (bitmap != null) {
             Card(
                 modifier = Modifier.size(200.dp),
                 shape = RoundedCornerShape(12.dp)
@@ -339,7 +340,7 @@ private fun CardQuickActionSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        bitmap = qrBitmap.asImageBitmap(),
+                        bitmap = bitmap.asImageBitmap(),
                         contentDescription = "QR Code",
                         modifier = Modifier.fillMaxSize()
                     )

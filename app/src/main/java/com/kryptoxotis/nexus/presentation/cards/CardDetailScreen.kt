@@ -134,7 +134,8 @@ fun CardDetailScreen(
                 }
             }
 
-            if (qrBitmap != null) {
+            val bitmap = qrBitmap
+            if (bitmap != null) {
                 Text(
                     text = "QR Code",
                     style = MaterialTheme.typography.titleSmall,
@@ -153,7 +154,7 @@ fun CardDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            bitmap = qrBitmap.asImageBitmap(),
+                            bitmap = bitmap.asImageBitmap(),
                             contentDescription = "QR Code",
                             modifier = Modifier.fillMaxSize()
                         )
