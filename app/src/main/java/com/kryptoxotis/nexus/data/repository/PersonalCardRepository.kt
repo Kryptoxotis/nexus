@@ -58,7 +58,8 @@ class PersonalCardRepository(
         title: String,
         content: String? = null,
         icon: String? = null,
-        color: String? = null
+        color: String? = null,
+        imageUrl: String? = null
     ): Result<PersonalCard> {
         return try {
             val userId = getCurrentUserId()
@@ -76,6 +77,7 @@ class PersonalCardRepository(
                 content = content,
                 icon = icon,
                 color = color,
+                imageUrl = imageUrl,
                 isActive = false,
                 orderIndex = nextOrder,
                 createdAt = now,
@@ -189,6 +191,7 @@ class PersonalCardRepository(
                         content = remote.content,
                         icon = remote.icon,
                         color = remote.color,
+                        imageUrl = remote.imageUrl,
                         isActive = remote.isActive,
                         orderIndex = remote.orderIndex,
                         createdAt = remote.createdAt ?: java.time.Instant.now().toString(),
@@ -205,6 +208,7 @@ class PersonalCardRepository(
                             content = remote.content,
                             icon = remote.icon,
                             color = remote.color,
+                            imageUrl = remote.imageUrl,
                             isActive = remote.isActive,
                             orderIndex = remote.orderIndex,
                             updatedAt = remoteUpdated
@@ -261,6 +265,7 @@ class PersonalCardRepository(
                 content = card.content,
                 icon = card.icon,
                 color = card.color,
+                imageUrl = card.imageUrl,
                 isActive = card.isActive,
                 orderIndex = card.orderIndex,
                 createdAt = card.createdAt,
@@ -283,6 +288,7 @@ class PersonalCardRepository(
                 content = entity.content,
                 icon = entity.icon,
                 color = entity.color,
+                imageUrl = entity.imageUrl,
                 isActive = entity.isActive,
                 orderIndex = entity.orderIndex,
                 createdAt = entity.createdAt,

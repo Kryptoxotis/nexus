@@ -23,8 +23,8 @@ android {
         applicationId = "com.kryptoxotis.nexus"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = (project.findProperty("buildNumber") as? String)?.toIntOrNull() ?: 1
+        versionName = "1.0.${(project.findProperty("buildNumber") as? String) ?: "0"}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -104,6 +104,9 @@ dependencies {
 
     // QR Code generation
     implementation("com.google.zxing:core:3.5.3")
+
+    // Image loading (Coil)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Google Credential Manager (for Google Sign-In)
     implementation("androidx.credentials:credentials:1.3.0")

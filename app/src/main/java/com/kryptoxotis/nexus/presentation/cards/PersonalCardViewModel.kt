@@ -58,7 +58,8 @@ class PersonalCardViewModel(
         title: String,
         content: String? = null,
         icon: String? = null,
-        color: String? = null
+        color: String? = null,
+        imageUrl: String? = null
     ) {
         if (title.isBlank()) {
             _uiState.value = CardUiState.Error("Title cannot be empty")
@@ -72,7 +73,7 @@ class PersonalCardViewModel(
         _uiState.value = CardUiState.Loading
 
         viewModelScope.launch {
-            when (val result = cardRepository.addCard(cardType, title, content, icon, color)) {
+            when (val result = cardRepository.addCard(cardType, title, content, icon, color, imageUrl)) {
                 is Result.Success -> {
                     _uiState.value = CardUiState.Success("Card added")
                 }

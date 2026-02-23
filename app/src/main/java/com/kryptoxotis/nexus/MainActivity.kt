@@ -1,6 +1,7 @@
 package com.kryptoxotis.nexus
 
 import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -74,6 +75,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var authManager: AuthManager
     private lateinit var authViewModel: AuthViewModel
     private var isNfcSupported: Boolean = false
+    private var nfcAdapter: NfcAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -371,6 +373,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (isNfcSupported) {
+            nfcAdapter?.enableReaderMode(
+                this,
+                { _: Tag? -> /* no-op: suppress default tag dispatch */ },
+                NfcAdapter.FLAG_READER_NFC_A or
+                        NfcAdapter.FLAG_READER_NFC_B or
+                        NfcAdapter.FLAG_READER_NFC_F or
+                        NfcAdapter.FLAG_READER_NFC_V or
+                        NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
+                null
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (isNfcSupported) {
+            nfcAdapter?.disableReaderMode(this)
+        }
+    }
+
     private fun initSupabase() {
         SupabaseClientProvider.supabaseUrl = BuildConfig.SUPABASE_URL
         SupabaseClientProvider.supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
@@ -378,14 +403,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkNfcSupport() {
-        val nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        val adapter = NfcAdapter.getDefaultAdapter(this)
+        nfcAdapter = adapter
 
         when {
-            nfcAdapter == null -> {
+            adapter == null -> {
                 isNfcSupported = false
                 Toast.makeText(this, "NFC is not supported on this device.", Toast.LENGTH_LONG).show()
             }
-            !nfcAdapter.isEnabled -> {
+            !adapter.isEnabled -> {
                 isNfcSupported = false
                 Toast.makeText(this, "NFC is disabled. Please enable it in Settings.", Toast.LENGTH_LONG).show()
             }

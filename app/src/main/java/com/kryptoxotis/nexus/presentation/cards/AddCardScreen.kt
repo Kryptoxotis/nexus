@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,10 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.kryptoxotis.nexus.domain.model.CardType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +39,11 @@ fun AddCardScreen(
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf<String?>(null) }
     var fileUploadUrl by remember { mutableStateOf<String?>(null) }
+
+    // Image picker state
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var imageUploadUrl by remember { mutableStateOf<String?>(null) }
+    var isUploadingImage by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -55,18 +64,66 @@ fun AddCardScreen(
         }
     }
 
-    // Handle file upload completion -> create card
+    // Image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedImageUri = uri
+        }
+    }
+
+    // Handle file/image upload completion -> create card
     LaunchedEffect(uiState) {
         if (uiState is CardUiState.FileUploaded) {
             val url = (uiState as CardUiState.FileUploaded).url
-            fileUploadUrl = url
-            viewModel.addCard(
-                cardType = CardType.FILE,
-                title = title,
-                content = url,
-                icon = icon.ifBlank { null },
-                color = color.ifBlank { null }
-            )
+            if (isUploadingImage) {
+                // Image upload completed — now create the card
+                isUploadingImage = false
+                imageUploadUrl = url
+                if (selectedType == CardType.FILE) {
+                    // FILE card: file was already uploaded, image just finished
+                    viewModel.addCard(
+                        cardType = CardType.FILE,
+                        title = title,
+                        content = fileUploadUrl,
+                        icon = icon.ifBlank { null },
+                        color = color.ifBlank { null },
+                        imageUrl = url
+                    )
+                } else {
+                    viewModel.addCard(
+                        cardType = selectedType!!,
+                        title = title,
+                        content = content.ifBlank { null },
+                        icon = icon.ifBlank { null },
+                        color = color.ifBlank { null },
+                        imageUrl = url
+                    )
+                }
+            } else {
+                // File upload completed (for FILE type cards)
+                fileUploadUrl = url
+                if (selectedImageUri != null && imageUploadUrl == null) {
+                    // Need to upload image next
+                    isUploadingImage = true
+                    val uri = selectedImageUri!!
+                    val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                    val mimeType = context.contentResolver.getType(uri)
+                    if (bytes != null) {
+                        viewModel.uploadFile(bytes, "card-image-${System.currentTimeMillis()}.jpg", mimeType)
+                    }
+                } else {
+                    viewModel.addCard(
+                        cardType = CardType.FILE,
+                        title = title,
+                        content = url,
+                        icon = icon.ifBlank { null },
+                        color = color.ifBlank { null },
+                        imageUrl = imageUploadUrl
+                    )
+                }
+            }
         }
         if (uiState is CardUiState.Success) {
             onNavigateBack()
@@ -264,6 +321,33 @@ fun AddCardScreen(
                     )
                 }
 
+                // Card image (optional, all card types)
+                OutlinedButton(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = uiState !is CardUiState.Loading
+                ) {
+                    Icon(
+                        Icons.Default.Image,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (selectedImageUri != null) "Change Card Image" else "Add Card Image (Optional)")
+                }
+
+                if (selectedImageUri != null) {
+                    AsyncImage(
+                        model = selectedImageUri,
+                        contentDescription = "Card image preview",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
@@ -278,6 +362,15 @@ fun AddCardScreen(
                                 if (bytes != null) {
                                     viewModel.uploadFile(bytes, name, mimeType)
                                 }
+                            }
+                        } else if (selectedImageUri != null) {
+                            // Upload image first, then card is created in LaunchedEffect
+                            isUploadingImage = true
+                            val uri = selectedImageUri!!
+                            val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                            val mimeType = context.contentResolver.getType(uri)
+                            if (bytes != null) {
+                                viewModel.uploadFile(bytes, "card-image-${System.currentTimeMillis()}.jpg", mimeType)
                             }
                         } else {
                             viewModel.addCard(
