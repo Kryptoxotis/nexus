@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nexus</string>
+
+    <!-- Auth Strings -->
+    <string name="login">Login</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="dont_have_account">Don\'t have an account? Sign up</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="logout">Logout</string>
+
+    <!-- Pass Strings -->
+    <string name="my_passes">My Passes</string>
+    <string name="add_pass">Add Pass</string>
+    <string name="pass_name">Pass Name</string>
+    <string name="pass_id">Pass ID</string>
+    <string name="organization">Organization</string>
+    <string name="expiry_date">Expiry Date</string>
+    <string name="active">Active</string>
+    <string name="inactive">Inactive</string>
+    <string name="activate">Activate</string>
+    <string name="deactivate">Deactivate</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+
+    <!-- Status Messages -->
+    <string name="pass_activated">Pass activated successfully</string>
+    <string name="pass_deactivated">Pass deactivated</string>
+    <string name="pass_added">Pass added successfully</string>
+    <string name="pass_deleted">Pass deleted</string>
+    <string name="sync_complete">Sync complete</string>
+    <string name="sync_failed">Sync failed. Using offline data.</string>
+
+    <!-- Error Messages -->
+    <string name="error_invalid_email">Invalid email address</string>
+    <string name="error_password_mismatch">Passwords do not match</string>
+    <string name="error_password_too_short">Password must be at least 6 characters</string>
+    <string name="error_login_failed">Login failed. Check your credentials.</string>
+    <string name="error_signup_failed">Sign up failed. Try again.</string>
+    <string name="error_network">Network error. Check your connection.</string>
+    <string name="error_nfc_not_supported">NFC is not supported on this device</string>
+    <string name="error_nfc_disabled">NFC is disabled. Please enable it in settings.</string>
+    <string name="error_no_active_pass">No active pass. Please activate a pass first.</string>
+
+    <!-- NFC Strings -->
+    <string name="nfc_service_desc">NFC Pass Emulation Service</string>
+    <string name="tap_to_use">Hold near reader to use your pass</string>
+    <string name="ready_to_tap">Ready to tap</string>
+</resources>
