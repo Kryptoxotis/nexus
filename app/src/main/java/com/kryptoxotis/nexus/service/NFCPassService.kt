@@ -6,15 +6,9 @@ import android.util.Log
 import com.kryptoxotis.nexus.data.local.NexusDatabase
 import com.kryptoxotis.nexus.data.repository.PersonalCardRepository
 import com.kryptoxotis.nexus.domain.model.CardType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class NFCPassService : HostApduService() {
-
-    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val repository: PersonalCardRepository by lazy {
         val database = NexusDatabase.getDatabase(applicationContext)
@@ -49,16 +43,16 @@ class NFCPassService : HostApduService() {
         private val SW_CONDITIONS_NOT_MET = byteArrayOf(0x69.toByte(), 0x85.toByte())
 
         private val CC_FILE = byteArrayOf(
-            0x00, 0x0F,
-            0x20,
-            0x00, 0xFF.toByte(),
-            0x00, 0xFF.toByte(),
-            0x04,
-            0x06,
-            0xE1.toByte(), 0x04,
-            0x02, 0x00,
-            0x00,
-            0xFF.toByte()
+            0x00, 0x0F,                   // CCLEN: 15 bytes
+            0x20,                         // Mapping Version 2.0
+            0xFF.toByte(), 0xFF.toByte(), // MLe: 65535 (max R-APDU data size)
+            0xFF.toByte(), 0xFF.toByte(), // MLc: 65535 (max C-APDU data size)
+            0x04,                         // T: NDEF File Control TLV
+            0x06,                         // L: 6 bytes
+            0xE1.toByte(), 0x04,          // NDEF File ID
+            0x02, 0x00,                   // Max NDEF size: 512
+            0x00,                         // Read access: granted
+            0xFF.toByte()                 // Write access: denied
         )
 
         fun createNdefMessage(content: String, isUri: Boolean = false): ByteArray {
@@ -124,40 +118,6 @@ class NFCPassService : HostApduService() {
         private fun ByteArray.toHexString(): String = joinToString("") { "%02X".format(it) }
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        refreshNdefMessage()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        serviceScope.cancel()
-    }
-
-    private fun refreshNdefMessage() {
-        serviceScope.launch {
-            try {
-                val activeCard = repository.getActiveCard()
-                ndefMessage = if (activeCard != null) {
-                    Log.d(TAG, "Cached active card: type=${activeCard.cardType}")
-                    when (activeCard.cardType) {
-                        CardType.LINK -> {
-                            val url = activeCard.content ?: activeCard.title
-                            createNdefMessage(url, isUri = true)
-                        }
-                        else -> {
-                            createNdefMessage(activeCard.content ?: activeCard.id, isUri = false)
-                        }
-                    }
-                } else {
-                    createNdefMessage("NO_ACTIVE_CARD")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to refresh NDEF message", e)
-            }
-        }
-    }
-
     override fun onDeactivated(reason: Int) {
         val reasonStr = when (reason) {
             DEACTIVATION_LINK_LOSS -> "LINK_LOSS"
@@ -218,8 +178,8 @@ class NFCPassService : HostApduService() {
                 appSelected = true
                 selectedFile = null
 
-                // Refresh cached NDEF message in background for next tap
-                refreshNdefMessage()
+                // Refresh NDEF message synchronously so reader gets fresh data
+                refreshNdefMessageSync()
 
                 Log.d(TAG, "NDEF message ready: ${ndefMessage.size} bytes")
                 return SW_OK
@@ -278,7 +238,12 @@ class NFCPassService : HostApduService() {
 
         val offset = ((apdu[2].toInt() and 0xFF) shl 8) or (apdu[3].toInt() and 0xFF)
 
-        val le = if (apdu.size >= 5) {
+        // Handle extended APDU Le format (Samsung/Android sends 3-byte Le: 00 XX XX)
+        val le = if (apdu.size == 7 && apdu[4] == 0x00.toByte()) {
+            // Extended Le: 3 bytes (00 + 2-byte length)
+            val extLe = ((apdu[5].toInt() and 0xFF) shl 8) or (apdu[6].toInt() and 0xFF)
+            if (extLe == 0) 65536 else extLe
+        } else if (apdu.size >= 5) {
             val rawLe = apdu[apdu.size - 1].toInt() and 0xFF
             if (rawLe == 0) 256 else rawLe
         } else {
@@ -298,5 +263,33 @@ class NFCPassService : HostApduService() {
 
         Log.d(TAG, "Returning $bytesToRead bytes from offset $offset")
         return data + SW_OK
+    }
+
+    /**
+     * Synchronously reads the active card from DB and builds the NDEF message.
+     * Called on the binder thread when a reader selects the NDEF AID.
+     * Room queries are fast (<10ms) so this won't cause timeouts.
+     */
+    private fun refreshNdefMessageSync() {
+        try {
+            val activeCard = runBlocking { repository.getActiveCard() }
+            ndefMessage = if (activeCard != null) {
+                Log.d(TAG, "Active card: type=${activeCard.cardType}, title=${activeCard.title}")
+                when (activeCard.cardType) {
+                    CardType.LINK, CardType.FILE, CardType.SOCIAL_MEDIA -> {
+                        val url = activeCard.content ?: activeCard.title
+                        createNdefMessage(url, isUri = true)
+                    }
+                    else -> {
+                        createNdefMessage(activeCard.content ?: activeCard.id, isUri = false)
+                    }
+                }
+            } else {
+                Log.d(TAG, "No active card found")
+                createNdefMessage("NO_ACTIVE_CARD")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to refresh NDEF message", e)
+        }
     }
 }

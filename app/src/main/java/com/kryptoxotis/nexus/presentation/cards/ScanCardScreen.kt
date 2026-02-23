@@ -1,0 +1,295 @@
+package com.kryptoxotis.nexus.presentation.cards
+
+import android.app.Activity
+import android.content.Intent
+import android.nfc.NdefMessage
+import android.nfc.NdefRecord
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.nfc.tech.IsoDep
+import android.util.Log
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+
+/**
+ * Scan/Receive screen — puts this phone into NFC reader mode so it can
+ * reliably read HCE tags from another Android phone running Nexus.
+ *
+ * This solves the Android-to-Android NFC problem where both phones try to
+ * read each other. Reader mode forces this phone to be the reader.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScanCardScreen(
+    onNavigateBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    var scanResult by remember { mutableStateOf<String?>(null) }
+    var isScanning by remember { mutableStateOf(true) }
+
+    // Enable reader mode — this forces this phone to be the reader,
+    // which is required for reliably reading HCE from another Android phone.
+    DisposableEffect(Unit) {
+        val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+        if (activity != null && nfcAdapter != null) {
+            nfcAdapter.enableReaderMode(
+                activity,
+                { tag ->
+                    // Tag discovered — try to read NDEF from it
+                    val result = readNdefFromTag(tag)
+                    if (result != null) {
+                        scanResult = result
+                        isScanning = false
+                        // Try to open the result as a URL
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(result))
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        } catch (_: Exception) {
+                            // Not a valid URL, just show it
+                        }
+                    }
+                },
+                NfcAdapter.FLAG_READER_NFC_A or
+                    NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
+                    NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
+                null
+            )
+        }
+        onDispose {
+            if (activity != null) {
+                try {
+                    NfcAdapter.getDefaultAdapter(context)?.disableReaderMode(activity)
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Scan Card") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (isScanning) {
+                Icon(
+                    Icons.Default.Nfc,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Hold near a Nexus card",
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Place this phone against another phone that has an active Nexus card",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                CircularProgressIndicator()
+            } else {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Card received!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
+                )
+                if (scanResult != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = scanResult!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(onClick = {
+                    scanResult = null
+                    isScanning = true
+                }) {
+                    Text("Scan Again")
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Reads NDEF data from an HCE tag using ISO-DEP (Type 4 Tag protocol).
+ * This manually sends APDU commands to read the NDEF message.
+ */
+private fun readNdefFromTag(tag: Tag): String? {
+    val isoDep = IsoDep.get(tag) ?: return null
+    try {
+        isoDep.connect()
+        isoDep.timeout = 5000
+
+        // Step 1: SELECT NDEF Application (AID: D2760000850101)
+        val selectAid = byteArrayOf(
+            0x00, 0xA4.toByte(), 0x04, 0x00, 0x07,
+            0xD2.toByte(), 0x76, 0x00, 0x00, 0x85.toByte(), 0x01, 0x01,
+            0x00
+        )
+        var resp = isoDep.transceive(selectAid)
+        if (!isOk(resp)) {
+            Log.d("Nexus:Scan", "SELECT AID failed: ${resp.toHex()}")
+            return null
+        }
+
+        // Step 2: SELECT CC file (E103)
+        val selectCc = byteArrayOf(
+            0x00, 0xA4.toByte(), 0x00, 0x0C, 0x02,
+            0xE1.toByte(), 0x03
+        )
+        resp = isoDep.transceive(selectCc)
+        if (!isOk(resp)) {
+            Log.d("Nexus:Scan", "SELECT CC failed: ${resp.toHex()}")
+            return null
+        }
+
+        // Step 3: READ CC file
+        val readCc = byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x0F)
+        resp = isoDep.transceive(readCc)
+        if (!isOk(resp) || resp.size < 17) {
+            Log.d("Nexus:Scan", "READ CC failed: ${resp.toHex()}")
+            return null
+        }
+
+        // Step 4: SELECT NDEF file (E104)
+        val selectNdef = byteArrayOf(
+            0x00, 0xA4.toByte(), 0x00, 0x0C, 0x02,
+            0xE1.toByte(), 0x04
+        )
+        resp = isoDep.transceive(selectNdef)
+        if (!isOk(resp)) {
+            Log.d("Nexus:Scan", "SELECT NDEF failed: ${resp.toHex()}")
+            return null
+        }
+
+        // Step 5: READ NDEF length (first 2 bytes)
+        val readLen = byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x02)
+        resp = isoDep.transceive(readLen)
+        if (!isOk(resp) || resp.size < 4) {
+            Log.d("Nexus:Scan", "READ NDEF length failed: ${resp.toHex()}")
+            return null
+        }
+        val ndefLen = ((resp[0].toInt() and 0xFF) shl 8) or (resp[1].toInt() and 0xFF)
+        if (ndefLen == 0 || ndefLen > 512) {
+            Log.d("Nexus:Scan", "Invalid NDEF length: $ndefLen")
+            return null
+        }
+
+        // Step 6: READ NDEF data
+        val readNdef = byteArrayOf(
+            0x00, 0xB0.toByte(), 0x00, 0x02,
+            ndefLen.toByte()
+        )
+        resp = isoDep.transceive(readNdef)
+        if (!isOk(resp) || resp.size < ndefLen + 2) {
+            Log.d("Nexus:Scan", "READ NDEF data failed: ${resp.toHex()}")
+            return null
+        }
+
+        // Parse the NDEF record
+        val ndefBytes = resp.copyOfRange(0, resp.size - 2)
+        return parseNdefRecord(ndefBytes)
+
+    } catch (e: Exception) {
+        Log.e("Nexus:Scan", "Failed to read tag", e)
+        return null
+    } finally {
+        try { isoDep.close() } catch (_: Exception) {}
+    }
+}
+
+private fun isOk(resp: ByteArray): Boolean {
+    return resp.size >= 2 &&
+        resp[resp.size - 2] == 0x90.toByte() &&
+        resp[resp.size - 1] == 0x00.toByte()
+}
+
+private fun parseNdefRecord(data: ByteArray): String? {
+    if (data.isEmpty()) return null
+    try {
+        // Parse NDEF record header
+        val tnf = data[0].toInt() and 0x07
+        val sr = (data[0].toInt() and 0x10) != 0 // short record
+        val typeLength = data[1].toInt() and 0xFF
+        val payloadLength = if (sr) {
+            (data[2].toInt() and 0xFF)
+        } else {
+            ((data[2].toInt() and 0xFF) shl 24) or
+                ((data[3].toInt() and 0xFF) shl 16) or
+                ((data[4].toInt() and 0xFF) shl 8) or
+                (data[5].toInt() and 0xFF)
+        }
+        val headerSize = if (sr) 3 else 6
+        val type = data.copyOfRange(headerSize, headerSize + typeLength)
+        val payload = data.copyOfRange(headerSize + typeLength, headerSize + typeLength + payloadLength)
+
+        // TNF 0x01 = NFC Forum well-known type
+        if (tnf == 1 && typeLength == 1) {
+            when (type[0].toInt()) {
+                0x55 -> { // URI record (type 'U')
+                    val prefixCode = payload[0].toInt() and 0xFF
+                    val uriBody = String(payload, 1, payload.size - 1, Charsets.UTF_8)
+                    val prefix = when (prefixCode) {
+                        0x01 -> "http://www."
+                        0x02 -> "https://www."
+                        0x03 -> "http://"
+                        0x04 -> "https://"
+                        else -> ""
+                    }
+                    return prefix + uriBody
+                }
+                0x54 -> { // Text record (type 'T')
+                    val langLen = payload[0].toInt() and 0x3F
+                    return String(payload, 1 + langLen, payload.size - 1 - langLen, Charsets.UTF_8)
+                }
+            }
+        }
+        // Fallback: return raw text
+        return String(payload, Charsets.UTF_8)
+    } catch (e: Exception) {
+        Log.e("Nexus:Scan", "Failed to parse NDEF record", e)
+        return null
+    }
+}
+
+private fun ByteArray.toHex(): String = joinToString("") { "%02X".format(it) }

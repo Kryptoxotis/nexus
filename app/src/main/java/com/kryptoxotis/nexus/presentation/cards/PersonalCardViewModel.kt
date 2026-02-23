@@ -28,6 +28,11 @@ class PersonalCardViewModel(
     val uiState: StateFlow<CardUiState> = _uiState.asStateFlow()
 
     init {
+        // Deactivate all cards on startup — cards should default to off
+        viewModelScope.launch {
+            cardRepository.deactivateAllCardsOnStartup()
+        }
+
         viewModelScope.launch {
             cardRepository.observeUserCards().collect { cardList ->
                 _cards.value = cardList
@@ -59,7 +64,8 @@ class PersonalCardViewModel(
         content: String? = null,
         icon: String? = null,
         color: String? = null,
-        imageUrl: String? = null
+        imageUrl: String? = null,
+        cardShape: String = "card"
     ) {
         if (title.isBlank()) {
             _uiState.value = CardUiState.Error("Title cannot be empty")
@@ -73,7 +79,7 @@ class PersonalCardViewModel(
         _uiState.value = CardUiState.Loading
 
         viewModelScope.launch {
-            when (val result = cardRepository.addCard(cardType, title, content, icon, color, imageUrl)) {
+            when (val result = cardRepository.addCard(cardType, title, content, icon, color, imageUrl, cardShape)) {
                 is Result.Success -> {
                     _uiState.value = CardUiState.Success("Card added")
                 }
@@ -97,6 +103,25 @@ class PersonalCardViewModel(
         viewModelScope.launch {
             when (val result = cardRepository.deactivateCard(cardId)) {
                 is Result.Success -> _uiState.value = CardUiState.Success("Card deactivated")
+                is Result.Error -> _uiState.value = CardUiState.Error(result.message)
+            }
+        }
+    }
+
+    fun updateCard(
+        cardId: String,
+        title: String,
+        content: String?,
+        color: String?,
+        cardShape: String
+    ) {
+        if (title.isBlank()) {
+            _uiState.value = CardUiState.Error("Title cannot be empty")
+            return
+        }
+        viewModelScope.launch {
+            when (val result = cardRepository.updateCard(cardId, title, content, color, cardShape)) {
+                is Result.Success -> _uiState.value = CardUiState.Success("Card updated")
                 is Result.Error -> _uiState.value = CardUiState.Error(result.message)
             }
         }

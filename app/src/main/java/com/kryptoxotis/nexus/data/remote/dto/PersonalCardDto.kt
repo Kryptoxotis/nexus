@@ -16,6 +16,8 @@ data class PersonalCardDto(
     val color: String? = null,
     @SerialName("image_url")
     val imageUrl: String? = null,
+    @SerialName("card_shape")
+    val cardShape: String = "card",
     @SerialName("is_active")
     val isActive: Boolean = false,
     @SerialName("order_index")

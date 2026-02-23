@@ -1,7 +1,9 @@
 package com.kryptoxotis.nexus
 
+import android.content.ComponentName
+import android.content.Intent
 import android.nfc.NfcAdapter
-import android.nfc.Tag
+import android.nfc.cardemulation.CardEmulation
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -54,6 +56,8 @@ import com.kryptoxotis.nexus.presentation.business.OrgSettingsScreen
 import com.kryptoxotis.nexus.presentation.cards.AddCardScreen
 import com.kryptoxotis.nexus.presentation.cards.CardDetailScreen
 import com.kryptoxotis.nexus.presentation.cards.CardWalletScreen
+import com.kryptoxotis.nexus.presentation.cards.EditCardScreen
+import com.kryptoxotis.nexus.presentation.cards.ScanCardScreen
 import com.kryptoxotis.nexus.presentation.cards.PersonalCardViewModel
 import com.kryptoxotis.nexus.presentation.profile.AccountSwitcherScreen
 import com.kryptoxotis.nexus.presentation.profile.ProfileSetupScreen
@@ -227,6 +231,8 @@ class MainActivity : ComponentActivity() {
                             authViewModel = authViewModel,
                             onNavigateToAddCard = { navController.navigate("add_card") },
                             onNavigateToCardDetail = { id -> navController.navigate("card_detail/$id") },
+                            onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") },
+                            onNavigateToScanCard = { navController.navigate("scan_card") },
                             onNavigateToAccounts = { navController.navigate("accounts") },
                             onNavigateToBusinessPasses = { navController.navigate("business_passes") }
                         )
@@ -249,6 +255,25 @@ class MainActivity : ComponentActivity() {
                             )
                         } else {
                             // Invalid card ID — go back
+                            LaunchedEffect(Unit) { navController.popBackStack() }
+                        }
+                    }
+
+                    composable("scan_card") {
+                        ScanCardScreen(
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable("edit_card/{cardId}") { backStackEntry ->
+                        val cardId = backStackEntry.arguments?.getString("cardId") ?: ""
+                        if (cardId.isNotEmpty()) {
+                            EditCardScreen(
+                                cardId = cardId,
+                                viewModel = cardViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        } else {
                             LaunchedEffect(Unit) { navController.popBackStack() }
                         }
                     }
@@ -375,25 +400,32 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Tell Android to prefer our HCE service for card emulation
+        // This biases the NFC controller toward listen mode (card) instead of poll mode (reader)
         if (isNfcSupported) {
-            nfcAdapter?.enableReaderMode(
-                this,
-                { _: Tag? -> /* no-op: suppress default tag dispatch */ },
-                NfcAdapter.FLAG_READER_NFC_A or
-                        NfcAdapter.FLAG_READER_NFC_B or
-                        NfcAdapter.FLAG_READER_NFC_F or
-                        NfcAdapter.FLAG_READER_NFC_V or
-                        NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
-                null
-            )
+            try {
+                val cardEmulation = CardEmulation.getInstance(nfcAdapter!!)
+                cardEmulation.setPreferredService(
+                    this,
+                    ComponentName(this, com.kryptoxotis.nexus.service.NFCPassService::class.java)
+                )
+            } catch (_: Exception) {}
         }
     }
 
     override fun onPause() {
         super.onPause()
         if (isNfcSupported) {
-            nfcAdapter?.disableReaderMode(this)
+            try {
+                val cardEmulation = CardEmulation.getInstance(nfcAdapter!!)
+                cardEmulation.unsetPreferredService(this)
+            } catch (_: Exception) {}
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Silently consume any NFC intents that arrive
     }
 
     private fun initSupabase() {

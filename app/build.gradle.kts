@@ -108,6 +108,7 @@ dependencies {
     // Image loading (Coil)
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+
     // Google Credential Manager (for Google Sign-In)
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")

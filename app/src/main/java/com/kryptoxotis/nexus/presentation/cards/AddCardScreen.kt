@@ -34,6 +34,7 @@ fun AddCardScreen(
     var content by remember { mutableStateOf("") }
     var icon by remember { mutableStateOf("") }
     var color by remember { mutableStateOf("") }
+    var cardShape by remember { mutableStateOf("card") }
 
     // File picker state
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -89,7 +90,8 @@ fun AddCardScreen(
                         content = fileUploadUrl,
                         icon = icon.ifBlank { null },
                         color = color.ifBlank { null },
-                        imageUrl = url
+                        imageUrl = url,
+                        cardShape = cardShape
                     )
                 } else {
                     viewModel.addCard(
@@ -98,7 +100,8 @@ fun AddCardScreen(
                         content = content.ifBlank { null },
                         icon = icon.ifBlank { null },
                         color = color.ifBlank { null },
-                        imageUrl = url
+                        imageUrl = url,
+                        cardShape = cardShape
                     )
                 }
             } else {
@@ -120,7 +123,8 @@ fun AddCardScreen(
                         content = url,
                         icon = icon.ifBlank { null },
                         color = color.ifBlank { null },
-                        imageUrl = imageUploadUrl
+                        imageUrl = imageUploadUrl,
+                        cardShape = cardShape
                     )
                 }
             }
@@ -321,6 +325,109 @@ fun AddCardScreen(
                     )
                 }
 
+                // Card shape selector
+                Text(
+                    text = "Card Shape",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    FilterChip(
+                        selected = cardShape == "card",
+                        onClick = { cardShape = "card" },
+                        label = { Text("Card") },
+                        leadingIcon = if (cardShape == "card") {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = cardShape == "coin",
+                        onClick = { cardShape = "coin" },
+                        label = { Text("Coin") },
+                        leadingIcon = if (cardShape == "coin") {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Card color (only when no image selected)
+                if (selectedImageUri == null) {
+                    Text(
+                        text = "Card Color",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = color == "",
+                            onClick = { color = "" },
+                            label = { Text("Default") },
+                            leadingIcon = if (color == "") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = color == "#FF6B35",
+                            onClick = { color = "#FF6B35" },
+                            label = { Text("Orange") },
+                            leadingIcon = if (color == "#FF6B35") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = color == "#4A90D9",
+                            onClick = { color = "#4A90D9" },
+                            label = { Text("Blue") },
+                            leadingIcon = if (color == "#4A90D9") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = color == "#2ECC71",
+                            onClick = { color = "#2ECC71" },
+                            label = { Text("Green") },
+                            leadingIcon = if (color == "#2ECC71") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = color == "#9B59B6",
+                            onClick = { color = "#9B59B6" },
+                            label = { Text("Purple") },
+                            leadingIcon = if (color == "#9B59B6") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = color == "#E74C3C",
+                            onClick = { color = "#E74C3C" },
+                            label = { Text("Red") },
+                            leadingIcon = if (color == "#E74C3C") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
                 // Card image (optional, all card types)
                 OutlinedButton(
                     onClick = { imagePickerLauncher.launch("image/*") },
@@ -378,7 +485,8 @@ fun AddCardScreen(
                                 title = title,
                                 content = content.ifBlank { null },
                                 icon = icon.ifBlank { null },
-                                color = color.ifBlank { null }
+                                color = color.ifBlank { null },
+                                cardShape = cardShape
                             )
                         }
                     },
