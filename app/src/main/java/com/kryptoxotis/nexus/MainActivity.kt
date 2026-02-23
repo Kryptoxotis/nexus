@@ -122,7 +122,6 @@ class MainActivity : ComponentActivity() {
                     is AuthState.Loading -> "login"
                     is AuthState.NotAuthenticated -> "login"
                     is AuthState.NotAllowed -> "not_allowed"
-                    is AuthState.NeedsProfileSetup -> "profile_setup"
                     is AuthState.Authenticated -> {
                         when ((authState as AuthState.Authenticated).accountType) {
                             AccountType.BUSINESS -> "business_dashboard"
@@ -151,11 +150,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                                 when (state) {
-                                    is AuthState.NeedsProfileSetup -> {
-                                        navController.navigate("profile_setup") {
-                                            popUpTo("login") { inclusive = true }
-                                        }
-                                    }
                                     is AuthState.Authenticated -> {
                                         val dest = when (state.accountType) {
                                             AccountType.BUSINESS -> "business_dashboard"
@@ -182,7 +176,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Icon(
                                 Icons.Default.Lock,
-                                contentDescription = null,
+                                contentDescription = "Access denied",
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )

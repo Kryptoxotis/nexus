@@ -23,7 +23,6 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> onSignedIn()
-            is AuthState.NeedsProfileSetup -> onSignedIn()
             else -> {}
         }
     }

@@ -196,7 +196,6 @@ sealed class AuthState {
     object Loading : AuthState()
     object NotAuthenticated : AuthState()
     object NotAllowed : AuthState()
-    object NeedsProfileSetup : AuthState()
     data class Authenticated(val userId: String, val accountType: AccountType) : AuthState()
     data class Error(val message: String) : AuthState()
 }

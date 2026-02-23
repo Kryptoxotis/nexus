@@ -27,14 +27,6 @@ fun CardDetailScreen(
     val cards by viewModel.cards.collectAsState()
     val card = cards.find { it.id == cardId }
 
-    // HCE runs as a background service — no NFC setup needed here.
-    // Just deactivate the card when leaving this screen.
-    DisposableEffect(cardId) {
-        onDispose {
-            viewModel.deactivateCard(cardId)
-        }
-    }
-
     // Dark gradient by default, or use card.color if set
     val gradientColors = if (card?.color != null) {
         try {
