@@ -50,7 +50,10 @@ fun UserManagementScreen(
         }
     }
 
-    val allRows: List<UserRow> = users.map { UserRow.Profile(it) } + allowedEmails.map { UserRow.Pending(it) }
+    // Only show allowed_emails as "Pending" if they haven't signed up yet
+    val signedUpEmails = users.mapNotNull { it.email }.toSet()
+    val pendingOnly = allowedEmails.filter { it.email !in signedUpEmails }
+    val allRows: List<UserRow> = users.map { UserRow.Profile(it) } + pendingOnly.map { UserRow.Pending(it) }
 
     val filteredRows = if (searchQuery.isBlank()) {
         allRows

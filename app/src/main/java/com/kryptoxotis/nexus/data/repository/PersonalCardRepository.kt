@@ -34,6 +34,11 @@ class PersonalCardRepository(
         }
     }
 
+    suspend fun deactivateAllCardsOnStartup() {
+        val userId = getCurrentUserId()
+        cardDao.deactivateAllCards(userId)
+    }
+
     fun observeUserCards(): Flow<List<PersonalCard>> {
         return cardDao.observeAllCards().map { entities ->
             val userId = getCurrentUserId()
@@ -59,7 +64,8 @@ class PersonalCardRepository(
         content: String? = null,
         icon: String? = null,
         color: String? = null,
-        imageUrl: String? = null
+        imageUrl: String? = null,
+        cardShape: String = "card"
     ): Result<PersonalCard> {
         return try {
             val userId = getCurrentUserId()
@@ -78,6 +84,7 @@ class PersonalCardRepository(
                 icon = icon,
                 color = color,
                 imageUrl = imageUrl,
+                cardShape = cardShape,
                 isActive = false,
                 orderIndex = nextOrder,
                 createdAt = now,
@@ -134,6 +141,32 @@ class PersonalCardRepository(
         }
     }
 
+    suspend fun updateCard(
+        cardId: String,
+        title: String,
+        content: String?,
+        color: String?,
+        cardShape: String
+    ): Result<Unit> {
+        return try {
+            val entity = cardDao.getCardById(cardId) ?: return Result.Error("Card not found")
+            val updated = entity.copy(
+                title = title,
+                content = content,
+                color = color,
+                cardShape = cardShape,
+                updatedAt = java.time.Instant.now().toString()
+            )
+            cardDao.updateCard(updated)
+            pushEntityToSupabase(updated)
+            Log.d(TAG, "Card updated: $cardId")
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update card", e)
+            Result.Error("Failed to update card: ${e.message}", e)
+        }
+    }
+
     suspend fun deleteCard(cardId: String): Result<Unit> {
         return try {
             val entity = cardDao.getCardById(cardId) ?: return Result.Error("Card not found")
@@ -182,7 +215,7 @@ class PersonalCardRepository(
             for ((id, remote) in remoteById) {
                 val local = localById[id]
                 if (local == null) {
-                    // Remote card missing locally - insert
+                    // Remote card missing locally - insert (always inactive locally)
                     cardDao.insertCard(PersonalCardEntity(
                         id = id,
                         userId = remote.userId,
@@ -192,13 +225,15 @@ class PersonalCardRepository(
                         icon = remote.icon,
                         color = remote.color,
                         imageUrl = remote.imageUrl,
-                        isActive = remote.isActive,
+                        cardShape = remote.cardShape,
+                        isActive = false,
                         orderIndex = remote.orderIndex,
                         createdAt = remote.createdAt ?: java.time.Instant.now().toString(),
                         updatedAt = remote.updatedAt ?: java.time.Instant.now().toString()
                     ))
                 } else {
                     // Both exist - update local if remote is newer or equal (server wins ties)
+                    // Never sync isActive — cards should always default to off locally
                     val remoteUpdated = remote.updatedAt ?: ""
                     val localUpdated = local.updatedAt
                     if (remoteUpdated >= localUpdated) {
@@ -209,7 +244,8 @@ class PersonalCardRepository(
                             icon = remote.icon,
                             color = remote.color,
                             imageUrl = remote.imageUrl,
-                            isActive = remote.isActive,
+                            cardShape = remote.cardShape,
+                            isActive = local.isActive,
                             orderIndex = remote.orderIndex,
                             updatedAt = remoteUpdated
                         ))
@@ -266,6 +302,7 @@ class PersonalCardRepository(
                 icon = card.icon,
                 color = card.color,
                 imageUrl = card.imageUrl,
+                cardShape = card.cardShape,
                 isActive = card.isActive,
                 orderIndex = card.orderIndex,
                 createdAt = card.createdAt,
@@ -289,6 +326,7 @@ class PersonalCardRepository(
                 icon = entity.icon,
                 color = entity.color,
                 imageUrl = entity.imageUrl,
+                cardShape = entity.cardShape,
                 isActive = entity.isActive,
                 orderIndex = entity.orderIndex,
                 createdAt = entity.createdAt,

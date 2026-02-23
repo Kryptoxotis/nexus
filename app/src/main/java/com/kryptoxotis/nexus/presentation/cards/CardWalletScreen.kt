@@ -1,14 +1,14 @@
 package com.kryptoxotis.nexus.presentation.cards
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,8 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -42,6 +40,8 @@ fun CardWalletScreen(
     authViewModel: AuthViewModel?,
     onNavigateToAddCard: () -> Unit,
     onNavigateToCardDetail: (String) -> Unit,
+    onNavigateToEditCard: (String) -> Unit,
+    onNavigateToScanCard: () -> Unit,
     onNavigateToAccounts: () -> Unit,
     onNavigateToBusinessPasses: () -> Unit
 ) {
@@ -55,7 +55,9 @@ fun CardWalletScreen(
     val accountType = (authState as? AuthState.Authenticated)?.accountType
 
     var selectedCard by remember { mutableStateOf<PersonalCard?>(null) }
-    var showBottomSheet by remember { mutableStateOf(false) }
+    var showEditSheet by remember { mutableStateOf(false) }
+    var showQrSheet by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -74,6 +76,9 @@ fun CardWalletScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToScanCard) {
+                        Icon(Icons.Default.Nfc, contentDescription = "Scan Card")
+                    }
                     if (isAuthenticated) {
                         IconButton(onClick = onNavigateToBusinessPasses) {
                             Icon(Icons.Default.Badge, contentDescription = "Business Passes")
@@ -136,8 +141,7 @@ fun CardWalletScreen(
                     ActiveCardHero(
                         card = activeCard!!,
                         onClick = {
-                            selectedCard = activeCard
-                            showBottomSheet = true
+                            onNavigateToCardDetail(activeCard!!.id)
                         }
                     )
                 } else {
@@ -172,7 +176,7 @@ fun CardWalletScreen(
             }
 
             if (cards.isEmpty()) {
-                item {
+                item(key = "empty_state") {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -203,7 +207,7 @@ fun CardWalletScreen(
                     }
                 }
             } else {
-                item {
+                item(key = "my_cards_header") {
                     Text(
                         text = "My Cards",
                         style = MaterialTheme.typography.titleSmall,
@@ -212,17 +216,22 @@ fun CardWalletScreen(
                     )
                 }
 
-                items(cards) { card ->
+                items(cards, key = { it.id }) { card ->
                     CardItem(
                         card = card,
-                        isActive = card.id == activeCard?.id,
+                        isActive = card.isActive,
                         onClick = {
                             viewModel.activateCard(card.id)
-                            selectedCard = card
-                            showBottomSheet = true
+                            onNavigateToCardDetail(card.id)
                         },
-                        onActivate = { viewModel.activateCard(card.id) },
-                        onDeactivate = { viewModel.deactivateCard(card.id) }
+                        onLongClick = {
+                            selectedCard = card
+                            showEditSheet = true
+                        },
+                        onQrClick = {
+                            selectedCard = card
+                            showQrSheet = true
+                        }
                     )
                 }
             }
@@ -235,48 +244,87 @@ fun CardWalletScreen(
         }
     }
 
-    // Bottom Sheet
-    if (showBottomSheet && selectedCard != null) {
+    // Long-press bottom sheet (edit/delete)
+    if (showEditSheet && selectedCard != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                showBottomSheet = false
+                showEditSheet = false
                 selectedCard = null
             },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp
         ) {
-            CardQuickActionSheet(
+            CardEditSheet(
                 card = selectedCard!!,
-                isActive = selectedCard!!.id == activeCard?.id,
-                onDetailsClick = {
-                    showBottomSheet = false
-                    onNavigateToCardDetail(selectedCard!!.id)
+                onEditClick = {
+                    showEditSheet = false
+                    onNavigateToEditCard(selectedCard!!.id)
                     selectedCard = null
                 },
-                onDeactivateClick = {
-                    viewModel.deactivateCard(selectedCard!!.id)
-                    showBottomSheet = false
-                    selectedCard = null
+                onDeleteClick = {
+                    showEditSheet = false
+                    showDeleteDialog = true
                 }
             )
         }
     }
+
+    // QR button bottom sheet
+    if (showQrSheet && selectedCard != null) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showQrSheet = false
+                selectedCard = null
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp
+        ) {
+            CardQrSheet(card = selectedCard!!)
+        }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog && selectedCard != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+                selectedCard = null
+            },
+            title = { Text("Delete Card") },
+            text = { Text("Are you sure you want to delete \"${selectedCard!!.title}\"?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteCard(selectedCard!!.id)
+                    showDeleteDialog = false
+                    selectedCard = null
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    selectedCard = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
-private fun CardQuickActionSheet(
+private fun CardEditSheet(
     card: PersonalCard,
-    isActive: Boolean,
-    onDetailsClick: () -> Unit,
-    onDeactivateClick: () -> Unit
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .padding(bottom = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(bottom = 32.dp)
     ) {
         // Card info
         Text(
@@ -292,28 +340,49 @@ private fun CardQuickActionSheet(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Edit
+        Button(
+            onClick = onEditClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Edit, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Edit Card")
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
-        // NFC status
-        if (isActive) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    Icons.Default.Nfc,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "NFC Active",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+        // Delete
+        OutlinedButton(
+            onClick = onDeleteClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Delete Card")
         }
+    }
+}
+
+@Composable
+private fun CardQrSheet(card: PersonalCard) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = card.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -331,7 +400,7 @@ private fun CardQuickActionSheet(
         val bitmap = qrBitmap
         if (bitmap != null) {
             Card(
-                modifier = Modifier.size(200.dp),
+                modifier = Modifier.size(240.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Box(
@@ -355,47 +424,36 @@ private fun CardQuickActionSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Actions
-        Button(
-            onClick = onDetailsClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Info, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Details")
-        }
-
-        if (isActive) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onDeactivateClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Close, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Deactivate")
-            }
-        }
     }
 }
 
 @Composable
 private fun ActiveCardHero(card: PersonalCard, onClick: () -> Unit) {
+    val gradientColors = if (card.color != null) {
+        try {
+            val c = Color(android.graphics.Color.parseColor(card.color))
+            listOf(c.copy(alpha = 0.9f), c.copy(alpha = 0.5f))
+        } catch (_: Exception) {
+            listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
+        }
+    } else {
+        listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
+    }
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(
+            width = 2.dp,
+            brush = Brush.linearGradient(listOf(NexusOrange, NexusOrange.copy(alpha = 0.5f)))
+        )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    Brush.linearGradient(
-                        colors = listOf(NexusOrange, NexusBlue)
-                    )
+                    Brush.linearGradient(colors = gradientColors)
                 )
         ) {
             if (card.imageUrl != null) {
@@ -457,107 +515,169 @@ private fun ActiveCardHero(card: PersonalCard, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CardItem(
     card: PersonalCard,
     isActive: Boolean,
     onClick: () -> Unit,
-    onActivate: () -> Unit,
-    onDeactivate: () -> Unit
+    onLongClick: () -> Unit,
+    onQrClick: () -> Unit
 ) {
-    var isPressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessHigh
-        ),
-        label = "cardScale"
-    )
+    val isCoin = card.cardShape == "coin"
+    val hasImage = card.imageUrl != null
+    val cardTypeLabel = card.cardType.name.replace("_", " ").lowercase()
+        .replaceFirstChar { it.uppercase() }
+    val glowBorder = if (isActive) BorderStroke(
+        width = 2.dp,
+        brush = Brush.linearGradient(listOf(NexusOrange, NexusOrange.copy(alpha = 0.5f)))
+    ) else null
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        isPressed = true
-                        tryAwaitRelease()
-                        isPressed = false
-                    },
-                    onTap = { onClick() }
-                )
-            }
-    ) {
-        Row(
+    // Dark gradient by default, or use card.color if set
+    val gradientColors = if (card.color != null) {
+        try {
+            val c = Color(android.graphics.Color.parseColor(card.color))
+            listOf(c.copy(alpha = 0.9f), c.copy(alpha = 0.5f))
+        } catch (_: Exception) {
+            listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
+        }
+    } else {
+        listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
+    }
+
+    if (isCoin) {
+        // Coin (circle) layout
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            if (card.imageUrl != null) {
-                AsyncImage(
-                    model = card.imageUrl,
-                    contentDescription = "Card image",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(6.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                val icon = when (card.cardType) {
-                    CardType.LINK -> Icons.Default.Link
-                    CardType.FILE -> Icons.Default.AttachFile
-                    CardType.CONTACT -> Icons.Default.Contacts
-                    CardType.SOCIAL_MEDIA -> Icons.Default.Share
-                    CardType.CUSTOM -> Icons.Default.CreditCard
+            Card(
+                modifier = Modifier.size(140.dp),
+                shape = CircleShape
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (hasImage) {
+                        AsyncImage(
+                            model = card.imageUrl,
+                            contentDescription = "Card image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f))
+                        )
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = card.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (hasImage) Color.White else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2
+                        )
+                        if (isActive) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Icon(
+                                Icons.Default.Nfc,
+                                contentDescription = "NFC Active",
+                                modifier = Modifier.size(16.dp),
+                                tint = if (hasImage) Color.White else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
-
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = if (isActive) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = card.title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                if (card.content != null) {
-                    Text(
-                        text = card.content,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
+        }
+    } else {
+        // Card layout (image and no-image unified)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick
+                ),
+            shape = RoundedCornerShape(12.dp),
+            border = glowBorder
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.586f)
+                    .then(
+                        if (!hasImage) Modifier.background(
+                            Brush.linearGradient(colors = gradientColors)
+                        ) else Modifier
+                    )
+            ) {
+                if (hasImage) {
+                    AsyncImage(
+                        model = card.imageUrl,
+                        contentDescription = "Card image",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.45f))
                     )
                 }
-                Text(
-                    text = card.cardType.name.replace("_", " ").lowercase()
-                        .replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-
-            IconButton(
-                onClick = if (isActive) onDeactivate else onActivate
-            ) {
-                Icon(
-                    if (isActive) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                    contentDescription = if (isActive) "Deactivate" else "Activate",
-                    tint = if (isActive) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Content overlay
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Top: type label
+                    Text(
+                        text = cardTypeLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    // Bottom row: title/content + QR button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = card.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White
+                            )
+                            if (card.content != null) {
+                                Text(
+                                    text = card.content,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                        IconButton(onClick = onQrClick) {
+                            Icon(
+                                Icons.Default.QrCode2,
+                                contentDescription = "QR Code",
+                                tint = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
