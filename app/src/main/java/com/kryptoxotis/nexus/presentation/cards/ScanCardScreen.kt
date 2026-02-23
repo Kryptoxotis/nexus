@@ -2,8 +2,6 @@ package com.kryptoxotis.nexus.presentation.cards
 
 import android.app.Activity
 import android.content.Intent
-import android.nfc.NdefMessage
-import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.IsoDep
@@ -49,14 +47,6 @@ fun ScanCardScreen(
                     if (result != null) {
                         scanResult = result
                         isScanning = false
-                        // Try to open the result as a URL
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(result))
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            // Not a valid URL, just show it
-                        }
                     }
                 },
                 NfcAdapter.FLAG_READER_NFC_A or
@@ -97,7 +87,7 @@ fun ScanCardScreen(
             if (isScanning) {
                 Icon(
                     Icons.Default.Nfc,
-                    contentDescription = null,
+                    contentDescription = "NFC scanning",
                     modifier = Modifier.size(80.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -138,8 +128,25 @@ fun ScanCardScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(onClick = {
+                if (scanResult != null) {
+                    val result = scanResult!!
+                    val isUrl = result.startsWith("http://") || result.startsWith("https://")
+                    if (isUrl) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(result))
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        }) {
+                            Icon(Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Open Link")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(onClick = {
                     scanResult = null
                     isScanning = true
                 }) {
@@ -210,16 +217,23 @@ private fun readNdefFromTag(tag: Tag): String? {
             return null
         }
         val ndefLen = ((resp[0].toInt() and 0xFF) shl 8) or (resp[1].toInt() and 0xFF)
-        if (ndefLen == 0 || ndefLen > 512) {
+        if (ndefLen == 0 || ndefLen > 1024) {
             Log.d("Nexus:Scan", "Invalid NDEF length: $ndefLen")
             return null
         }
 
-        // Step 6: READ NDEF data
-        val readNdef = byteArrayOf(
-            0x00, 0xB0.toByte(), 0x00, 0x02,
-            ndefLen.toByte()
-        )
+        // Step 6: READ NDEF data (use extended APDU for > 255 bytes)
+        val readNdef = if (ndefLen > 255) {
+            byteArrayOf(
+                0x00, 0xB0.toByte(), 0x00, 0x02,
+                0x00, ((ndefLen shr 8) and 0xFF).toByte(), (ndefLen and 0xFF).toByte()
+            )
+        } else {
+            byteArrayOf(
+                0x00, 0xB0.toByte(), 0x00, 0x02,
+                ndefLen.toByte()
+            )
+        }
         resp = isoDep.transceive(readNdef)
         if (!isOk(resp) || resp.size < ndefLen + 2) {
             Log.d("Nexus:Scan", "READ NDEF data failed: ${resp.toHex()}")

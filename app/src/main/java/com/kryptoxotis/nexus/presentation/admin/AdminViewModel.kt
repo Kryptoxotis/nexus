@@ -193,6 +193,10 @@ class AdminViewModel : ViewModel() {
     }
 
     fun createUser(email: String, fullName: String, accountType: String) {
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _uiState.value = AdminUiState.Error("Invalid email address")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
             try {

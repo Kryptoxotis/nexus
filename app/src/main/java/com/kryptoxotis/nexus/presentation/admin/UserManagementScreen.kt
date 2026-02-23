@@ -128,7 +128,12 @@ fun UserManagementScreen(
                     )
                 }
 
-                items(filteredRows) { row ->
+                items(filteredRows, key = { row ->
+                    when (row) {
+                        is UserRow.Profile -> "profile_${row.dto.id}"
+                        is UserRow.Pending -> "pending_${row.dto.id}"
+                    }
+                }) { row ->
                     when (row) {
                         is UserRow.Profile -> UserItem(
                             user = row.dto,
@@ -355,7 +360,7 @@ private fun UserItem(
                                 Icon(Icons.Default.SwapHoriz, contentDescription = null)
                             }
                         )
-                        Divider()
+                        HorizontalDivider()
                         DropdownMenuItem(
                             text = { Text("Delete User", color = MaterialTheme.colorScheme.error) },
                             onClick = {

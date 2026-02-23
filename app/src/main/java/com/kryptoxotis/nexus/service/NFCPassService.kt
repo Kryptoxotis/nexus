@@ -50,7 +50,7 @@ class NFCPassService : HostApduService() {
             0x04,                         // T: NDEF File Control TLV
             0x06,                         // L: 6 bytes
             0xE1.toByte(), 0x04,          // NDEF File ID
-            0x02, 0x00,                   // Max NDEF size: 512
+            0x04, 0x00,                   // Max NDEF size: 1024
             0x00,                         // Read access: granted
             0xFF.toByte()                 // Write access: denied
         )
@@ -66,6 +66,11 @@ class NFCPassService : HostApduService() {
             ndefFile[0] = ((record.size shr 8) and 0xFF).toByte()
             ndefFile[1] = (record.size and 0xFF).toByte()
             System.arraycopy(record, 0, ndefFile, 2, record.size)
+
+            if (ndefFile.size > 1024) {
+                Log.w(TAG, "NDEF message too large (${ndefFile.size} bytes), truncating content")
+                return createNdefMessage("Content too large", isUri = false)
+            }
 
             Log.d(TAG, "NDEF message created: ${ndefFile.size} bytes, record: ${record.size} bytes")
             return ndefFile
