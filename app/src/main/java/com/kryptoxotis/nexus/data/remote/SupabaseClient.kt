@@ -6,6 +6,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
+import kotlinx.coroutines.runBlocking
 
 object SupabaseClientProvider {
 
@@ -38,6 +39,7 @@ object SupabaseClientProvider {
 
     fun resetClient() {
         synchronized(this) {
+            try { runBlocking { client?.close() } } catch (_: Exception) {}
             client = null
         }
     }

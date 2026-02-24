@@ -166,6 +166,10 @@ class PersonalCardViewModel(
         _uiState.value = CardUiState.Idle
     }
 
+    fun setError(message: String) {
+        _uiState.value = CardUiState.Error(message)
+    }
+
 }
 
 sealed class CardUiState {

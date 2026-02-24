@@ -130,12 +130,13 @@ fun ScanCardScreen(
                 }
                 if (scanResult != null) {
                     val result = scanResult!!
-                    val isUrl = result.startsWith("http://") || result.startsWith("https://")
+                    val parsedUri = android.net.Uri.parse(result)
+                    val isUrl = parsedUri.scheme == "http" || parsedUri.scheme == "https"
                     if (isUrl) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = {
                             try {
-                                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(result))
+                                val intent = Intent(Intent.ACTION_VIEW, parsedUri)
                                 context.startActivity(intent)
                             } catch (_: Exception) {}
                         }) {

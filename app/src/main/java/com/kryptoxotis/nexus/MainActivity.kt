@@ -118,19 +118,8 @@ class MainActivity : ComponentActivity() {
                 val authState by authViewModel.authState.collectAsState()
                 val coroutineScope = rememberCoroutineScope()
 
-                val startDestination = when (authState) {
-                    is AuthState.Loading -> "login"
-                    is AuthState.NotAuthenticated -> "login"
-                    is AuthState.NotAllowed -> "not_allowed"
-                    is AuthState.Authenticated -> {
-                        when ((authState as AuthState.Authenticated).accountType) {
-                            AccountType.BUSINESS -> "business_dashboard"
-                            AccountType.ADMIN -> "admin_dashboard"
-                            else -> "card_wallet"
-                        }
-                    }
-                    is AuthState.Error -> "login"
-                }
+                // Compute once — LaunchedEffect handles subsequent navigation
+                val startDestination = remember { "login" }
 
                 NavHost(
                     navController = navController,

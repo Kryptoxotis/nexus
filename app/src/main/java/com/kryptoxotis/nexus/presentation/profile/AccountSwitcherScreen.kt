@@ -54,7 +54,7 @@ fun AccountSwitcherScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(savedAccounts) { account ->
+            items(savedAccounts, key = { it.email }) { account ->
                 AccountItem(
                     account = account,
                     isActive = account.email == activeEmail,
@@ -71,7 +71,7 @@ fun AccountSwitcherScreen(
 
                 OutlinedButton(
                     onClick = {
-                        authViewModel.signInWithGoogle(context as Activity)
+                        (context as? Activity)?.let { authViewModel.signInWithGoogle(it) }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

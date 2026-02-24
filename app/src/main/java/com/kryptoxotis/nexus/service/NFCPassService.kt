@@ -7,6 +7,7 @@ import com.kryptoxotis.nexus.data.local.NexusDatabase
 import com.kryptoxotis.nexus.data.repository.PersonalCardRepository
 import com.kryptoxotis.nexus.domain.model.CardType
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 class NFCPassService : HostApduService() {
 
@@ -76,6 +77,26 @@ class NFCPassService : HostApduService() {
             return ndefFile
         }
 
+        private fun createNdefRecord(typeByte: Byte, payload: ByteArray): ByteArray {
+            val sr = payload.size <= 255
+            val headerSize = if (sr) 3 else 6
+            val record = ByteArray(headerSize + 1 + payload.size)
+            // Flags: MB=1, ME=1, CF=0, SR=conditional, IL=0, TNF=001 (well-known)
+            record[0] = if (sr) 0xD1.toByte() else 0xC1.toByte()
+            record[1] = 0x01 // type length
+            if (sr) {
+                record[2] = payload.size.toByte()
+            } else {
+                record[2] = ((payload.size shr 24) and 0xFF).toByte()
+                record[3] = ((payload.size shr 16) and 0xFF).toByte()
+                record[4] = ((payload.size shr 8) and 0xFF).toByte()
+                record[5] = (payload.size and 0xFF).toByte()
+            }
+            record[headerSize] = typeByte
+            System.arraycopy(payload, 0, record, headerSize + 1, payload.size)
+            return record
+        }
+
         private fun createUriRecord(uri: String): ByteArray {
             val (prefixCode, strippedUri) = when {
                 uri.startsWith("https://www.") -> Pair(0x02.toByte(), uri.removePrefix("https://www."))
@@ -90,15 +111,8 @@ class NFCPassService : HostApduService() {
             payload[0] = prefixCode
             System.arraycopy(uriBytes, 0, payload, 1, uriBytes.size)
 
-            val record = ByteArray(3 + 1 + payload.size)
-            record[0] = 0xD1.toByte()
-            record[1] = 0x01
-            record[2] = payload.size.toByte()
-            record[3] = 0x55
-            System.arraycopy(payload, 0, record, 4, payload.size)
-
             Log.d(TAG, "URI record: prefix=${String.format("%02X", prefixCode)}, uri=$strippedUri")
-            return record
+            return createNdefRecord(0x55, payload) // 'U' = URI
         }
 
         private fun createTextRecord(text: String): ByteArray {
@@ -110,14 +124,7 @@ class NFCPassService : HostApduService() {
             System.arraycopy(language, 0, payload, 1, language.size)
             System.arraycopy(textBytes, 0, payload, 1 + language.size, textBytes.size)
 
-            val record = ByteArray(3 + 1 + payload.size)
-            record[0] = 0xD1.toByte()
-            record[1] = 0x01
-            record[2] = payload.size.toByte()
-            record[3] = 0x54
-            System.arraycopy(payload, 0, record, 4, payload.size)
-
-            return record
+            return createNdefRecord(0x54, payload) // 'T' = Text
         }
 
         private fun ByteArray.toHexString(): String = joinToString("") { "%02X".format(it) }
@@ -277,7 +284,7 @@ class NFCPassService : HostApduService() {
      */
     private fun refreshNdefMessageSync() {
         try {
-            val activeCard = runBlocking { repository.getActiveCard() }
+            val activeCard = runBlocking { withTimeoutOrNull(500L) { repository.getActiveCard() } }
             ndefMessage = if (activeCard != null) {
                 Log.d(TAG, "Active card: type=${activeCard.cardType}, title=${activeCard.title}")
                 when (activeCard.cardType) {

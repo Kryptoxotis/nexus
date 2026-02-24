@@ -40,15 +40,15 @@ class PersonalCardRepository(
     }
 
     fun observeUserCards(): Flow<List<PersonalCard>> {
+        val userId = getCurrentUserId()
         return cardDao.observeAllCards().map { entities ->
-            val userId = getCurrentUserId()
             entities.filter { it.userId == userId }.map { it.toDomain() }
         }
     }
 
     fun observeActiveCard(): Flow<PersonalCard?> {
+        val userId = getCurrentUserId()
         return cardDao.observeAllActiveCards().map { entities ->
-            val userId = getCurrentUserId()
             entities.firstOrNull { it.userId == userId }?.toDomain()
         }
     }
@@ -106,14 +106,19 @@ class PersonalCardRepository(
         return try {
             val userId = getCurrentUserId()
 
+            // Remember previously active card before switching
+            val previouslyActive = cardDao.getActiveCard(userId)
+
             // Atomic local operation: deactivate all + activate target in one transaction
             cardDao.activateCardAtomically(userId, cardId)
 
-            // Push all card states to Supabase
-            val allCards = cardDao.getCardsByUser(userId)
-            for (card in allCards) {
-                pushEntityToSupabase(card)
+            // Only push the changed cards (old-active → inactive, new-active → active)
+            if (previouslyActive != null && previouslyActive.id != cardId) {
+                val deactivated = cardDao.getCardById(previouslyActive.id)
+                if (deactivated != null) pushEntityToSupabase(deactivated)
             }
+            val activated = cardDao.getCardById(cardId)
+            if (activated != null) pushEntityToSupabase(activated)
 
             Log.d(TAG, "Card activated: $cardId")
             Result.Success(Unit)
@@ -341,7 +346,10 @@ class PersonalCardRepository(
         try {
             val supabase = SupabaseClientProvider.getClient()
             supabase.postgrest["personal_cards"].delete {
-                filter { eq("id", cardId) }
+                filter {
+                    eq("id", cardId)
+                    eq("user_id", getCurrentUserId())
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to delete card from Supabase", e)

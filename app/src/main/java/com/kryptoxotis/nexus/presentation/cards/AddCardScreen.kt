@@ -459,6 +459,17 @@ fun AddCardScreen(
 
                 Button(
                     onClick = {
+                        // Validate URLs for link/social types
+                        if ((selectedType == CardType.LINK || selectedType == CardType.SOCIAL_MEDIA) && content.isNotBlank()) {
+                            val trimmed = content.trim()
+                            if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:")) {
+                                viewModel.setError("Invalid URL scheme")
+                                return@Button
+                            }
+                            if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+                                content = "https://$trimmed"
+                            }
+                        }
                         if (selectedType == CardType.FILE) {
                             // Upload file first, then card is created in LaunchedEffect
                             val uri = selectedFileUri

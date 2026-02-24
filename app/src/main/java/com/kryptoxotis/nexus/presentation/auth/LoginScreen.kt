@@ -82,7 +82,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        authViewModel.signInWithGoogle(context as Activity)
+                        authViewModel.signInWithGoogle(context as? Activity ?: return@Button)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -92,7 +92,7 @@ fun LoginScreen(
             else -> {
                 Button(
                     onClick = {
-                        authViewModel.signInWithGoogle(context as Activity)
+                        authViewModel.signInWithGoogle(context as? Activity ?: return@Button)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
