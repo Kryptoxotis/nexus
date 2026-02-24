@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.kryptoxotis.nexus"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = (project.findProperty("buildNumber") as? String)?.toIntOrNull() ?: 1
         versionName = "1.0.${(project.findProperty("buildNumber") as? String) ?: "0"}"

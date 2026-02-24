@@ -25,9 +25,9 @@ abstract class NexusDatabase : RoomDatabase() {
                     NexusDatabase::class.java,
                     "nexus_database"
                 )
-                    // TODO: Replace with proper migrations before production release.
-                    // fallbackToDestructiveMigration() wipes ALL local data on schema changes.
-                    .fallbackToDestructiveMigration()
+                    // Only wipe data when migrating from old pre-release schemas (1-5).
+                    // For version 6+, add explicit Migration objects instead.
+                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5)
                     .build()
                 INSTANCE = instance
                 instance
