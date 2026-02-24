@@ -15,6 +15,10 @@ if (secretsFile.exists()) {
     secrets.load(FileInputStream(secretsFile))
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
     namespace = "com.kryptoxotis.nexus"
     compileSdk = 35

@@ -81,7 +81,7 @@ fun MemberListScreen(
                     )
                 }
 
-                items(members) { member ->
+                items(members, key = { it.id }) { member ->
                     MemberItem(member = member)
                 }
             }

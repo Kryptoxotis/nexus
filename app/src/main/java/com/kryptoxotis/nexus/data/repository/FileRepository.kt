@@ -27,6 +27,9 @@ class FileRepository {
         originalFilename: String,
         mimeType: String? = null
     ): Result<String> {
+        if (fileBytes.size > 10 * 1024 * 1024) {
+            return Result.Error("File must be under 10 MB")
+        }
         return try {
             val userId = getCurrentUserId() ?: return Result.Error("Not authenticated")
 

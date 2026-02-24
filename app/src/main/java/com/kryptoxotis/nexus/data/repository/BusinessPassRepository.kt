@@ -97,17 +97,17 @@ class BusinessPassRepository(
                 .select { filter { eq("user_id", userId) } }
                 .decodeList<BusinessPassDto>()
 
-            // Fetch org names for display
+            // Fetch org names for display (single batched query)
             val orgIds = remotePasses.mapNotNull { it.organizationId }.distinct()
             val orgNames = mutableMapOf<String, String>()
-            for (orgId in orgIds) {
+            if (orgIds.isNotEmpty()) {
                 try {
-                    val org = supabase.postgrest["organizations"]
-                        .select { filter { eq("id", orgId) } }
-                        .decodeSingleOrNull<OrganizationDto>()
-                    org?.let { orgNames[orgId] = it.name }
+                    val orgs = supabase.postgrest["organizations"]
+                        .select { filter { isIn("id", orgIds) } }
+                        .decodeList<OrganizationDto>()
+                    orgs.forEach { org -> org.id?.let { orgNames[it] = org.name } }
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to fetch org name for $orgId")
+                    Log.w(TAG, "Failed to fetch org names")
                 }
             }
 

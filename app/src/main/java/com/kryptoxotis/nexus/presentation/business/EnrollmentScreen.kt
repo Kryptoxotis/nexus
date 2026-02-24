@@ -87,7 +87,7 @@ fun EnrollmentScreen(
                     )
                 }
 
-                items(organizations) { org ->
+                items(organizations, key = { it.id }) { org ->
                     OrgEnrollmentCard(
                         org = org,
                         isLoading = uiState is BusinessUiState.Loading,
@@ -108,11 +108,7 @@ fun EnrollmentScreen(
             }
         }
 
-        if (uiState is BusinessUiState.Error) {
-            LaunchedEffect(uiState) {
-                // Error shown in snackbar or inline
-            }
-        }
+        // Error is shown inline in the PIN dialog above
     }
 
     if (showPinDialog && selectedOrg != null) {

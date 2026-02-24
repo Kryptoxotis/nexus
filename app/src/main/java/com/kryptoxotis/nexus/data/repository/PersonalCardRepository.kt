@@ -10,8 +10,10 @@ import com.kryptoxotis.nexus.domain.model.PersonalCard
 import com.kryptoxotis.nexus.domain.model.Result
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 class PersonalCardRepository(
@@ -41,15 +43,15 @@ class PersonalCardRepository(
 
     fun observeUserCards(): Flow<List<PersonalCard>> {
         val userId = getCurrentUserId()
-        return cardDao.observeAllCards().map { entities ->
-            entities.filter { it.userId == userId }.map { it.toDomain() }
+        return cardDao.observeCardsByUser(userId).map { entities ->
+            entities.map { it.toDomain() }
         }
     }
 
     fun observeActiveCard(): Flow<PersonalCard?> {
         val userId = getCurrentUserId()
-        return cardDao.observeAllActiveCards().map { entities ->
-            entities.firstOrNull { it.userId == userId }?.toDomain()
+        return cardDao.observeActiveCard(userId).map { entity ->
+            entity?.toDomain()
         }
     }
 
@@ -188,11 +190,18 @@ class PersonalCardRepository(
 
     suspend fun reorderCards(cardIds: List<String>): Result<Unit> {
         return try {
+            val updatedEntities = mutableListOf<PersonalCardEntity>()
             cardIds.forEachIndexed { index, id ->
                 val entity = cardDao.getCardById(id) ?: return@forEachIndexed
                 val updated = entity.copy(orderIndex = index)
                 cardDao.updateCard(updated)
-                pushEntityToSupabase(updated)
+                updatedEntities.add(updated)
+            }
+            // Push all reordered cards in parallel
+            coroutineScope {
+                for (entity in updatedEntities) {
+                    launch { pushEntityToSupabase(entity) }
+                }
             }
             Result.Success(Unit)
         } catch (e: Exception) {

@@ -74,7 +74,7 @@ fun BusinessPassListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(passes) { pass ->
+                items(passes, key = { it.id }) { pass ->
                     BusinessPassItem(pass = pass)
                 }
             }

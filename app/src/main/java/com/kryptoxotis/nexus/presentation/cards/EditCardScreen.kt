@@ -207,6 +207,17 @@ fun EditCardScreen(
 
             Button(
                 onClick = {
+                    // Validate URLs for link/social types
+                    if ((card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA) && content.isNotBlank()) {
+                        val trimmed = content.trim()
+                        if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:")) {
+                            viewModel.setError("Invalid URL scheme")
+                            return@Button
+                        }
+                        if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+                            content = "https://$trimmed"
+                        }
+                    }
                     viewModel.updateCard(
                         cardId = card.id,
                         title = title,
