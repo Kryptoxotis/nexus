@@ -50,6 +50,6 @@ object QrContentResolver {
     private fun looksLikeUrl(text: String): Boolean {
         val t = text.trim().lowercase()
         return t.startsWith("http://") || t.startsWith("https://") ||
-                t.startsWith("www.") || t.matches(Regex("[a-z0-9-]+\\.[a-z]{2,}.*"))
+                t.startsWith("www.")
     }
 }

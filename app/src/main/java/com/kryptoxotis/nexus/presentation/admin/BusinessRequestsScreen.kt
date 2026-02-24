@@ -81,7 +81,7 @@ fun BusinessRequestsScreen(
                     )
                 }
 
-                items(requests) { request ->
+                items(requests, key = { it.id ?: "" }) { request ->
                     RequestCard(
                         request = request,
                         isLoading = uiState is AdminUiState.Loading,

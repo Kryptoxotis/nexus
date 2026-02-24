@@ -104,7 +104,9 @@ class AuthViewModel(
         if (pollingJob?.isActive == true) return
         pollingJob = viewModelScope.launch {
             Log.d(TAG, "Started business request polling")
-            while (true) {
+            var attempts = 0
+            while (attempts < 100) {
+                attempts++
                 delay(POLL_INTERVAL_MS)
                 try {
                     val request = authManager.getBusinessRequestStatus()

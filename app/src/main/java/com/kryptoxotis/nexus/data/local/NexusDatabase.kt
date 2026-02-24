@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [PersonalCardEntity::class, BusinessPassEntity::class],
     version = 6,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class NexusDatabase : RoomDatabase() {
     abstract fun personalCardDao(): PersonalCardDao

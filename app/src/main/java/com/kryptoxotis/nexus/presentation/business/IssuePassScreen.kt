@@ -87,8 +87,7 @@ fun IssuePassScreen(
 
             Button(
                 onClick = {
-                    // For now, enroll with the org ID - in a real app you'd look up the user by email
-                    viewModel.enrollInOrganization(myOrg!!.id, myOrg!!.name)
+                    viewModel.setError("Issuing passes by email is not yet implemented. Use enrollment instead.")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = email.isNotBlank() && uiState !is BusinessUiState.Loading

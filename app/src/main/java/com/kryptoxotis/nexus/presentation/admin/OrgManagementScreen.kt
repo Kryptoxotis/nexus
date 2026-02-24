@@ -109,7 +109,7 @@ fun OrgManagementScreen(
                     )
                 }
 
-                items(organizations) { org ->
+                items(organizations, key = { it.id ?: "" }) { org ->
                     OrgItem(
                         org = org,
                         onToggleActive = {
@@ -225,7 +225,7 @@ private fun OrgItem(
                             )
                         }
                     )
-                    Divider()
+                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
                         onClick = {

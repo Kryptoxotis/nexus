@@ -461,13 +461,13 @@ fun AddCardScreen(
                     onClick = {
                         // Validate URLs for link/social types
                         if ((selectedType == CardType.LINK || selectedType == CardType.SOCIAL_MEDIA) && content.isNotBlank()) {
-                            val trimmed = content.trim()
-                            if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:")) {
+                            content = content.trim()
+                            if (content.startsWith("javascript:") || content.startsWith("data:")) {
                                 viewModel.setError("Invalid URL scheme")
                                 return@Button
                             }
-                            if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-                                content = "https://$trimmed"
+                            if (!content.startsWith("http://") && !content.startsWith("https://")) {
+                                content = "https://$content"
                             }
                         }
                         if (selectedType == CardType.FILE) {
@@ -475,6 +475,11 @@ fun AddCardScreen(
                             val uri = selectedFileUri
                             val name = selectedFileName
                             if (uri != null && name != null) {
+                                val fileSize = context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
+                                if (fileSize > 10 * 1024 * 1024) {
+                                    viewModel.setError("File must be under 10 MB")
+                                    return@Button
+                                }
                                 val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
                                 val mimeType = context.contentResolver.getType(uri)
                                 if (bytes != null) {

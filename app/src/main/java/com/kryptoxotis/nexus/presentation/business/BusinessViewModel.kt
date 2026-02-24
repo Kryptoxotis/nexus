@@ -193,6 +193,10 @@ class BusinessViewModel(
     fun resetState() {
         _uiState.value = BusinessUiState.Idle
     }
+
+    fun setError(message: String) {
+        _uiState.value = BusinessUiState.Error(message)
+    }
 }
 
 sealed class BusinessUiState {
