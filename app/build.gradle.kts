@@ -23,6 +23,18 @@ android {
     namespace = "com.kryptoxotis.nexus"
     compileSdk = 35
 
+    signingConfigs {
+        getByName("debug") {
+            val repoKeystore = rootProject.file(".debug.keystore")
+            if (repoKeystore.exists()) {
+                storeFile = repoKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.kryptoxotis.nexus"
         minSdk = 26
