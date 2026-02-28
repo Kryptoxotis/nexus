@@ -35,9 +35,13 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "SUPABASE_URL", "\"${secrets.getProperty("SUPABASE_URL", "REDACTED_SUPABASE_URL")}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${secrets.getProperty("SUPABASE_ANON_KEY", "REDACTED_SUPABASE_ANON_KEY")}\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secrets.getProperty("GOOGLE_WEB_CLIENT_ID", "REDACTED_GOOGLE_CLIENT_ID")}\"")
+        val supabaseUrl = secrets.getProperty("SUPABASE_URL")?.takeIf { it.isNotBlank() } ?: "REDACTED_SUPABASE_URL"
+        val supabaseAnonKey = secrets.getProperty("SUPABASE_ANON_KEY")?.takeIf { it.isNotBlank() } ?: "REDACTED_SUPABASE_ANON_KEY"
+        val googleWebClientId = secrets.getProperty("GOOGLE_WEB_CLIENT_ID")?.takeIf { it.isNotBlank() } ?: "REDACTED_GOOGLE_CLIENT_ID"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
     buildTypes {
