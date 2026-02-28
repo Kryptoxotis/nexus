@@ -35,9 +35,9 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "SUPABASE_URL", "\"${secrets.getProperty("SUPABASE_URL", "")}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${secrets.getProperty("SUPABASE_ANON_KEY", "")}\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secrets.getProperty("GOOGLE_WEB_CLIENT_ID", "")}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${secrets.getProperty("SUPABASE_URL", "https://fxtccxljxzbbbtgcfesr.supabase.co")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${secrets.getProperty("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dGNjeGxqeHpiYmJ0Z2NmZXNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNDQ4ODIsImV4cCI6MjA4NTkyMDg4Mn0.4GEcaxmsoVVcsLhj1pSrm3GkU_hOsPgM6hi0GOX0b_s")}\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secrets.getProperty("GOOGLE_WEB_CLIENT_ID", "12770293076-63f8kh0seej89dgohcrpn9rl940snvc0.apps.googleusercontent.com")}\"")
     }
 
     buildTypes {
