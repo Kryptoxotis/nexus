@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.CardType
+import com.kryptoxotis.nexus.presentation.business.BusinessViewModel
 
 /**
  * Scan/Receive screen — puts this phone into NFC reader mode so it can
@@ -30,6 +31,7 @@ import com.kryptoxotis.nexus.domain.model.CardType
 fun ScanCardScreen(
     receivedCardViewModel: ReceivedCardViewModel,
     personalCardViewModel: PersonalCardViewModel? = null,
+    businessViewModel: BusinessViewModel? = null,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -178,6 +180,31 @@ fun ScanCardScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+
+                    // Join organization via NFC
+                    if (businessViewModel != null && parsed.organizationId.isNotBlank()) {
+                        var orgJoined by remember { mutableStateOf(false) }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (!orgJoined) {
+                            Button(onClick = {
+                                businessViewModel.enrollInOrganization(
+                                    parsed.organizationId,
+                                    parsed.company.ifBlank { null }
+                                )
+                                orgJoined = true
+                            }) {
+                                Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Join ${parsed.company.ifBlank { "Organization" }}")
+                            }
+                        } else {
+                            Text(
+                                text = "Enrollment requested!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
 
                     // Save to wallet as a card
@@ -437,7 +464,8 @@ private data class ParsedVCard(
     val linkedin: String = "",
     val instagram: String = "",
     val twitter: String = "",
-    val github: String = ""
+    val github: String = "",
+    val organizationId: String = ""
 )
 
 private fun parseVCard(vcard: String): ParsedVCard {
@@ -451,6 +479,7 @@ private fun parseVCard(vcard: String): ParsedVCard {
     var instagram = ""
     var twitter = ""
     var github = ""
+    var organizationId = ""
 
     for (line in vcard.lines()) {
         val trimmed = line.trim()
@@ -461,6 +490,7 @@ private fun parseVCard(vcard: String): ParsedVCard {
             trimmed.startsWith("TEL:") -> phone = trimmed.removePrefix("TEL:")
             trimmed.startsWith("EMAIL:") -> email = trimmed.removePrefix("EMAIL:")
             trimmed.startsWith("URL:") -> website = trimmed.removePrefix("URL:")
+            trimmed.startsWith("X-NEXUS-ORG:") -> organizationId = trimmed.removePrefix("X-NEXUS-ORG:")
             trimmed.startsWith("ADR:") -> {
                 // ADR:;;address;;;;
                 val parts = trimmed.removePrefix("ADR:").split(";")
@@ -485,6 +515,7 @@ private fun parseVCard(vcard: String): ParsedVCard {
         name = name, jobTitle = jobTitle, company = company,
         phone = phone, email = email, website = website,
         linkedin = linkedin, instagram = instagram,
-        twitter = twitter, github = github
+        twitter = twitter, github = github,
+        organizationId = organizationId
     )
 }

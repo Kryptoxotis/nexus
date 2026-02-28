@@ -185,7 +185,9 @@ fun AccountSwitcherScreen(
         var businessName by remember { mutableStateOf("") }
         var businessType by remember { mutableStateOf("") }
         var contactEmail by remember { mutableStateOf("") }
-        var message by remember { mutableStateOf("") }
+        var userMessage by remember { mutableStateOf("") }
+        var description by remember { mutableStateOf("") }
+        var enrollmentMode by remember { mutableStateOf("open") }
 
         AlertDialog(
             onDismissRequest = { showBusinessDialog = false },
@@ -193,7 +195,7 @@ fun AccountSwitcherScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Tell us about your business. An admin will review your request.",
+                        text = "Tell us about your business. An admin will review your request and create your organization.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -213,15 +215,45 @@ fun AccountSwitcherScreen(
                         placeholder = { Text("e.g., Gym, Restaurant") }
                     )
                     OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        placeholder = { Text("Brief description of your business") }
+                    )
+                    OutlinedTextField(
                         value = contactEmail,
                         onValueChange = { contactEmail = it },
                         label = { Text("Contact Email") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    Text(
+                        text = "Enrollment Mode",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = enrollmentMode == "open",
+                            onClick = { enrollmentMode = "open" },
+                            label = { Text("Open") }
+                        )
+                        FilterChip(
+                            selected = enrollmentMode == "pin",
+                            onClick = { enrollmentMode = "pin" },
+                            label = { Text("PIN") }
+                        )
+                        FilterChip(
+                            selected = enrollmentMode == "closed",
+                            onClick = { enrollmentMode = "closed" },
+                            label = { Text("Closed") }
+                        )
+                    }
                     OutlinedTextField(
-                        value = message,
-                        onValueChange = { message = it },
+                        value = userMessage,
+                        onValueChange = { userMessage = it },
                         label = { Text("Message") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2,
@@ -232,11 +264,17 @@ fun AccountSwitcherScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        // Encode org details as JSON in the message field
+                        val jsonMessage = org.json.JSONObject().apply {
+                            put("userMessage", userMessage)
+                            put("description", description)
+                            put("enrollmentMode", enrollmentMode)
+                        }.toString()
                         authViewModel.requestBusinessUpgrade(
                             businessName = businessName,
                             businessType = businessType.ifBlank { null },
                             contactEmail = contactEmail.ifBlank { null },
-                            message = message.ifBlank { null }
+                            message = jsonMessage
                         )
                         showBusinessDialog = false
                     },

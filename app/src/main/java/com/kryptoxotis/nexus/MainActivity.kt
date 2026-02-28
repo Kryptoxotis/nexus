@@ -245,8 +245,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("add_card") {
+                        val myOrg by businessViewModel.myOrganization.collectAsState()
                         AddCardScreen(
                             viewModel = cardViewModel,
+                            organizationId = myOrg?.id,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
@@ -269,6 +271,7 @@ class MainActivity : ComponentActivity() {
                         ScanCardScreen(
                             receivedCardViewModel = receivedCardViewModel,
                             personalCardViewModel = cardViewModel,
+                            businessViewModel = businessViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
@@ -334,7 +337,6 @@ class MainActivity : ComponentActivity() {
                             onNavigateToMembers = { navController.navigate("member_list") },
                             onNavigateToOrgSettings = { navController.navigate("org_settings") },
                             onNavigateToIssuePasses = { navController.navigate("issue_pass") },
-                            onNavigateToCreateOrg = { navController.navigate("create_org") },
                             onNavigateToCardWallet = { navController.navigate("card_wallet") },
                             onNavigateToAccounts = { navController.navigate("accounts") }
                         )

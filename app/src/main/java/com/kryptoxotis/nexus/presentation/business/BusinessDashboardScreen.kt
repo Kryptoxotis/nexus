@@ -20,7 +20,6 @@ fun BusinessDashboardScreen(
     onNavigateToMembers: () -> Unit,
     onNavigateToOrgSettings: () -> Unit,
     onNavigateToIssuePasses: () -> Unit,
-    onNavigateToCreateOrg: () -> Unit,
     onNavigateToCardWallet: () -> Unit,
     onNavigateToAccounts: () -> Unit
 ) {
@@ -67,7 +66,7 @@ fun BusinessDashboardScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (myOrg == null) {
-                // No organization yet - show create prompt
+                // No organization found — it should be auto-created on approval
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier
@@ -79,25 +78,20 @@ fun BusinessDashboardScreen(
                             Icons.Default.Business,
                             contentDescription = null,
                             modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.outline
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No Organization Yet",
+                            text = "Organization not found",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Create your organization to start managing passes",
+                            text = "Your organization should have been created when your account was approved. Please contact an admin if this persists.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateToCreateOrg) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Create Organization")
-                        }
                     }
                 }
             } else {

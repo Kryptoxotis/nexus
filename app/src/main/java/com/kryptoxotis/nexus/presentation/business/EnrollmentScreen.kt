@@ -22,9 +22,18 @@ fun EnrollmentScreen(
     val organizations by viewModel.organizations.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
+    var searchQuery by remember { mutableStateOf("") }
     var showPinDialog by remember { mutableStateOf(false) }
     var selectedOrg by remember { mutableStateOf<Organization?>(null) }
     var pinInput by remember { mutableStateOf("") }
+
+    val filteredOrganizations = remember(organizations, searchQuery) {
+        if (searchQuery.isBlank()) organizations
+        else organizations.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+                (it.type?.contains(searchQuery, ignoreCase = true) == true)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadOrganizations()
@@ -49,45 +58,63 @@ fun EnrollmentScreen(
             )
         }
     ) { paddingValues ->
-        if (organizations.isEmpty()) {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Search bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.SearchOff,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No organizations available",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text(
-                        text = "Available Organizations",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Search organizations...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                singleLine = true,
+                trailingIcon = if (searchQuery.isNotBlank()) {
+                    { IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    } }
+                } else null
+            )
 
-                items(organizations, key = { it.id }) { org ->
+            if (filteredOrganizations.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (searchQuery.isNotBlank()) "No results for \"$searchQuery\""
+                                   else "No organizations available",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Available Organizations",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    items(filteredOrganizations, key = { it.id }) { org ->
                     OrgEnrollmentCard(
                         org = org,
                         isLoading = uiState is BusinessUiState.Loading,
@@ -106,6 +133,7 @@ fun EnrollmentScreen(
                     )
                 }
             }
+        }
         }
 
         // Error is shown inline in the PIN dialog above
