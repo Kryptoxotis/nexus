@@ -85,7 +85,7 @@ fun BusinessRequestsScreen(
                     RequestCard(
                         request = request,
                         isLoading = uiState is AdminUiState.Loading,
-                        onApprove = { viewModel.approveRequest(request.id ?: "", request.userId) },
+                        onApprove = { viewModel.approveRequest(request) },
                         onReject = { viewModel.rejectRequest(request.id ?: "") }
                     )
                 }
@@ -148,10 +148,36 @@ private fun RequestCard(
 
             if (request.message != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = request.message,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Parse JSON message for org details; fallback to plain text
+                val parsedMsg = try {
+                    val json = org.json.JSONObject(request.message)
+                    val userMsg = json.optString("userMessage", "").ifBlank { null }
+                    val desc = json.optString("description", "").ifBlank { null }
+                    val mode = json.optString("enrollmentMode", "").ifBlank { null }
+                    Triple(userMsg, desc, mode)
+                } catch (_: Exception) {
+                    Triple(request.message, null, null)
+                }
+                if (parsedMsg.first != null) {
+                    Text(
+                        text = parsedMsg.first!!,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                if (parsedMsg.second != null) {
+                    Text(
+                        text = "Description: ${parsedMsg.second}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (parsedMsg.third != null) {
+                    Text(
+                        text = "Enrollment: ${parsedMsg.third}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

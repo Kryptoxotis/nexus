@@ -1,40 +1,40 @@
-# Restructure Contacts & Move Upgrade to Account
+# Merge Business Request + Org, Org Browsing, NFC Auto-Enroll
 
-## Tasks
+## Part 1: Merge business request + org creation
+- [x] 1. AccountSwitcherScreen.kt — Add `description` and `enrollmentMode` fields to business request dialog; encode as JSON in `message`
+- [x] 2. AdminViewModel.kt — Change `approveRequest` to accept full `BusinessRequestDto`; after upgrading account, also create org
+- [x] 3. BusinessRequestsScreen.kt — Parse message JSON to show org details; pass full request to onApprove
+- [x] 4. BusinessDashboardScreen.kt — Remove "Create Organization" button, show info message instead
+- [x] 5. MainActivity.kt — Remove `onNavigateToCreateOrg` from BusinessDashboardScreen call
 
-- [x] 1. CardWalletScreen.kt — Remove NFC icon + upgrade card
-  - Remove `onNavigateToScanCard` parameter
-  - Remove NFC icon button from top bar (3 icons remain: People, Badge, Account)
-  - Remove "Upgrade to Business" card from LazyColumn
-  - Remove `showBusinessDialog` state and AlertDialog
-  - Keep pending business request banner
+## Part 2: Org browsing with search
+- [x] 6. EnrollmentScreen.kt — Add search bar to filter organizations by name/type
 
-- [x] 2. ContactsScreen.kt — Restructure as contacts hub
-  - Add `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard` parameters
-  - Collect user's cards, find BUSINESS_CARD ("My Card")
-  - Add NFC FAB for scanning
-  - LazyColumn: "My Card" section (show card or create prompt) + "Contacts" section
-
-- [x] 3. AccountSwitcherScreen.kt — Add upgrade to business
-  - Add `businessRequest` and `accountType` state from authViewModel
-  - Add `showBusinessDialog` state
-  - Add "Upgrade to Business" card between account list and "Add Account"
-  - Add business request AlertDialog
-
-- [x] 4. MainActivity.kt — Update navigation wiring
-  - Remove `onNavigateToScanCard` from CardWalletScreen call
-  - Pass `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard` to ContactsScreen
+## Part 3: NFC auto-enroll
+- [x] 7. PersonalCard.kt — Add `organizationId` field to BusinessCardData with vCard/JSON support
+- [x] 8. ScanCardScreen.kt — Parse org ID from vCard, show "Join" button
+- [x] 9. AddCardScreen.kt + MainActivity.kt — Wire `organizationId` into business card creation
 
 ## Review
 
-All 4 changes completed. Build successful.
+All 9 changes completed. Build successful.
 
 ### Summary of changes
 
-**CardWalletScreen.kt** — Removed the `onNavigateToScanCard` param, the NFC icon from the top bar (now 3 icons: People, Badge, Account), the "Upgrade to Business" card, and the business dialog. Kept the pending request banner. Cleaned up the unused `AccountType` import.
+**AccountSwitcherScreen.kt** — Added `description` and `enrollmentMode` fields to the business request dialog. Description replaces the old message field for describing the business. Enrollment mode uses filter chips (Open/PIN/Closed). All org details are JSON-encoded into the `message` column: `{"userMessage":"...","description":"...","enrollmentMode":"open"}`.
 
-**ContactsScreen.kt** — Restructured as a contacts hub. Added params for `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard`, and `onNavigateToEditCard`. Shows a "My Card" section at top — if a BUSINESS_CARD exists, shows it with name/subtitle/NFC icon (tappable to edit); if not, shows a "Create My Card" prompt that navigates to AddCardScreen. Below that, a "Contacts" section with the received cards list or empty state text. NFC FAB added for scanning.
+**AdminViewModel.kt** — Changed `approveRequest(requestId, userId)` to `approveRequest(request: BusinessRequestDto)`. After upgrading the user to business, it now also inserts into `organizations` table using the request's `businessName`, `businessType`, and parsed JSON fields (description, enrollmentMode). Falls back to defaults for old-style plain text messages.
 
-**AccountSwitcherScreen.kt** — Added `accountType`, `businessRequest` state collection, and `showBusinessDialog` state. Inserted the "Upgrade to Business" card (identical UI from wallet) between the account list and "Add Account" button. Added the business request AlertDialog (identical dialog from wallet).
+**BusinessRequestsScreen.kt** — Updated `onApprove` to pass full `request` object. Updated RequestCard to parse the JSON message and display description and enrollment mode separately, with fallback to plain text for old requests.
 
-**MainActivity.kt** — Removed `onNavigateToScanCard` from CardWalletScreen call. Added `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard`, and `onNavigateToEditCard` to ContactsScreen call.
+**BusinessDashboardScreen.kt** — Removed `onNavigateToCreateOrg` parameter. Changed "No Organization Yet" block from a create prompt to an informational message saying "Organization not found" with instructions to contact admin.
+
+**MainActivity.kt** — Removed `onNavigateToCreateOrg` from BusinessDashboardScreen call. Passed `businessViewModel` to ScanCardScreen. Passed `businessViewModel.myOrganization?.id` as `organizationId` to AddCardScreen.
+
+**EnrollmentScreen.kt** — Added a search bar (`OutlinedTextField` with search icon) above the org list. Organizations filter client-side by name or type matching the query. Empty states distinguish "no results" vs "no orgs available".
+
+**PersonalCard.kt** — Added `organizationId: String = ""` to BusinessCardData. `toVCard()` emits `X-NEXUS-ORG:{id}`. `toJson()`/`fromJson()` serialize/deserialize the field.
+
+**ScanCardScreen.kt** — Added `businessViewModel` parameter. Added `organizationId` to `ParsedVCard`. `parseVCard()` parses `X-NEXUS-ORG:` lines. After scan, if org ID present, shows "Join {company}" button that calls `businessViewModel.enrollInOrganization()`.
+
+**AddCardScreen.kt** — Added optional `organizationId` parameter. When saving a BUSINESS_CARD, injects the org ID into `BusinessCardData` so it appears in the vCard via NFC.

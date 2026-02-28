@@ -28,6 +28,7 @@ import com.kryptoxotis.nexus.domain.model.CardType
 @Composable
 fun AddCardScreen(
     viewModel: PersonalCardViewModel,
+    organizationId: String? = null,
     onNavigateBack: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf<CardType?>(null) }
@@ -607,7 +608,8 @@ fun AddCardScreen(
                                 name = bcName, jobTitle = bcJobTitle, company = bcCompany,
                                 phone = bcPhone, email = bcEmail, website = bcWebsite,
                                 linkedin = bcLinkedin, instagram = bcInstagram,
-                                twitter = bcTwitter, github = bcGithub
+                                twitter = bcTwitter, github = bcGithub,
+                                organizationId = organizationId ?: ""
                             )
                             viewModel.addCard(
                                 cardType = CardType.BUSINESS_CARD,

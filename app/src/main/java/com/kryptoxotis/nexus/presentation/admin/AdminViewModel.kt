@@ -69,7 +69,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    fun approveRequest(requestId: String, userId: String) {
+    fun approveRequest(request: BusinessRequestDto) {
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
             try {
@@ -82,17 +82,35 @@ class AdminViewModel : ViewModel() {
                     set("reviewed_by", adminId)
                     set("reviewed_at", java.time.Instant.now().toString())
                 }) {
-                    filter { eq("id", requestId) }
+                    filter { eq("id", request.id ?: "") }
                 }
 
                 // Upgrade user to business account
                 supabase.postgrest["profiles"].update({
                     set("account_type", "business")
                 }) {
-                    filter { eq("id", userId) }
+                    filter { eq("id", request.userId) }
                 }
 
-                _uiState.value = AdminUiState.Success("Request approved")
+                // Auto-create organization from request details
+                var description: String? = null
+                var enrollmentMode = "open"
+                try {
+                    val msgJson = org.json.JSONObject(request.message ?: "")
+                    description = msgJson.optString("description", "").ifBlank { null }
+                    enrollmentMode = msgJson.optString("enrollmentMode", "open").ifBlank { "open" }
+                } catch (_: Exception) { /* old-style plain text message, use defaults */ }
+
+                supabase.postgrest["organizations"].insert(OrganizationDto(
+                    name = request.businessName,
+                    type = request.businessType,
+                    description = description,
+                    ownerId = request.userId,
+                    enrollmentMode = enrollmentMode,
+                    isActive = true
+                ))
+
+                _uiState.value = AdminUiState.Success("Request approved & organization created")
                 loadPendingRequests()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to approve request", e)

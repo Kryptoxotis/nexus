@@ -26,7 +26,8 @@ data class BusinessCardData(
     val linkedin: String = "",
     val instagram: String = "",
     val twitter: String = "",
-    val github: String = ""
+    val github: String = "",
+    val organizationId: String = ""
 ) {
     fun toJson(): String {
         val obj = JSONObject()
@@ -41,6 +42,7 @@ data class BusinessCardData(
         obj.put("instagram", instagram)
         obj.put("twitter", twitter)
         obj.put("github", github)
+        obj.put("organizationId", organizationId)
         return obj.toString()
     }
 
@@ -59,6 +61,7 @@ data class BusinessCardData(
         if (instagram.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=instagram:$instagram")
         if (twitter.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=twitter:$twitter")
         if (github.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=github:$github")
+        if (organizationId.isNotBlank()) sb.appendLine("X-NEXUS-ORG:$organizationId")
         sb.appendLine("END:VCARD")
         return sb.toString().trimEnd()
     }
@@ -85,7 +88,8 @@ data class BusinessCardData(
                     linkedin = obj.optString("linkedin", ""),
                     instagram = obj.optString("instagram", ""),
                     twitter = obj.optString("twitter", ""),
-                    github = obj.optString("github", "")
+                    github = obj.optString("github", ""),
+                    organizationId = obj.optString("organizationId", "")
                 )
             } catch (_: Exception) {
                 BusinessCardData()
