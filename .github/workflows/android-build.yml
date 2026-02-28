@@ -31,6 +31,9 @@ jobs:
         echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> secrets.properties
         echo "GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}" >> secrets.properties
 
+    - name: Restore debug keystore
+      run: echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ~/.android/debug.keystore
+
     - name: Build with Gradle
       run: ./gradlew assembleDebug -PbuildNumber=${{ github.run_number }}
 
