@@ -28,6 +28,10 @@
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
 
+# Suppress R8 warnings for ktor/JVM management classes
+-dontwarn java.lang.management.ManagementFactory
+-dontwarn java.lang.management.RuntimeMXBean
+
 # Keep Serializers
 -keep,includedescriptorclasses class com.kryptoxotis.nexus.**$$serializer { *; }
 -keepclassmembers class com.kryptoxotis.nexus.** {
