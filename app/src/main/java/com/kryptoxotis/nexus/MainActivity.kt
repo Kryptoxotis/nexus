@@ -238,7 +238,6 @@ class MainActivity : ComponentActivity() {
                             onNavigateToAddCard = { navController.navigate("add_card") },
                             onNavigateToCardDetail = { id -> navController.navigate("card_detail/$id") },
                             onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") },
-                            onNavigateToScanCard = { navController.navigate("scan_card") },
                             onNavigateToAccounts = { navController.navigate("accounts") },
                             onNavigateToBusinessPasses = { navController.navigate("business_passes") },
                             onNavigateToContacts = { navController.navigate("contacts") }
@@ -277,8 +276,12 @@ class MainActivity : ComponentActivity() {
                     composable("contacts") {
                         ContactsScreen(
                             viewModel = receivedCardViewModel,
+                            personalCardViewModel = cardViewModel,
                             onNavigateBack = { navController.popBackStack() },
-                            onNavigateToDetail = { id -> navController.navigate("contact_detail/$id") }
+                            onNavigateToDetail = { id -> navController.navigate("contact_detail/$id") },
+                            onNavigateToScanCard = { navController.navigate("scan_card") },
+                            onNavigateToCreateMyCard = { navController.navigate("add_card") },
+                            onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") }
                         )
                     }
 

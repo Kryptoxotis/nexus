@@ -1,47 +1,40 @@
-# Received Business Cards (Contacts Collection)
+# Restructure Contacts & Move Upgrade to Account
 
 ## Tasks
 
-### Backend
-- [x] 1. Supabase migration: create `received_cards` table with RLS policies
-- [x] 2. Room entity: `ReceivedCardEntity`
-- [x] 3. Room DAO: `ReceivedCardDao`
-- [x] 4. Update `NexusDatabase` — add entity + DAO, bump version 6 → 7
-- [x] 5. DTO: `ReceivedCardDto` for Supabase serialization
-- [x] 6. Repository: `ReceivedCardRepository` — save, observe, sync, delete
+- [x] 1. CardWalletScreen.kt — Remove NFC icon + upgrade card
+  - Remove `onNavigateToScanCard` parameter
+  - Remove NFC icon button from top bar (3 icons remain: People, Badge, Account)
+  - Remove "Upgrade to Business" card from LazyColumn
+  - Remove `showBusinessDialog` state and AlertDialog
+  - Keep pending business request banner
 
-### Scan Flow
-- [x] 7. Update `ScanCardScreen` — detect vCard, parse fields, show "Save Contact" button
+- [x] 2. ContactsScreen.kt — Restructure as contacts hub
+  - Add `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard` parameters
+  - Collect user's cards, find BUSINESS_CARD ("My Card")
+  - Add NFC FAB for scanning
+  - LazyColumn: "My Card" section (show card or create prompt) + "Contacts" section
 
-### UI
-- [x] 8. New `ContactsScreen` — list of received business cards
-- [x] 9. New `ContactDetailScreen` — full detail view with tappable fields (phone/email/links)
-- [x] 10. ViewModel: `ReceivedCardViewModel`
+- [x] 3. AccountSwitcherScreen.kt — Add upgrade to business
+  - Add `businessRequest` and `accountType` state from authViewModel
+  - Add `showBusinessDialog` state
+  - Add "Upgrade to Business" card between account list and "Add Account"
+  - Add business request AlertDialog
 
-### Navigation
-- [x] 11. `MainActivity` — wire up repository, viewmodel, routes, sync
-- [x] 12. `CardWalletScreen` — "Contacts" (people icon) button in top bar
+- [x] 4. MainActivity.kt — Update navigation wiring
+  - Remove `onNavigateToScanCard` from CardWalletScreen call
+  - Pass `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard` to ContactsScreen
 
 ## Review
 
-### New files
-| File | Purpose |
-|------|---------|
-| `ReceivedCardEntity.kt` | Room entity for received_cards table |
-| `ReceivedCardDao.kt` | Room DAO — insert, observe, delete |
-| `ReceivedCardDto.kt` | Supabase serialization DTO |
-| `ReceivedCardRepository.kt` | Save/sync/delete contacts with Room + Supabase |
-| `ReceivedCardViewModel.kt` | Exposes contacts flow, save/delete methods |
-| `ContactsScreen.kt` | List view of all received business cards |
-| `ContactDetailScreen.kt` | Full detail view with tappable phone/email/links |
+All 4 changes completed. Build successful.
 
-### Modified files
-| File | What changed |
-|------|-------------|
-| `NexusDatabase.kt` | Added ReceivedCardEntity, ReceivedCardDao, version 7 |
-| `ScanCardScreen.kt` | Detects vCard, shows parsed name/title, "Save Contact" button |
-| `CardWalletScreen.kt` | Added Contacts button (people icon) in top bar |
-| `MainActivity.kt` | Wired repository, viewmodel, routes, sync on login/resume |
+### Summary of changes
 
-### Supabase
-- `received_cards` table with RLS (users can only read/insert/delete their own)
+**CardWalletScreen.kt** — Removed the `onNavigateToScanCard` param, the NFC icon from the top bar (now 3 icons: People, Badge, Account), the "Upgrade to Business" card, and the business dialog. Kept the pending request banner. Cleaned up the unused `AccountType` import.
+
+**ContactsScreen.kt** — Restructured as a contacts hub. Added params for `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard`, and `onNavigateToEditCard`. Shows a "My Card" section at top — if a BUSINESS_CARD exists, shows it with name/subtitle/NFC icon (tappable to edit); if not, shows a "Create My Card" prompt that navigates to AddCardScreen. Below that, a "Contacts" section with the received cards list or empty state text. NFC FAB added for scanning.
+
+**AccountSwitcherScreen.kt** — Added `accountType`, `businessRequest` state collection, and `showBusinessDialog` state. Inserted the "Upgrade to Business" card (identical UI from wallet) between the account list and "Add Account" button. Added the business request AlertDialog (identical dialog from wallet).
+
+**MainActivity.kt** — Removed `onNavigateToScanCard` from CardWalletScreen call. Added `personalCardViewModel`, `onNavigateToScanCard`, `onNavigateToCreateMyCard`, and `onNavigateToEditCard` to ContactsScreen call.
