@@ -269,6 +269,7 @@ class MainActivity : ComponentActivity() {
                     composable("scan_card") {
                         ScanCardScreen(
                             receivedCardViewModel = receivedCardViewModel,
+                            personalCardViewModel = cardViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }

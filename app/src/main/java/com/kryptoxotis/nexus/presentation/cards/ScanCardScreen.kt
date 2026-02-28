@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.kryptoxotis.nexus.domain.model.CardType
 
 /**
  * Scan/Receive screen — puts this phone into NFC reader mode so it can
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ScanCardScreen(
     receivedCardViewModel: ReceivedCardViewModel,
+    personalCardViewModel: PersonalCardViewModel? = null,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -177,6 +179,33 @@ fun ScanCardScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+
+                    // Save to wallet as a card
+                    if (personalCardViewModel != null) {
+                        var walletSaved by remember { mutableStateOf(false) }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (!walletSaved) {
+                            OutlinedButton(onClick = {
+                                val title = parsed.name.ifBlank { "Scanned Contact" }
+                                personalCardViewModel.addCard(
+                                    cardType = CardType.CONTACT,
+                                    title = title,
+                                    content = result
+                                )
+                                walletSaved = true
+                            }) {
+                                Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Save to Wallet")
+                            }
+                        } else {
+                            Text(
+                                text = "Saved to wallet!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 } else if (result != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -198,6 +227,38 @@ fun ScanCardScreen(
                             Icon(Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Open Link")
+                        }
+                    }
+
+                    // Save to wallet
+                    if (personalCardViewModel != null) {
+                        var walletSaved by remember { mutableStateOf(false) }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (!walletSaved) {
+                            OutlinedButton(onClick = {
+                                val cardType = if (isUrl) CardType.LINK else CardType.CUSTOM
+                                val title = if (isUrl) {
+                                    parsedUri.host?.removePrefix("www.") ?: "Scanned Link"
+                                } else {
+                                    result.take(50)
+                                }
+                                personalCardViewModel.addCard(
+                                    cardType = cardType,
+                                    title = title,
+                                    content = result
+                                )
+                                walletSaved = true
+                            }) {
+                                Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Save to Wallet")
+                            }
+                        } else {
+                            Text(
+                                text = "Saved to wallet!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
