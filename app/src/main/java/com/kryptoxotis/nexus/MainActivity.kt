@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.kryptoxotis.nexus.data.local.NexusDatabase
 import com.kryptoxotis.nexus.data.remote.AuthManager
 import com.kryptoxotis.nexus.data.remote.SupabaseClientProvider
@@ -244,11 +246,19 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable("add_card") {
+                    composable(
+                        "add_card?myCard={myCard}",
+                        arguments = listOf(navArgument("myCard") {
+                            type = NavType.BoolType
+                            defaultValue = false
+                        })
+                    ) { backStackEntry ->
+                        val myCardOnly = backStackEntry.arguments?.getBoolean("myCard") ?: false
                         val myOrg by businessViewModel.myOrganization.collectAsState()
                         AddCardScreen(
                             viewModel = cardViewModel,
                             organizationId = myOrg?.id,
+                            myCardOnly = myCardOnly,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
@@ -283,7 +293,7 @@ class MainActivity : ComponentActivity() {
                             onNavigateBack = { navController.popBackStack() },
                             onNavigateToDetail = { id -> navController.navigate("contact_detail/$id") },
                             onNavigateToScanCard = { navController.navigate("scan_card") },
-                            onNavigateToCreateMyCard = { navController.navigate("add_card") },
+                            onNavigateToCreateMyCard = { navController.navigate("add_card?myCard=true") },
                             onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") }
                         )
                     }

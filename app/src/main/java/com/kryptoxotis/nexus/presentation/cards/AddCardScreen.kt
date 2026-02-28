@@ -29,6 +29,7 @@ import com.kryptoxotis.nexus.domain.model.CardType
 fun AddCardScreen(
     viewModel: PersonalCardViewModel,
     organizationId: String? = null,
+    myCardOnly: Boolean = false,
     onNavigateBack: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf<CardType?>(null) }
@@ -174,44 +175,46 @@ fun AddCardScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "What type of card?",
+                    text = if (myCardOnly) "Create My Card" else "What type of card?",
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                CardTypeOption(
-                    icon = Icons.Default.Link,
-                    title = "Link",
-                    description = "Website URL - opens browser when tapped via NFC",
-                    onClick = { selectedType = CardType.LINK }
-                )
+                if (!myCardOnly) {
+                    CardTypeOption(
+                        icon = Icons.Default.Link,
+                        title = "Link",
+                        description = "Website URL - opens browser when tapped via NFC",
+                        onClick = { selectedType = CardType.LINK }
+                    )
 
-                CardTypeOption(
-                    icon = Icons.Default.AttachFile,
-                    title = "File",
-                    description = "Upload a file to share",
-                    onClick = { selectedType = CardType.FILE }
-                )
+                    CardTypeOption(
+                        icon = Icons.Default.AttachFile,
+                        title = "File",
+                        description = "Upload a file to share",
+                        onClick = { selectedType = CardType.FILE }
+                    )
 
-                CardTypeOption(
-                    icon = Icons.Default.Contacts,
-                    title = "Contact",
-                    description = "Contact info card",
-                    onClick = { selectedType = CardType.CONTACT }
-                )
+                    CardTypeOption(
+                        icon = Icons.Default.Contacts,
+                        title = "Contact",
+                        description = "Contact info card",
+                        onClick = { selectedType = CardType.CONTACT }
+                    )
 
-                CardTypeOption(
-                    icon = Icons.Default.Share,
-                    title = "Social Media",
-                    description = "Social media profile link",
-                    onClick = { selectedType = CardType.SOCIAL_MEDIA }
-                )
+                    CardTypeOption(
+                        icon = Icons.Default.Share,
+                        title = "Social Media",
+                        description = "Social media profile link",
+                        onClick = { selectedType = CardType.SOCIAL_MEDIA }
+                    )
 
-                CardTypeOption(
-                    icon = Icons.Default.CreditCard,
-                    title = "Custom",
-                    description = "Custom text or data card",
-                    onClick = { selectedType = CardType.CUSTOM }
-                )
+                    CardTypeOption(
+                        icon = Icons.Default.CreditCard,
+                        title = "Custom",
+                        description = "Custom text or data card",
+                        onClick = { selectedType = CardType.CUSTOM }
+                    )
+                }
 
                 CardTypeOption(
                     icon = Icons.Default.Badge,
