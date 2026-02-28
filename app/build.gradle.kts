@@ -35,9 +35,13 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "SUPABASE_URL", "\"${secrets.getProperty("SUPABASE_URL", "https://fxtccxljxzbbbtgcfesr.supabase.co")}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${secrets.getProperty("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dGNjeGxqeHpiYmJ0Z2NmZXNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNDQ4ODIsImV4cCI6MjA4NTkyMDg4Mn0.4GEcaxmsoVVcsLhj1pSrm3GkU_hOsPgM6hi0GOX0b_s")}\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secrets.getProperty("GOOGLE_WEB_CLIENT_ID", "12770293076-63f8kh0seej89dgohcrpn9rl940snvc0.apps.googleusercontent.com")}\"")
+        val supabaseUrl = secrets.getProperty("SUPABASE_URL")?.takeIf { it.isNotBlank() } ?: "https://fxtccxljxzbbbtgcfesr.supabase.co"
+        val supabaseAnonKey = secrets.getProperty("SUPABASE_ANON_KEY")?.takeIf { it.isNotBlank() } ?: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dGNjeGxqeHpiYmJ0Z2NmZXNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNDQ4ODIsImV4cCI6MjA4NTkyMDg4Mn0.4GEcaxmsoVVcsLhj1pSrm3GkU_hOsPgM6hi0GOX0b_s"
+        val googleWebClientId = secrets.getProperty("GOOGLE_WEB_CLIENT_ID")?.takeIf { it.isNotBlank() } ?: "12770293076-63f8kh0seej89dgohcrpn9rl940snvc0.apps.googleusercontent.com"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
     buildTypes {
