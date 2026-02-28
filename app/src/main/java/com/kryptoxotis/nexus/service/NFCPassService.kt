@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import com.kryptoxotis.nexus.data.local.NexusDatabase
 import com.kryptoxotis.nexus.data.repository.PersonalCardRepository
+import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -278,12 +279,21 @@ class NFCPassService : HostApduService() {
     }
 
     /**
-     * Synchronously reads the active card from DB and builds the NDEF message.
-     * Called on the binder thread when a reader selects the NDEF AID.
-     * Room queries are fast (<10ms) so this won't cause timeouts.
+     * Loads the NDEF message. Tries SharedPreferences cache first (~1ms),
+     * falls back to Room query if cache is empty.
      */
     private fun refreshNdefMessageSync() {
         try {
+            // Fast path: read pre-built bytes from SharedPreferences
+            val cached = NdefCache.read(applicationContext)
+            if (cached != null) {
+                ndefMessage = cached
+                Log.d(TAG, "Loaded ${cached.size} NDEF bytes from cache")
+                return
+            }
+
+            // Slow path fallback: query Room (only if cache wasn't written yet)
+            Log.d(TAG, "Cache miss, falling back to Room query")
             val activeCard = runBlocking { withTimeoutOrNull(500L) { repository.getActiveCard() } }
             ndefMessage = if (activeCard != null) {
                 Log.d(TAG, "Active card: type=${activeCard.cardType}, title=${activeCard.title}")
@@ -291,6 +301,10 @@ class NFCPassService : HostApduService() {
                     CardType.LINK, CardType.FILE, CardType.SOCIAL_MEDIA -> {
                         val url = activeCard.content ?: activeCard.title
                         createNdefMessage(url, isUri = true)
+                    }
+                    CardType.BUSINESS_CARD -> {
+                        val vcard = BusinessCardData.fromJson(activeCard.content ?: "").toVCard()
+                        createNdefMessage(vcard, isUri = false)
                     }
                     else -> {
                         createNdefMessage(activeCard.content ?: activeCard.id, isUri = false)

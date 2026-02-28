@@ -36,6 +36,7 @@ import com.kryptoxotis.nexus.data.repository.BusinessPassRepository
 import com.kryptoxotis.nexus.data.repository.FileRepository
 import com.kryptoxotis.nexus.data.repository.OrganizationRepository
 import com.kryptoxotis.nexus.data.repository.PersonalCardRepository
+import com.kryptoxotis.nexus.data.repository.ReceivedCardRepository
 import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.presentation.admin.AdminDashboardScreen
 import com.kryptoxotis.nexus.presentation.admin.AdminViewModel
@@ -53,12 +54,16 @@ import com.kryptoxotis.nexus.presentation.business.EnrollmentScreen
 import com.kryptoxotis.nexus.presentation.business.IssuePassScreen
 import com.kryptoxotis.nexus.presentation.business.MemberListScreen
 import com.kryptoxotis.nexus.presentation.business.OrgSettingsScreen
+import com.kryptoxotis.nexus.service.NdefCache
 import com.kryptoxotis.nexus.presentation.cards.AddCardScreen
 import com.kryptoxotis.nexus.presentation.cards.CardDetailScreen
 import com.kryptoxotis.nexus.presentation.cards.CardWalletScreen
+import com.kryptoxotis.nexus.presentation.cards.ContactDetailScreen
+import com.kryptoxotis.nexus.presentation.cards.ContactsScreen
 import com.kryptoxotis.nexus.presentation.cards.EditCardScreen
 import com.kryptoxotis.nexus.presentation.cards.ScanCardScreen
 import com.kryptoxotis.nexus.presentation.cards.PersonalCardViewModel
+import com.kryptoxotis.nexus.presentation.cards.ReceivedCardViewModel
 import com.kryptoxotis.nexus.presentation.profile.AccountSwitcherScreen
 import com.kryptoxotis.nexus.presentation.profile.ProfileSetupScreen
 import com.kryptoxotis.nexus.presentation.theme.NexusTheme
@@ -70,10 +75,12 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private lateinit var cardRepository: PersonalCardRepository
+    private lateinit var receivedCardRepository: ReceivedCardRepository
     private lateinit var businessPassRepository: BusinessPassRepository
     private lateinit var orgRepository: OrganizationRepository
     private lateinit var fileRepository: FileRepository
     private lateinit var cardViewModel: PersonalCardViewModel
+    private lateinit var receivedCardViewModel: ReceivedCardViewModel
     private lateinit var businessViewModel: BusinessViewModel
     private lateinit var adminViewModel: AdminViewModel
     private lateinit var authManager: AuthManager
@@ -89,6 +96,7 @@ class MainActivity : ComponentActivity() {
 
         val database = NexusDatabase.getDatabase(applicationContext)
         cardRepository = PersonalCardRepository(database.personalCardDao())
+        receivedCardRepository = ReceivedCardRepository(database.receivedCardDao())
         businessPassRepository = BusinessPassRepository(database.businessPassDao())
         orgRepository = OrganizationRepository()
         fileRepository = FileRepository()
@@ -97,6 +105,7 @@ class MainActivity : ComponentActivity() {
         authViewModel = AuthViewModel(authManager)
 
         cardViewModel = PersonalCardViewModel(cardRepository, fileRepository)
+        receivedCardViewModel = ReceivedCardViewModel(receivedCardRepository)
         businessViewModel = BusinessViewModel(businessPassRepository, orgRepository)
         adminViewModel = AdminViewModel()
 
@@ -106,9 +115,20 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 if (authViewModel.getCurrentUserId() != null) {
+                    cardRepository.refreshUserId()
+                    receivedCardRepository.refreshUserId()
                     cardRepository.syncFromSupabase()
                     businessPassRepository.syncFromSupabase()
+                    receivedCardRepository.syncFromSupabase()
                 }
+            }
+        }
+
+        // Pre-cache NDEF bytes whenever the active card changes.
+        // The HCE service reads from SharedPreferences (~1ms) instead of Room.
+        lifecycleScope.launch {
+            cardViewModel.activeCard.collect { card ->
+                NdefCache.write(applicationContext, card)
             }
         }
 
@@ -131,11 +151,14 @@ class MainActivity : ComponentActivity() {
                             onSignedIn = {
                                 val state = authViewModel.authState.value
                                 coroutineScope.launch {
+                                    cardRepository.refreshUserId()
+                                    receivedCardRepository.refreshUserId()
                                     val userId = authViewModel.getCurrentUserId()
                                     if (userId != null) {
                                         cardRepository.migrateLocalUserCards(userId)
                                         cardRepository.syncFromSupabase()
                                         businessPassRepository.syncFromSupabase()
+                                        receivedCardRepository.syncFromSupabase()
                                     }
                                 }
                                 when (state) {
@@ -217,7 +240,8 @@ class MainActivity : ComponentActivity() {
                             onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") },
                             onNavigateToScanCard = { navController.navigate("scan_card") },
                             onNavigateToAccounts = { navController.navigate("accounts") },
-                            onNavigateToBusinessPasses = { navController.navigate("business_passes") }
+                            onNavigateToBusinessPasses = { navController.navigate("business_passes") },
+                            onNavigateToContacts = { navController.navigate("contacts") }
                         )
                     }
 
@@ -244,8 +268,30 @@ class MainActivity : ComponentActivity() {
 
                     composable("scan_card") {
                         ScanCardScreen(
+                            receivedCardViewModel = receivedCardViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
+                    }
+
+                    composable("contacts") {
+                        ContactsScreen(
+                            viewModel = receivedCardViewModel,
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToDetail = { id -> navController.navigate("contact_detail/$id") }
+                        )
+                    }
+
+                    composable("contact_detail/{contactId}") { backStackEntry ->
+                        val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
+                        if (contactId.isNotEmpty()) {
+                            ContactDetailScreen(
+                                contactId = contactId,
+                                viewModel = receivedCardViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        } else {
+                            LaunchedEffect(Unit) { navController.popBackStack() }
+                        }
                     }
 
                     composable("edit_card/{cardId}") { backStackEntry ->

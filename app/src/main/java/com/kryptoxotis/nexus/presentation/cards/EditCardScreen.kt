@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +34,21 @@ fun EditCardScreen(
     var content by remember(card.id) { mutableStateOf(card.content ?: "") }
     var color by remember(card.id) { mutableStateOf(card.color ?: "") }
     var cardShape by remember(card.id) { mutableStateOf(card.cardShape) }
+
+    // Business card fields (parsed from JSON content)
+    val initialBc = remember(card.id) {
+        if (card.cardType == CardType.BUSINESS_CARD) BusinessCardData.fromJson(card.content ?: "") else BusinessCardData()
+    }
+    var bcName by remember(card.id) { mutableStateOf(initialBc.name) }
+    var bcJobTitle by remember(card.id) { mutableStateOf(initialBc.jobTitle) }
+    var bcCompany by remember(card.id) { mutableStateOf(initialBc.company) }
+    var bcPhone by remember(card.id) { mutableStateOf(initialBc.phone) }
+    var bcEmail by remember(card.id) { mutableStateOf(initialBc.email) }
+    var bcWebsite by remember(card.id) { mutableStateOf(initialBc.website) }
+    var bcLinkedin by remember(card.id) { mutableStateOf(initialBc.linkedin) }
+    var bcInstagram by remember(card.id) { mutableStateOf(initialBc.instagram) }
+    var bcTwitter by remember(card.id) { mutableStateOf(initialBc.twitter) }
+    var bcGithub by remember(card.id) { mutableStateOf(initialBc.github) }
 
     // Navigate back on successful update
     LaunchedEffect(uiState) {
@@ -69,36 +85,49 @@ fun EditCardScreen(
                 color = MaterialTheme.colorScheme.secondary
             )
 
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Title") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            if (card.cardType == CardType.BUSINESS_CARD) {
+                OutlinedTextField(value = bcName, onValueChange = { bcName = it }, label = { Text("Full Name *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = bcJobTitle, onValueChange = { bcJobTitle = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = bcCompany, onValueChange = { bcCompany = it }, label = { Text("Company") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = bcPhone, onValueChange = { bcPhone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+                OutlinedTextField(value = bcEmail, onValueChange = { bcEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+                OutlinedTextField(value = bcWebsite, onValueChange = { bcWebsite = it }, label = { Text("Website") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
+                OutlinedTextField(value = bcLinkedin, onValueChange = { bcLinkedin = it }, label = { Text("LinkedIn") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = bcInstagram, onValueChange = { bcInstagram = it }, label = { Text("Instagram") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = bcTwitter, onValueChange = { bcTwitter = it }, label = { Text("Twitter / X") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = bcGithub, onValueChange = { bcGithub = it }, label = { Text("GitHub") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            } else {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            OutlinedTextField(
-                value = content,
-                onValueChange = { content = it },
-                label = {
-                    Text(
-                        when (card.cardType) {
-                            CardType.LINK -> "URL"
-                            CardType.SOCIAL_MEDIA -> "Profile URL"
-                            CardType.CONTACT -> "Contact Info"
-                            else -> "Content"
-                        }
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA,
-                minLines = if (card.cardType == CardType.CONTACT || card.cardType == CardType.CUSTOM) 3 else 1,
-                keyboardOptions = if (card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA) {
-                    KeyboardOptions(keyboardType = KeyboardType.Uri)
-                } else {
-                    KeyboardOptions.Default
-                }
-            )
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = {
+                        Text(
+                            when (card.cardType) {
+                                CardType.LINK -> "URL"
+                                CardType.SOCIAL_MEDIA -> "Profile URL"
+                                CardType.CONTACT -> "Contact Info"
+                                else -> "Content"
+                            }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA,
+                    minLines = if (card.cardType == CardType.CONTACT || card.cardType == CardType.CUSTOM) 3 else 1,
+                    keyboardOptions = if (card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA) {
+                        KeyboardOptions(keyboardType = KeyboardType.Uri)
+                    } else {
+                        KeyboardOptions.Default
+                    }
+                )
+            }
 
             // Card shape selector
             Text(
@@ -218,16 +247,32 @@ fun EditCardScreen(
                             content = "https://$trimmed"
                         }
                     }
-                    viewModel.updateCard(
-                        cardId = card.id,
-                        title = title,
-                        content = content.ifBlank { null },
-                        color = color.ifBlank { null },
-                        cardShape = cardShape
-                    )
+                    if (card.cardType == CardType.BUSINESS_CARD) {
+                        val bcData = BusinessCardData(
+                            name = bcName, jobTitle = bcJobTitle, company = bcCompany,
+                            phone = bcPhone, email = bcEmail, website = bcWebsite,
+                            linkedin = bcLinkedin, instagram = bcInstagram,
+                            twitter = bcTwitter, github = bcGithub
+                        )
+                        viewModel.updateCard(
+                            cardId = card.id,
+                            title = bcName,
+                            content = bcData.toJson(),
+                            color = color.ifBlank { null },
+                            cardShape = cardShape
+                        )
+                    } else {
+                        viewModel.updateCard(
+                            cardId = card.id,
+                            title = title,
+                            content = content.ifBlank { null },
+                            color = color.ifBlank { null },
+                            cardShape = cardShape
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = title.isNotBlank() && uiState !is CardUiState.Loading
+                enabled = (if (card.cardType == CardType.BUSINESS_CARD) bcName.isNotBlank() else title.isNotBlank()) && uiState !is CardUiState.Loading
             ) {
                 if (uiState is CardUiState.Loading) {
                     CircularProgressIndicator(

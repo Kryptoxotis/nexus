@@ -10,18 +10,29 @@ import com.kryptoxotis.nexus.domain.model.PersonalCard
 import com.kryptoxotis.nexus.domain.model.Result
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PersonalCardRepository(
     private val cardDao: PersonalCardDao
 ) {
     companion object {
         private const val TAG = "Nexus:CardRepo"
         const val DEFAULT_USER_ID = "local-user"
+    }
+
+    private val _userId = MutableStateFlow(DEFAULT_USER_ID)
+
+    /** Call after auth state changes so observe flows re-subscribe with the correct userId. */
+    fun refreshUserId() {
+        _userId.value = getCurrentUserId()
     }
 
     private fun getCurrentUserId(): String {
@@ -37,21 +48,22 @@ class PersonalCardRepository(
     }
 
     suspend fun deactivateAllCardsOnStartup() {
-        val userId = getCurrentUserId()
-        cardDao.deactivateAllCards(userId)
+        cardDao.deactivateAll()
     }
 
     fun observeUserCards(): Flow<List<PersonalCard>> {
-        val userId = getCurrentUserId()
-        return cardDao.observeCardsByUser(userId).map { entities ->
-            entities.map { it.toDomain() }
+        return _userId.flatMapLatest { userId ->
+            cardDao.observeCardsByUser(userId).map { entities ->
+                entities.map { it.toDomain() }
+            }
         }
     }
 
     fun observeActiveCard(): Flow<PersonalCard?> {
-        val userId = getCurrentUserId()
-        return cardDao.observeActiveCard(userId).map { entity ->
-            entity?.toDomain()
+        return _userId.flatMapLatest { userId ->
+            cardDao.observeActiveCard(userId).map { entity ->
+                entity?.toDomain()
+            }
         }
     }
 
