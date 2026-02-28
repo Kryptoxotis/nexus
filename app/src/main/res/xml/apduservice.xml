@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/nfc_service_desc"
-    android:requireDeviceUnlock="true">
+    android:requireDeviceUnlock="false">
     <!--
         NDEF Application AID: D2760000850101
         This is the STANDARD NFC Type 4 Tag AID defined by NFC Forum.

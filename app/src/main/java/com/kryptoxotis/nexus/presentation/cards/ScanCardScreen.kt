@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanCardScreen(
+    receivedCardViewModel: ReceivedCardViewModel,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -107,6 +108,10 @@ fun ScanCardScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 CircularProgressIndicator()
             } else {
+                val result = scanResult
+                val isVCard = result != null && result.contains("BEGIN:VCARD")
+                var contactSaved by remember { mutableStateOf(false) }
+
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = null,
@@ -115,21 +120,71 @@ fun ScanCardScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Card received!",
+                    text = if (isVCard) "Business card received!" else "Card received!",
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
-                if (scanResult != null) {
+
+                if (isVCard && result != null) {
+                    // Parse and display vCard fields
+                    val parsed = parseVCard(result)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (parsed.name.isNotBlank()) {
+                        Text(
+                            text = parsed.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    val subtitle = listOfNotNull(
+                        parsed.jobTitle.ifBlank { null },
+                        parsed.company.ifBlank { null }
+                    ).joinToString(" at ")
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (!contactSaved) {
+                        Button(onClick = {
+                            receivedCardViewModel.saveContact(
+                                name = parsed.name,
+                                jobTitle = parsed.jobTitle,
+                                company = parsed.company,
+                                phone = parsed.phone,
+                                email = parsed.email,
+                                website = parsed.website,
+                                linkedin = parsed.linkedin,
+                                instagram = parsed.instagram,
+                                twitter = parsed.twitter,
+                                github = parsed.github
+                            )
+                            contactSaved = true
+                        }) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Save Contact")
+                        }
+                    } else {
+                        Text(
+                            text = "Contact saved!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                } else if (result != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = scanResult!!,
+                        text = result,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
-                }
-                if (scanResult != null) {
-                    val result = scanResult!!
                     val parsedUri = android.net.Uri.parse(result)
                     val isUrl = parsedUri.scheme == "http" || parsedUri.scheme == "https"
                     if (isUrl) {
@@ -146,10 +201,12 @@ fun ScanCardScreen(
                         }
                     }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedButton(onClick = {
                     scanResult = null
                     isScanning = true
+                    contactSaved = false
                 }) {
                     Text("Scan Again")
                 }
@@ -308,3 +365,65 @@ private fun parseNdefRecord(data: ByteArray): String? {
 }
 
 private fun ByteArray.toHex(): String = joinToString("") { "%02X".format(it) }
+
+private data class ParsedVCard(
+    val name: String = "",
+    val jobTitle: String = "",
+    val company: String = "",
+    val phone: String = "",
+    val email: String = "",
+    val website: String = "",
+    val linkedin: String = "",
+    val instagram: String = "",
+    val twitter: String = "",
+    val github: String = ""
+)
+
+private fun parseVCard(vcard: String): ParsedVCard {
+    var name = ""
+    var jobTitle = ""
+    var company = ""
+    var phone = ""
+    var email = ""
+    var website = ""
+    var linkedin = ""
+    var instagram = ""
+    var twitter = ""
+    var github = ""
+
+    for (line in vcard.lines()) {
+        val trimmed = line.trim()
+        when {
+            trimmed.startsWith("FN:") -> name = trimmed.removePrefix("FN:")
+            trimmed.startsWith("TITLE:") -> jobTitle = trimmed.removePrefix("TITLE:")
+            trimmed.startsWith("ORG:") -> company = trimmed.removePrefix("ORG:")
+            trimmed.startsWith("TEL:") -> phone = trimmed.removePrefix("TEL:")
+            trimmed.startsWith("EMAIL:") -> email = trimmed.removePrefix("EMAIL:")
+            trimmed.startsWith("URL:") -> website = trimmed.removePrefix("URL:")
+            trimmed.startsWith("ADR:") -> {
+                // ADR:;;address;;;;
+                val parts = trimmed.removePrefix("ADR:").split(";")
+                // skip empty parts, join non-empty
+            }
+            trimmed.contains("type=linkedin", ignoreCase = true) -> {
+                linkedin = trimmed.substringAfter(":")
+            }
+            trimmed.contains("type=instagram", ignoreCase = true) -> {
+                instagram = trimmed.substringAfter(":")
+            }
+            trimmed.contains("type=twitter", ignoreCase = true) -> {
+                twitter = trimmed.substringAfter(":")
+            }
+            trimmed.contains("type=github", ignoreCase = true) -> {
+                github = trimmed.substringAfter(":")
+            }
+        }
+    }
+
+    return ParsedVCard(
+        name = name, jobTitle = jobTitle, company = company,
+        phone = phone, email = email, website = website,
+        linkedin = linkedin, instagram = instagram,
+        twitter = twitter, github = github
+    )
+}

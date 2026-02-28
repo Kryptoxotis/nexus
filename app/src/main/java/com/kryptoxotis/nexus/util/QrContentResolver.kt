@@ -1,5 +1,6 @@
 package com.kryptoxotis.nexus.util
 
+import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
 
@@ -14,6 +15,7 @@ object QrContentResolver {
             CardType.CONTACT -> resolveContact(card.title, content)
             CardType.SOCIAL_MEDIA -> resolveUrl(content)
             CardType.CUSTOM -> if (looksLikeUrl(content)) resolveUrl(content) else content
+            CardType.BUSINESS_CARD -> BusinessCardData.fromJson(content).toVCard()
         }
     }
 

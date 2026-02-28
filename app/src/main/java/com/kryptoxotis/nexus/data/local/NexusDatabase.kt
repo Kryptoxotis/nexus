@@ -6,13 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PersonalCardEntity::class, BusinessPassEntity::class],
-    version = 6,
+    entities = [PersonalCardEntity::class, BusinessPassEntity::class, ReceivedCardEntity::class],
+    version = 7,
     exportSchema = true
 )
 abstract class NexusDatabase : RoomDatabase() {
     abstract fun personalCardDao(): PersonalCardDao
     abstract fun businessPassDao(): BusinessPassDao
+    abstract fun receivedCardDao(): ReceivedCardDao
 
     companion object {
         @Volatile
@@ -27,7 +28,7 @@ abstract class NexusDatabase : RoomDatabase() {
                 )
                     // Only wipe data when migrating from old pre-release schemas (1-5).
                     // For version 6+, add explicit Migration objects instead.
-                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5)
+                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6)
                     .build()
                 INSTANCE = instance
                 instance

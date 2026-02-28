@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,18 @@ fun AddCardScreen(
     var icon by remember { mutableStateOf("") }
     var color by remember { mutableStateOf("") }
     var cardShape by remember { mutableStateOf("card") }
+
+    // Business card fields
+    var bcName by remember { mutableStateOf("") }
+    var bcJobTitle by remember { mutableStateOf("") }
+    var bcCompany by remember { mutableStateOf("") }
+    var bcPhone by remember { mutableStateOf("") }
+    var bcEmail by remember { mutableStateOf("") }
+    var bcWebsite by remember { mutableStateOf("") }
+    var bcLinkedin by remember { mutableStateOf("") }
+    var bcInstagram by remember { mutableStateOf("") }
+    var bcTwitter by remember { mutableStateOf("") }
+    var bcGithub by remember { mutableStateOf("") }
 
     // File picker state
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -198,6 +211,13 @@ fun AddCardScreen(
                     description = "Custom text or data card",
                     onClick = { selectedType = CardType.CUSTOM }
                 )
+
+                CardTypeOption(
+                    icon = Icons.Default.Badge,
+                    title = "Business Card",
+                    description = "Professional contact card with structured fields",
+                    onClick = { selectedType = CardType.BUSINESS_CARD }
+                )
             }
         } else {
             // Card form
@@ -216,25 +236,112 @@ fun AddCardScreen(
                     color = MaterialTheme.colorScheme.secondary
                 )
 
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = {
-                        Text(
-                            when (selectedType) {
-                                CardType.LINK -> "My Website"
-                                CardType.FILE -> "My Resume"
-                                CardType.CONTACT -> "John Doe"
-                                CardType.SOCIAL_MEDIA -> "Instagram"
-                                CardType.CUSTOM -> "My Card"
-                                else -> ""
-                            }
-                        )
-                    }
-                )
+                if (selectedType == CardType.BUSINESS_CARD) {
+                    // Structured business card fields
+                    OutlinedTextField(
+                        value = bcName,
+                        onValueChange = { bcName = it },
+                        label = { Text("Full Name *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("John Doe") }
+                    )
+                    OutlinedTextField(
+                        value = bcJobTitle,
+                        onValueChange = { bcJobTitle = it },
+                        label = { Text("Job Title") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("Software Engineer") }
+                    )
+                    OutlinedTextField(
+                        value = bcCompany,
+                        onValueChange = { bcCompany = it },
+                        label = { Text("Company") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("Acme Inc.") }
+                    )
+                    OutlinedTextField(
+                        value = bcPhone,
+                        onValueChange = { bcPhone = it },
+                        label = { Text("Phone") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        placeholder = { Text("+1 555-123-4567") }
+                    )
+                    OutlinedTextField(
+                        value = bcEmail,
+                        onValueChange = { bcEmail = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        placeholder = { Text("john@example.com") }
+                    )
+                    OutlinedTextField(
+                        value = bcWebsite,
+                        onValueChange = { bcWebsite = it },
+                        label = { Text("Website") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        placeholder = { Text("https://example.com") }
+                    )
+                    OutlinedTextField(
+                        value = bcLinkedin,
+                        onValueChange = { bcLinkedin = it },
+                        label = { Text("LinkedIn") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("https://linkedin.com/in/johndoe") }
+                    )
+                    OutlinedTextField(
+                        value = bcInstagram,
+                        onValueChange = { bcInstagram = it },
+                        label = { Text("Instagram") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("https://instagram.com/johndoe") }
+                    )
+                    OutlinedTextField(
+                        value = bcTwitter,
+                        onValueChange = { bcTwitter = it },
+                        label = { Text("Twitter / X") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("https://x.com/johndoe") }
+                    )
+                    OutlinedTextField(
+                        value = bcGithub,
+                        onValueChange = { bcGithub = it },
+                        label = { Text("GitHub") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("https://github.com/johndoe") }
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Title *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = {
+                            Text(
+                                when (selectedType) {
+                                    CardType.LINK -> "My Website"
+                                    CardType.FILE -> "My Resume"
+                                    CardType.CONTACT -> "John Doe"
+                                    CardType.SOCIAL_MEDIA -> "Instagram"
+                                    CardType.CUSTOM -> "My Card"
+                                    else -> ""
+                                }
+                            )
+                        }
+                    )
+                }
 
                 if (selectedType == CardType.FILE) {
                     // File picker UI
@@ -288,8 +395,8 @@ fun AddCardScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                } else {
-                    // Standard content field for non-FILE types
+                } else if (selectedType != CardType.BUSINESS_CARD) {
+                    // Standard content field for non-FILE, non-BUSINESS_CARD types
                     OutlinedTextField(
                         value = content,
                         onValueChange = { content = it },
@@ -495,6 +602,21 @@ fun AddCardScreen(
                             if (bytes != null) {
                                 viewModel.uploadFile(bytes, "card-image-${System.currentTimeMillis()}.jpg", mimeType)
                             }
+                        } else if (selectedType == CardType.BUSINESS_CARD) {
+                            val bcData = BusinessCardData(
+                                name = bcName, jobTitle = bcJobTitle, company = bcCompany,
+                                phone = bcPhone, email = bcEmail, website = bcWebsite,
+                                linkedin = bcLinkedin, instagram = bcInstagram,
+                                twitter = bcTwitter, github = bcGithub
+                            )
+                            viewModel.addCard(
+                                cardType = CardType.BUSINESS_CARD,
+                                title = bcName,
+                                content = bcData.toJson(),
+                                icon = icon.ifBlank { null },
+                                color = color.ifBlank { null },
+                                cardShape = cardShape
+                            )
                         } else {
                             viewModel.addCard(
                                 cardType = selectedType!!,
@@ -507,7 +629,7 @@ fun AddCardScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = title.isNotBlank()
+                    enabled = (if (selectedType == CardType.BUSINESS_CARD) bcName.isNotBlank() else title.isNotBlank())
                             && uiState !is CardUiState.Loading
                             && (selectedType != CardType.FILE || selectedFileUri != null)
                 ) {

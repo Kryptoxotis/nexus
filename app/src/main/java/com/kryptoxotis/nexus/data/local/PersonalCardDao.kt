@@ -41,6 +41,9 @@ interface PersonalCardDao {
     @Query("UPDATE personal_cards SET isActive = 0 WHERE userId = :userId")
     suspend fun deactivateAllCards(userId: String)
 
+    @Query("UPDATE personal_cards SET isActive = 0")
+    suspend fun deactivateAll()
+
     @Transaction
     suspend fun activateCardAtomically(userId: String, cardId: String) {
         deactivateAllCards(userId)

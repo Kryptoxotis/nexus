@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.kryptoxotis.nexus.domain.model.BusinessCardData
+import com.kryptoxotis.nexus.domain.model.CardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +28,13 @@ fun CardDetailScreen(
 ) {
     val cards by viewModel.cards.collectAsState()
     val card = cards.find { it.id == cardId }
+
+    // Deactivate card when leaving this screen
+    DisposableEffect(cardId) {
+        onDispose {
+            viewModel.deactivateCard(cardId)
+        }
+    }
 
     // Dark gradient by default, or use card.color if set
     val gradientColors = if (card?.color != null) {
@@ -130,19 +139,47 @@ fun CardDetailScreen(
                                     tint = Color.White.copy(alpha = 0.8f)
                                 )
                             }
-                            Column {
-                                Text(
-                                    text = card.title,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = Color.White
-                                )
-                                if (card.content != null) {
-                                    Spacer(modifier = Modifier.height(4.dp))
+                            if (card.cardType == CardType.BUSINESS_CARD && card.content != null) {
+                                val bcData = BusinessCardData.fromJson(card.content)
+                                Column {
                                     Text(
-                                        text = card.content,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.White.copy(alpha = 0.8f)
+                                        text = bcData.name.ifBlank { card.title },
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = Color.White
                                     )
+                                    if (bcData.jobTitle.isNotBlank() || bcData.company.isNotBlank()) {
+                                        Text(
+                                            text = bcData.subtitle(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color.White.copy(alpha = 0.8f)
+                                        )
+                                    }
+                                    if (bcData.phone.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(text = bcData.phone, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                                    }
+                                    if (bcData.email.isNotBlank()) {
+                                        Text(text = bcData.email, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                                    }
+                                    if (bcData.website.isNotBlank()) {
+                                        Text(text = bcData.website, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                                    }
+                                }
+                            } else {
+                                Column {
+                                    Text(
+                                        text = card.title,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = Color.White
+                                    )
+                                    if (card.content != null) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = card.content,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color.White.copy(alpha = 0.8f)
+                                        )
+                                    }
                                 }
                             }
                         }

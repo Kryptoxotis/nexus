@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.kryptoxotis.nexus.domain.model.AccountType
+import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
 import com.kryptoxotis.nexus.presentation.auth.AuthState
@@ -43,7 +44,8 @@ fun CardWalletScreen(
     onNavigateToEditCard: (String) -> Unit,
     onNavigateToScanCard: () -> Unit,
     onNavigateToAccounts: () -> Unit,
-    onNavigateToBusinessPasses: () -> Unit
+    onNavigateToBusinessPasses: () -> Unit,
+    onNavigateToContacts: () -> Unit
 ) {
     val cards by viewModel.cards.collectAsState()
     val activeCard by viewModel.activeCard.collectAsState()
@@ -76,6 +78,9 @@ fun CardWalletScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToContacts) {
+                        Icon(Icons.Default.People, contentDescription = "Contacts")
+                    }
                     IconButton(onClick = onNavigateToScanCard) {
                         Icon(Icons.Default.Nfc, contentDescription = "Scan Card")
                     }
@@ -496,9 +501,14 @@ private fun ActiveCardHero(card: PersonalCard, onClick: () -> Unit) {
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White
                 )
-                if (card.content != null) {
+                val heroSubtitle = if (card.cardType == CardType.BUSINESS_CARD && card.content != null) {
+                    BusinessCardData.fromJson(card.content).subtitle()
+                } else {
+                    card.content
+                }
+                if (heroSubtitle != null) {
                     Text(
-                        text = card.content,
+                        text = heroSubtitle,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.8f),
                         maxLines = 1
@@ -660,9 +670,14 @@ private fun CardItem(
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White
                             )
-                            if (card.content != null) {
+                            val itemSubtitle = if (card.cardType == CardType.BUSINESS_CARD && card.content != null) {
+                                BusinessCardData.fromJson(card.content).subtitle()
+                            } else {
+                                card.content
+                            }
+                            if (itemSubtitle != null) {
                                 Text(
-                                    text = card.content,
+                                    text = itemSubtitle,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.White.copy(alpha = 0.8f),
                                     maxLines = 1
