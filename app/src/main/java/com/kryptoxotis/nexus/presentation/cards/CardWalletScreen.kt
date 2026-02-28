@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
@@ -42,7 +41,6 @@ fun CardWalletScreen(
     onNavigateToAddCard: () -> Unit,
     onNavigateToCardDetail: (String) -> Unit,
     onNavigateToEditCard: (String) -> Unit,
-    onNavigateToScanCard: () -> Unit,
     onNavigateToAccounts: () -> Unit,
     onNavigateToBusinessPasses: () -> Unit,
     onNavigateToContacts: () -> Unit
@@ -60,7 +58,6 @@ fun CardWalletScreen(
     var showEditSheet by remember { mutableStateOf(false) }
     var showQrSheet by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var showBusinessDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -81,9 +78,6 @@ fun CardWalletScreen(
                 actions = {
                     IconButton(onClick = onNavigateToContacts) {
                         Icon(Icons.Default.People, contentDescription = "Contacts")
-                    }
-                    IconButton(onClick = onNavigateToScanCard) {
-                        Icon(Icons.Default.Nfc, contentDescription = "Scan Card")
                     }
                     if (isAuthenticated) {
                         IconButton(onClick = onNavigateToBusinessPasses) {
@@ -135,70 +129,6 @@ fun CardWalletScreen(
                                 text = "Business account request pending review",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Upgrade to Business card (for individual users with no pending request)
-            if (accountType == AccountType.INDIVIDUAL && businessRequest?.status != "pending") {
-                item(key = "upgrade_business") {
-                    val isRejected = businessRequest?.status == "rejected"
-                    Card(
-                        onClick = { showBusinessDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isRejected)
-                                MaterialTheme.colorScheme.errorContainer
-                            else
-                                MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Business,
-                                contentDescription = null,
-                                tint = if (isRejected)
-                                    MaterialTheme.colorScheme.onErrorContainer
-                                else
-                                    MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = if (isRejected) "Re-request Business Account" else "Upgrade to Business",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = if (isRejected)
-                                        MaterialTheme.colorScheme.onErrorContainer
-                                    else
-                                        MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Text(
-                                    text = if (isRejected)
-                                        "Your previous request was rejected. Tap to try again."
-                                    else
-                                        "Create and manage passes for your organization",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isRejected)
-                                        MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
-                                    else
-                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                                )
-                            }
-                            Icon(
-                                Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = if (isRejected)
-                                    MaterialTheme.colorScheme.onErrorContainer
-                                else
-                                    MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
                     }
@@ -383,78 +313,6 @@ fun CardWalletScreen(
         )
     }
 
-    // Business upgrade request dialog
-    if (showBusinessDialog) {
-        var businessName by remember { mutableStateOf("") }
-        var businessType by remember { mutableStateOf("") }
-        var contactEmail by remember { mutableStateOf("") }
-        var message by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showBusinessDialog = false },
-            title = { Text("Business Account Request") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Tell us about your business. An admin will review your request.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    OutlinedTextField(
-                        value = businessName,
-                        onValueChange = { businessName = it },
-                        label = { Text("Business Name *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = businessType,
-                        onValueChange = { businessType = it },
-                        label = { Text("Business Type") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("e.g., Gym, Restaurant") }
-                    )
-                    OutlinedTextField(
-                        value = contactEmail,
-                        onValueChange = { contactEmail = it },
-                        label = { Text("Contact Email") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = message,
-                        onValueChange = { message = it },
-                        label = { Text("Message") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2,
-                        placeholder = { Text("Why do you need a business account?") }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        authViewModel?.requestBusinessUpgrade(
-                            businessName = businessName,
-                            businessType = businessType.ifBlank { null },
-                            contactEmail = contactEmail.ifBlank { null },
-                            message = message.ifBlank { null }
-                        )
-                        showBusinessDialog = false
-                    },
-                    enabled = businessName.isNotBlank()
-                ) {
-                    Text("Submit")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showBusinessDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
 
 @Composable

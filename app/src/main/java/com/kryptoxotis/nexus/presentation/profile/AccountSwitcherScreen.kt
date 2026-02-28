@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.BuildConfig
 import com.kryptoxotis.nexus.data.remote.AuthManager
+import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
 
@@ -34,6 +35,10 @@ fun AccountSwitcherScreen(
         }
         else -> null
     }
+
+    val accountType = (authState as? AuthState.Authenticated)?.accountType
+    val businessRequest = authViewModel.businessRequest.collectAsState().value
+    var showBusinessDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -64,6 +69,71 @@ fun AccountSwitcherScreen(
                         }
                     }
                 )
+            }
+
+            // Upgrade to Business card
+            if (accountType == AccountType.INDIVIDUAL && businessRequest?.status != "pending") {
+                item(key = "upgrade_business") {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val isRejected = businessRequest?.status == "rejected"
+                    Card(
+                        onClick = { showBusinessDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isRejected)
+                                MaterialTheme.colorScheme.errorContainer
+                            else
+                                MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Business,
+                                contentDescription = null,
+                                tint = if (isRejected)
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                else
+                                    MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (isRejected) "Re-request Business Account" else "Upgrade to Business",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = if (isRejected)
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    text = if (isRejected)
+                                        "Your previous request was rejected. Tap to try again."
+                                    else
+                                        "Create and manage passes for your organization",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isRejected)
+                                        MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+                                    else
+                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                                )
+                            }
+                            Icon(
+                                Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = if (isRejected)
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                else
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
             }
 
             item {
@@ -108,6 +178,79 @@ fun AccountSwitcherScreen(
                 )
             }
         }
+    }
+
+    // Business upgrade request dialog
+    if (showBusinessDialog) {
+        var businessName by remember { mutableStateOf("") }
+        var businessType by remember { mutableStateOf("") }
+        var contactEmail by remember { mutableStateOf("") }
+        var message by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showBusinessDialog = false },
+            title = { Text("Business Account Request") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Tell us about your business. An admin will review your request.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = businessName,
+                        onValueChange = { businessName = it },
+                        label = { Text("Business Name *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = businessType,
+                        onValueChange = { businessType = it },
+                        label = { Text("Business Type") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("e.g., Gym, Restaurant") }
+                    )
+                    OutlinedTextField(
+                        value = contactEmail,
+                        onValueChange = { contactEmail = it },
+                        label = { Text("Contact Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = message,
+                        onValueChange = { message = it },
+                        label = { Text("Message") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        placeholder = { Text("Why do you need a business account?") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        authViewModel.requestBusinessUpgrade(
+                            businessName = businessName,
+                            businessType = businessType.ifBlank { null },
+                            contactEmail = contactEmail.ifBlank { null },
+                            message = message.ifBlank { null }
+                        )
+                        showBusinessDialog = false
+                    },
+                    enabled = businessName.isNotBlank()
+                ) {
+                    Text("Submit")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBusinessDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
