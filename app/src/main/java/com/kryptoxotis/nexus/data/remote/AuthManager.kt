@@ -264,6 +264,32 @@ class AuthManager(private val context: Context) {
         }
     }
 
+    /**
+     * Creates a profile for the current user if one doesn't exist.
+     * This handles users who signed up before the trigger existed.
+     */
+    suspend fun createProfileIfMissing(): ProfileDto? {
+        return try {
+            val supabase = SupabaseClientProvider.getClient()
+            val user = supabase.auth.currentUserOrNull() ?: return null
+            val userId = user.id
+            val email = user.email ?: ""
+            val fullName = user.userMetadata?.get("full_name")?.toString()?.trim('"') ?: email
+
+            supabase.postgrest["profiles"].insert(ProfileDto(
+                id = userId,
+                email = email,
+                fullName = fullName,
+                accountType = "individual"
+            ))
+            Log.d(TAG, "Created missing profile for $email")
+            getCurrentProfile()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create profile", e)
+            null
+        }
+    }
+
     fun getCurrentUserId(): String? {
         return try {
             SupabaseClientProvider.getClient().auth.currentUserOrNull()?.id

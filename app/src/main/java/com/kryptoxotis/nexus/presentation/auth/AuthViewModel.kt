@@ -73,11 +73,16 @@ class AuthViewModel(
     }
 
     private suspend fun loadProfile() {
-        val profile = authManager.getCurrentProfile()
+        var profile = authManager.getCurrentProfile()
+
+        // If no profile exists (e.g. user signed up before trigger), create one
+        if (profile == null) {
+            profile = authManager.createProfileIfMissing()
+        }
+
         _profile.value = profile
 
         if (profile == null) {
-            // No profile means user is not on the allowlist — sign out and block
             authManager.signOut()
             _authState.value = AuthState.NotAllowed
         } else {
