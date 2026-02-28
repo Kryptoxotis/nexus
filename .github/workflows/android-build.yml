@@ -32,7 +32,7 @@ jobs:
         echo "GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}" >> secrets.properties
 
     - name: Restore debug keystore
-      run: mkdir -p ~/.android && echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ~/.android/debug.keystore
+      run: mkdir -p ~/.android && cp .debug.keystore ~/.android/debug.keystore
 
     - name: Build with Gradle
       run: ./gradlew assembleDebug -PbuildNumber=$(( ${{ github.run_number }} + 4 ))
