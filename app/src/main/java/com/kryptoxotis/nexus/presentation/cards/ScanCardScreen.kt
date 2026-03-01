@@ -3,7 +3,6 @@ package com.kryptoxotis.nexus.presentation.cards
 import android.app.Activity
 import android.content.Intent
 import android.nfc.NfcAdapter
-import android.os.Bundle
 import android.nfc.Tag
 import android.nfc.tech.IsoDep
 import android.util.Log
@@ -18,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.CardType
+import com.kryptoxotis.nexus.presentation.business.BusinessUiState
 import com.kryptoxotis.nexus.presentation.business.BusinessViewModel
 
 /**
@@ -45,9 +45,6 @@ fun ScanCardScreen(
     DisposableEffect(Unit) {
         val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
         if (activity != null && nfcAdapter != null) {
-            val readerExtras = Bundle().apply {
-                putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 1000)
-            }
             nfcAdapter.enableReaderMode(
                 activity,
                 { tag ->
@@ -59,10 +56,9 @@ fun ScanCardScreen(
                     }
                 },
                 NfcAdapter.FLAG_READER_NFC_A or
-                    NfcAdapter.FLAG_READER_NFC_B or
                     NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
                     NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
-                readerExtras
+                null
             )
         }
         onDispose {
@@ -189,6 +185,7 @@ fun ScanCardScreen(
 
                     // Join organization via NFC
                     if (businessViewModel != null && parsed.organizationId.isNotBlank()) {
+                        val bizUiState by businessViewModel.uiState.collectAsState()
                         var orgJoined by remember { mutableStateOf(false) }
                         Spacer(modifier = Modifier.height(8.dp))
                         if (!orgJoined) {
@@ -203,6 +200,12 @@ fun ScanCardScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("Join ${parsed.company.ifBlank { "Organization" }}")
                             }
+                        } else if (bizUiState is BusinessUiState.Error) {
+                            Text(
+                                text = (bizUiState as BusinessUiState.Error).message,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
                         } else {
                             Text(
                                 text = "Enrollment requested!",
@@ -316,7 +319,7 @@ private fun readNdefFromTag(tag: Tag): String? {
     val isoDep = IsoDep.get(tag) ?: return null
     try {
         isoDep.connect()
-        isoDep.timeout = 10000
+        isoDep.timeout = 5000
 
         // Step 1: SELECT NDEF Application (AID: D2760000850101)
         val selectAid = byteArrayOf(

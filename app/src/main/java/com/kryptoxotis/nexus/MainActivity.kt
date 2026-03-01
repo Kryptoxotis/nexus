@@ -445,8 +445,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Tell Android to prefer our HCE service for card emulation
-        // This biases the NFC controller toward listen mode (card) instead of poll mode (reader)
         if (isNfcSupported) {
             try {
                 val cardEmulation = CardEmulation.getInstance(nfcAdapter!!)

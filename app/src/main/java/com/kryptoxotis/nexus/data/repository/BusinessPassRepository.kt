@@ -9,6 +9,7 @@ import com.kryptoxotis.nexus.domain.model.BusinessPass
 import com.kryptoxotis.nexus.domain.model.PassStatus
 import com.kryptoxotis.nexus.domain.model.Result
 import com.kryptoxotis.nexus.data.remote.dto.OrganizationDto
+import com.kryptoxotis.nexus.domain.model.EnrollmentMode
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.Flow
@@ -53,6 +54,19 @@ class BusinessPassRepository(
     ): Result<BusinessPass> {
         return try {
             val userId = getCurrentUserId() ?: return Result.Error("Not authenticated")
+            val supabase = SupabaseClientProvider.getClient()
+
+            // Verify organization exists and allows open enrollment
+            val org = supabase.postgrest["organizations"]
+                .select { filter { eq("id", organizationId) } }
+                .decodeSingleOrNull<OrganizationDto>()
+                ?: return Result.Error("Organization not found")
+
+            val mode = EnrollmentMode.fromString(org.enrollmentMode)
+            if (mode != EnrollmentMode.OPEN) {
+                return Result.Error("This organization does not allow open enrollment")
+            }
+
             val now = java.time.Instant.now().toString()
             val id = UUID.randomUUID().toString()
 
@@ -67,7 +81,6 @@ class BusinessPassRepository(
             )
 
             // Push to Supabase first (it has the unique constraint)
-            val supabase = SupabaseClientProvider.getClient()
             supabase.postgrest["business_passes"].insert(BusinessPassDto(
                 id = id,
                 userId = userId,
