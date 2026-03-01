@@ -28,6 +28,9 @@
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
 
+# Keep NFC HCE service and cache — R8 must not optimize timing-sensitive APDU code
+-keep class com.kryptoxotis.nexus.service.** { *; }
+
 # Suppress R8 warnings for ktor/JVM management classes
 -dontwarn java.lang.management.ManagementFactory
 -dontwarn java.lang.management.RuntimeMXBean

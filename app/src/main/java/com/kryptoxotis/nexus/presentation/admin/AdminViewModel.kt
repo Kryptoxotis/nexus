@@ -76,23 +76,7 @@ class AdminViewModel : ViewModel() {
                 val supabase = SupabaseClientProvider.getClient()
                 val adminId = supabase.auth.currentUserOrNull()?.id
 
-                // Update request status
-                supabase.postgrest["business_requests"].update({
-                    set("status", "approved")
-                    set("reviewed_by", adminId)
-                    set("reviewed_at", java.time.Instant.now().toString())
-                }) {
-                    filter { eq("id", request.id ?: "") }
-                }
-
-                // Upgrade user to business account
-                supabase.postgrest["profiles"].update({
-                    set("account_type", "business")
-                }) {
-                    filter { eq("id", request.userId) }
-                }
-
-                // Auto-create organization from request details
+                // Parse org details from message JSON
                 var description: String? = null
                 var enrollmentMode = "open"
                 try {
@@ -101,6 +85,7 @@ class AdminViewModel : ViewModel() {
                     enrollmentMode = msgJson.optString("enrollmentMode", "open").ifBlank { "open" }
                 } catch (_: Exception) { /* old-style plain text message, use defaults */ }
 
+                // Step 1: Create organization first (most likely to fail, easiest to clean up)
                 supabase.postgrest["organizations"].insert(OrganizationDto(
                     name = request.businessName,
                     type = request.businessType,
@@ -109,6 +94,22 @@ class AdminViewModel : ViewModel() {
                     enrollmentMode = enrollmentMode,
                     isActive = true
                 ))
+
+                // Step 2: Upgrade user to business account
+                supabase.postgrest["profiles"].update({
+                    set("account_type", "business")
+                }) {
+                    filter { eq("id", request.userId) }
+                }
+
+                // Step 3: Mark request as approved (last — so failures above leave request pending)
+                supabase.postgrest["business_requests"].update({
+                    set("status", "approved")
+                    set("reviewed_by", adminId)
+                    set("reviewed_at", java.time.Instant.now().toString())
+                }) {
+                    filter { eq("id", request.id ?: "") }
+                }
 
                 _uiState.value = AdminUiState.Success("Request approved & organization created")
                 loadPendingRequests()
