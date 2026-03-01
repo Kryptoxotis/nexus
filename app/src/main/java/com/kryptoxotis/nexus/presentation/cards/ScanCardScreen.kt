@@ -3,6 +3,7 @@ package com.kryptoxotis.nexus.presentation.cards
 import android.app.Activity
 import android.content.Intent
 import android.nfc.NfcAdapter
+import android.os.Bundle
 import android.nfc.Tag
 import android.nfc.tech.IsoDep
 import android.util.Log
@@ -44,6 +45,9 @@ fun ScanCardScreen(
     DisposableEffect(Unit) {
         val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
         if (activity != null && nfcAdapter != null) {
+            val readerExtras = Bundle().apply {
+                putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 1000)
+            }
             nfcAdapter.enableReaderMode(
                 activity,
                 { tag ->
@@ -55,9 +59,10 @@ fun ScanCardScreen(
                     }
                 },
                 NfcAdapter.FLAG_READER_NFC_A or
+                    NfcAdapter.FLAG_READER_NFC_B or
                     NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
                     NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
-                null
+                readerExtras
             )
         }
         onDispose {
@@ -311,7 +316,7 @@ private fun readNdefFromTag(tag: Tag): String? {
     val isoDep = IsoDep.get(tag) ?: return null
     try {
         isoDep.connect()
-        isoDep.timeout = 5000
+        isoDep.timeout = 10000
 
         // Step 1: SELECT NDEF Application (AID: D2760000850101)
         val selectAid = byteArrayOf(
