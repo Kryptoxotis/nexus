@@ -29,7 +29,8 @@ import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
-import com.kryptoxotis.nexus.presentation.theme.NexusBlue
+import com.kryptoxotis.nexus.presentation.theme.NexusTeal
+
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neuInset
@@ -218,7 +219,7 @@ fun CardWalletScreen(
                                     fontSize = 14.sp
                                 ),
                                 singleLine = true,
-                                cursorBrush = SolidColor(NexusBlue),
+                                cursorBrush = SolidColor(NexusTeal),
                                 decorationBox = { innerTextField ->
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -265,7 +266,7 @@ fun CardWalletScreen(
                                     Icon(
                                         Icons.Default.Add,
                                         contentDescription = null,
-                                        tint = NexusBlue,
+                                        tint = NexusTeal,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -580,7 +581,7 @@ private fun ActiveCardBanner(card: PersonalCard, onClick: () -> Unit) {
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(NexusBlue)
+                        .background(NexusTeal)
                 )
                 Column {
                     Text(

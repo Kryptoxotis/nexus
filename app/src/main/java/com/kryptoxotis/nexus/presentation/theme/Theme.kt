@@ -11,9 +11,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val NexusDarkColorScheme = darkColorScheme(
-    primary = NexusOrange,
+    primary = NexusTeal,
     onPrimary = Color.White,
-    primaryContainer = NexusOrangeDark,
+    primaryContainer = NexusTealDark,
     onPrimaryContainer = NexusTextPrimary,
     secondary = NexusBlue,
     onSecondary = Color.White,

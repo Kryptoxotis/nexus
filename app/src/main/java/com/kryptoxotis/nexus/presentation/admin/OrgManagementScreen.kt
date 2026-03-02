@@ -12,6 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.data.remote.dto.OrganizationDto
 import com.kryptoxotis.nexus.data.remote.dto.ProfileDto
+import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +48,7 @@ fun OrgManagementScreen(
     }
 
     Scaffold(
+        containerColor = NexusBackground,
         topBar = {
             TopAppBar(
                 title = { Text("Organizations") },
@@ -149,7 +153,11 @@ private fun OrgItem(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
+        colors = CardDefaults.cardColors(containerColor = NexusSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

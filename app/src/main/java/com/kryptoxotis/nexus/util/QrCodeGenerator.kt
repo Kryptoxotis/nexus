@@ -8,7 +8,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object QrCodeGenerator {
-    suspend fun generate(content: String, size: Int = 512): Bitmap = withContext(Dispatchers.Default) {
+    suspend fun generate(
+        content: String,
+        size: Int = 512,
+        foregroundColor: Int = 0xFF000000.toInt(),
+        backgroundColor: Int = 0xFFFFFFFF.toInt()
+    ): Bitmap = withContext(Dispatchers.Default) {
         val hints = mapOf(
             EncodeHintType.MARGIN to 1,
             EncodeHintType.CHARACTER_SET to "UTF-8"
@@ -19,7 +24,7 @@ object QrCodeGenerator {
 
         for (y in 0 until size) {
             for (x in 0 until size) {
-                pixels[y * size + x] = if (bitMatrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
+                pixels[y * size + x] = if (bitMatrix[x, y]) foregroundColor else backgroundColor
             }
         }
 

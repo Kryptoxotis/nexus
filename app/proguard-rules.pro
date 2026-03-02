@@ -28,8 +28,9 @@
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
 
-# Keep NFC HCE service and cache — R8 must not optimize timing-sensitive APDU code
--keep class com.kryptoxotis.nexus.service.** { *; }
+# Keep NFC HCE service (referenced by AndroidManifest, must not be renamed/removed)
+-keep class com.kryptoxotis.nexus.service.NFCPassService { *; }
+-keep class com.kryptoxotis.nexus.service.NfcReader { *; }
 
 # Suppress R8 warnings for ktor/JVM management classes
 -dontwarn java.lang.management.ManagementFactory
@@ -44,9 +45,15 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# Ktor
--keep class io.ktor.** { *; }
--keep class kotlinx.coroutines.** { *; }
+# Ktor — keep engine + call pipeline (R8 strips via ServiceLoader reflection)
+-keep class io.ktor.client.engine.** { *; }
+-keep class io.ktor.client.call.** { *; }
+-keep class io.ktor.client.plugins.** { *; }
+-keepnames class io.ktor.client.HttpClient
+-keep class io.ktor.serialization.kotlinx.** { *; }
+-keep class kotlinx.coroutines.android.** { *; }
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler
 -dontwarn kotlinx.atomicfu.**
 -dontwarn io.netty.**
 -dontwarn com.typesafe.**

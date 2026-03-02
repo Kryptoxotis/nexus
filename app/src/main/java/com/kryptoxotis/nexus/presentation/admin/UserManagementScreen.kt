@@ -12,6 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.data.remote.dto.AllowedEmailDto
 import com.kryptoxotis.nexus.data.remote.dto.ProfileDto
+import androidx.compose.ui.graphics.Color
+import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusDeep
+import com.kryptoxotis.nexus.presentation.theme.NexusOrange
+import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.NexusTeal
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 private sealed class UserRow {
     data class Profile(val dto: ProfileDto) : UserRow()
@@ -73,6 +80,7 @@ fun UserManagementScreen(
     }
 
     Scaffold(
+        containerColor = NexusBackground,
         topBar = {
             TopAppBar(
                 title = { Text("User Management") },
@@ -86,9 +94,9 @@ fun UserManagementScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = NexusTeal
             ) {
-                Icon(Icons.Default.PersonAdd, contentDescription = "Add User")
+                Icon(Icons.Default.PersonAdd, contentDescription = "Add User", tint = Color.White)
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -106,7 +114,7 @@ fun UserManagementScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = NexusTeal) },
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) {
                         IconButton(onClick = { searchQuery = "" }) {
@@ -124,7 +132,7 @@ fun UserManagementScreen(
                     Text(
                         text = "${filteredRows.size} user(s)",
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = NexusTeal
                     )
                 }
 
@@ -178,7 +186,11 @@ private fun PendingItem(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
+            colors = CardDefaults.cardColors(containerColor = NexusSurface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -189,7 +201,7 @@ private fun PendingItem(
                 Icons.Default.Email,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = NexusTeal
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -200,7 +212,7 @@ private fun PendingItem(
                 Text(
                     text = email.email,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = NexusOrange
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AssistChip(
@@ -208,18 +220,19 @@ private fun PendingItem(
                         label = {
                             Text(
                                 email.accountType.replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall
+                                style = MaterialTheme.typography.labelSmall,
+                                color = NexusTeal
                             )
-                        }
+                        },
+                        border = AssistChipDefaults.assistChipBorder(true, borderColor = NexusTeal)
                     )
                     AssistChip(
                         onClick = {},
                         label = {
-                            Text("Pending invite", style = MaterialTheme.typography.labelSmall)
+                            Text("Pending invite", style = MaterialTheme.typography.labelSmall, color = NexusOrange)
                         },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                        )
+                        border = AssistChipDefaults.assistChipBorder(true, borderColor = NexusOrange),
+                        colors = AssistChipDefaults.assistChipColors(containerColor = Color.Transparent)
                     )
                 }
             }
@@ -266,7 +279,11 @@ private fun UserItem(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val isAdmin = user.accountType == "admin"
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
+            colors = CardDefaults.cardColors(containerColor = NexusSurface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -277,7 +294,7 @@ private fun UserItem(
                 Icons.Default.Person,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = NexusTeal
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -288,7 +305,7 @@ private fun UserItem(
                 Text(
                     text = user.email ?: "",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = NexusOrange
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -298,23 +315,30 @@ private fun UserItem(
                         label = {
                             Text(
                                 user.accountType.lowercase().replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall
+                                style = MaterialTheme.typography.labelSmall,
+                                color = NexusTeal
                             )
-                        }
+                        },
+                        border = AssistChipDefaults.assistChipBorder(true, borderColor = NexusTeal)
                     )
                     AssistChip(
                         onClick = {},
                         label = {
                             Text(
                                 user.status ?: "active",
-                                style = MaterialTheme.typography.labelSmall
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (user.status == "suspended") MaterialTheme.colorScheme.error else NexusTeal
                             )
                         },
+                        border = AssistChipDefaults.assistChipBorder(
+                            true,
+                            borderColor = if (user.status == "suspended") MaterialTheme.colorScheme.error else NexusTeal
+                        ),
                         colors = AssistChipDefaults.assistChipColors(
                             containerColor = if (user.status == "suspended")
                                 MaterialTheme.colorScheme.errorContainer
                             else
-                                MaterialTheme.colorScheme.surface
+                                Color.Transparent
                         )
                     )
                 }
@@ -323,7 +347,7 @@ private fun UserItem(
             if (!isAdmin) {
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Actions")
+                        Icon(Icons.Default.MoreVert, contentDescription = "Actions", tint = NexusOrange)
                     }
                     DropdownMenu(
                         expanded = showMenu,

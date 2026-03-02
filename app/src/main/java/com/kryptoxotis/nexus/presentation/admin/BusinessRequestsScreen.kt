@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.data.remote.dto.BusinessRequestDto
 import androidx.compose.ui.graphics.Color
-import com.kryptoxotis.nexus.presentation.theme.AdminBackground
-import com.kryptoxotis.nexus.presentation.theme.AdminSurface
+import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +41,7 @@ fun BusinessRequestsScreen(
     }
 
     Scaffold(
-        containerColor = AdminBackground,
+        containerColor = NexusBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -133,8 +133,8 @@ private fun RequestCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = AdminSurface),
-        colors = CardDefaults.cardColors(containerColor = AdminSurface),
+        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
+        colors = CardDefaults.cardColors(containerColor = NexusSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(

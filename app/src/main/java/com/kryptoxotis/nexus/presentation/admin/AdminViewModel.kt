@@ -1,40 +1,34 @@
 package com.kryptoxotis.nexus.presentation.admin
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kryptoxotis.nexus.data.remote.SupabaseClientProvider
 import com.kryptoxotis.nexus.data.remote.dto.AllowedEmailDto
 import com.kryptoxotis.nexus.data.remote.dto.BusinessRequestDto
 import com.kryptoxotis.nexus.data.remote.dto.OrganizationDto
 import com.kryptoxotis.nexus.data.remote.dto.ProfileDto
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.rpc
+import com.kryptoxotis.nexus.data.repository.AdminRepository
+import com.kryptoxotis.nexus.domain.model.Result
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
-class AdminViewModel : ViewModel() {
+class AdminViewModel(
+    private val adminRepository: AdminRepository = AdminRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AdminUiState>(AdminUiState.Idle)
     val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
 
-    init {
-        // Auto-dismiss success/error states after 3 seconds
-        viewModelScope.launch {
-            _uiState.collect { state ->
-                if (state is AdminUiState.Success || state is AdminUiState.Error) {
-                    delay(3000)
-                    if (_uiState.value == state) {
-                        _uiState.value = AdminUiState.Idle
-                    }
-                }
-            }
+    private var autoDismissJob: Job? = null
+
+    private fun scheduleAutoDismiss(isError: Boolean = false) {
+        autoDismissJob?.cancel()
+        autoDismissJob = viewModelScope.launch {
+            delay(if (isError) 6000L else 3000L)
+            _uiState.value = AdminUiState.Idle
         }
     }
 
@@ -50,258 +44,164 @@ class AdminViewModel : ViewModel() {
     private val _allowedEmails = MutableStateFlow<List<AllowedEmailDto>>(emptyList())
     val allowedEmails: StateFlow<List<AllowedEmailDto>> = _allowedEmails.asStateFlow()
 
-    companion object {
-        private const val TAG = "Nexus:AdminVM"
+    private fun handleResult(result: Result<String>, onSuccess: () -> Unit = {}) {
+        when (result) {
+            is Result.Success -> {
+                _uiState.value = AdminUiState.Success(result.data)
+                scheduleAutoDismiss(isError = false)
+                onSuccess()
+            }
+            is Result.Error -> {
+                _uiState.value = AdminUiState.Error(result.message)
+                scheduleAutoDismiss(isError = true)
+            }
+        }
     }
 
     fun loadPendingRequests() {
+        _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                val requests = supabase.postgrest["business_requests"]
-                    .select { filter { eq("status", "pending") } }
-                    .decodeList<BusinessRequestDto>()
-                _pendingRequests.value = requests
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load pending requests", e)
-                _uiState.value = AdminUiState.Error("Failed to load requests: ${e.message}")
+            when (val result = adminRepository.loadPendingRequests()) {
+                is Result.Success -> {
+                    _pendingRequests.value = result.data
+                    _uiState.value = AdminUiState.Idle
+                }
+                is Result.Error -> _uiState.value = AdminUiState.Error(result.message)
             }
         }
     }
 
     fun approveRequest(request: BusinessRequestDto) {
+        if (request.id.isNullOrBlank()) {
+            _uiState.value = AdminUiState.Error("Request ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                val adminId = supabase.auth.currentUserOrNull()?.id
-
-                // Parse org details from message JSON
-                var description: String? = null
-                var enrollmentMode = "open"
-                try {
-                    val msgJson = org.json.JSONObject(request.message ?: "")
-                    description = msgJson.optString("description", "").ifBlank { null }
-                    enrollmentMode = msgJson.optString("enrollmentMode", "open").ifBlank { "open" }
-                } catch (_: Exception) { /* old-style plain text message, use defaults */ }
-
-                // Step 1: Create organization first (most likely to fail, easiest to clean up)
-                supabase.postgrest["organizations"].insert(OrganizationDto(
-                    name = request.businessName,
-                    type = request.businessType,
-                    description = description,
-                    ownerId = request.userId,
-                    enrollmentMode = enrollmentMode,
-                    isActive = true
-                ))
-
-                // Step 2: Upgrade user to business account
-                supabase.postgrest["profiles"].update({
-                    set("account_type", "business")
-                }) {
-                    filter { eq("id", request.userId) }
-                }
-
-                // Step 3: Mark request as approved (last — so failures above leave request pending)
-                supabase.postgrest["business_requests"].update({
-                    set("status", "approved")
-                    set("reviewed_by", adminId)
-                    set("reviewed_at", java.time.Instant.now().toString())
-                }) {
-                    filter { eq("id", request.id ?: "") }
-                }
-
-                _uiState.value = AdminUiState.Success("Request approved & organization created")
-                loadPendingRequests()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to approve request", e)
-                _uiState.value = AdminUiState.Error("Failed to approve: ${e.message}")
-            }
+            handleResult(adminRepository.approveRequest(request)) { loadPendingRequests() }
         }
     }
 
     fun rejectRequest(requestId: String) {
+        if (requestId.isBlank()) {
+            _uiState.value = AdminUiState.Error("Request ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                val adminId = supabase.auth.currentUserOrNull()?.id
-
-                supabase.postgrest["business_requests"].update({
-                    set("status", "rejected")
-                    set("reviewed_by", adminId)
-                    set("reviewed_at", java.time.Instant.now().toString())
-                }) {
-                    filter { eq("id", requestId) }
-                }
-
-                _uiState.value = AdminUiState.Success("Request rejected")
-                loadPendingRequests()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to reject request", e)
-                _uiState.value = AdminUiState.Error("Failed to reject: ${e.message}")
-            }
+            handleResult(adminRepository.rejectRequest(requestId)) { loadPendingRequests() }
         }
     }
 
     fun loadUsers() {
+        _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                val profiles = supabase.postgrest["profiles"]
-                    .select()
-                    .decodeList<ProfileDto>()
-                _users.value = profiles
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load users", e)
-                _uiState.value = AdminUiState.Error("Failed to load users: ${e.message}")
+            when (val result = adminRepository.loadUsers()) {
+                is Result.Success -> {
+                    _users.value = result.data
+                    _uiState.value = AdminUiState.Idle
+                }
+                is Result.Error -> _uiState.value = AdminUiState.Error(result.message)
             }
         }
     }
 
     fun updateUserStatus(userId: String, status: String) {
+        if (userId.isBlank()) {
+            _uiState.value = AdminUiState.Error("User ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest["profiles"].update({
-                    set("status", status)
-                }) {
-                    filter { eq("id", userId) }
-                }
-                _uiState.value = AdminUiState.Success("User status updated")
-                loadUsers()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to update user status", e)
-                _uiState.value = AdminUiState.Error("Failed to update user: ${e.message}")
-            }
+            handleResult(adminRepository.updateUserStatus(userId, status)) { loadUsers() }
         }
     }
 
     fun changeAccountType(userId: String, newType: String) {
+        if (userId.isBlank()) {
+            _uiState.value = AdminUiState.Error("User ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest["profiles"].update({
-                    set("account_type", newType)
-                }) {
-                    filter { eq("id", userId) }
-                }
-                _uiState.value = AdminUiState.Success("Account type changed to $newType")
-                loadUsers()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to change account type", e)
-                _uiState.value = AdminUiState.Error("Failed to change type: ${e.message}")
-            }
+            handleResult(adminRepository.changeAccountType(userId, newType)) { loadUsers() }
         }
     }
 
     fun loadAllowedEmails() {
+        _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                val emails = supabase.postgrest["allowed_emails"]
-                    .select()
-                    .decodeList<AllowedEmailDto>()
-                _allowedEmails.value = emails
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load allowed emails", e)
+            when (val result = adminRepository.loadAllowedEmails()) {
+                is Result.Success -> {
+                    _allowedEmails.value = result.data
+                    _uiState.value = AdminUiState.Idle
+                }
+                is Result.Error -> _uiState.value = AdminUiState.Error(result.message)
             }
         }
     }
 
     fun createUser(email: String, fullName: String, accountType: String) {
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (email.isBlank()) {
             _uiState.value = AdminUiState.Error("Invalid email address")
+            return
+        }
+        if (fullName.isBlank() || fullName.length > 200) {
+            _uiState.value = AdminUiState.Error("Name must be 1-200 characters")
             return
         }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest.rpc("admin_add_allowed_email", buildJsonObject {
-                    put("p_email", email)
-                    put("p_full_name", fullName)
-                    put("p_account_type", accountType)
-                })
-                _uiState.value = AdminUiState.Success("\"$fullName\" added")
+            handleResult(adminRepository.createUser(email, fullName, accountType)) {
                 loadUsers()
                 loadAllowedEmails()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to add user", e)
-                _uiState.value = AdminUiState.Error("Failed to add user: ${e.message}")
             }
         }
     }
 
     fun deleteAllowedEmail(emailId: String) {
+        if (emailId.isBlank()) {
+            _uiState.value = AdminUiState.Error("Email ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest["allowed_emails"].delete {
-                    filter { eq("id", emailId) }
-                }
-                _uiState.value = AdminUiState.Success("Invite removed")
-                loadAllowedEmails()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete allowed email", e)
-                _uiState.value = AdminUiState.Error("Failed to remove invite: ${e.message}")
-            }
+            handleResult(adminRepository.deleteAllowedEmail(emailId)) { loadAllowedEmails() }
         }
     }
 
     fun deleteUser(userId: String) {
+        if (userId.isBlank()) {
+            _uiState.value = AdminUiState.Error("User ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest.rpc("admin_delete_user", buildJsonObject {
-                    put("p_user_id", userId)
-                })
-                _uiState.value = AdminUiState.Success("User deleted")
-                loadUsers()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete user", e)
-                _uiState.value = AdminUiState.Error("Failed to delete user: ${e.message}")
-            }
+            handleResult(adminRepository.deleteUser(userId)) { loadUsers() }
         }
     }
 
     fun loadOrganizations() {
+        _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                val orgs = supabase.postgrest["organizations"]
-                    .select()
-                    .decodeList<OrganizationDto>()
-                _organizations.value = orgs
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load organizations", e)
-                _uiState.value = AdminUiState.Error("Failed to load organizations: ${e.message}")
+            when (val result = adminRepository.loadOrganizations()) {
+                is Result.Success -> {
+                    _organizations.value = result.data
+                    _uiState.value = AdminUiState.Idle
+                }
+                is Result.Error -> _uiState.value = AdminUiState.Error(result.message)
             }
         }
     }
 
     fun toggleOrganizationActive(orgId: String, isActive: Boolean) {
+        if (orgId.isBlank()) {
+            _uiState.value = AdminUiState.Error("Organization ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest["organizations"].update({
-                    set("is_active", isActive)
-                }) {
-                    filter { eq("id", orgId) }
-                }
-                _uiState.value = AdminUiState.Success(
-                    if (isActive) "Organization activated" else "Organization deactivated"
-                )
-                loadOrganizations()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to toggle organization", e)
-                _uiState.value = AdminUiState.Error("Failed to update organization: ${e.message}")
-            }
+            handleResult(adminRepository.toggleOrganizationActive(orgId, isActive)) { loadOrganizations() }
         }
     }
 
@@ -312,41 +212,30 @@ class AdminViewModel : ViewModel() {
         ownerId: String,
         enrollmentMode: String
     ) {
+        if (name.isBlank()) {
+            _uiState.value = AdminUiState.Error("Organization name is required")
+            return
+        }
+        if (ownerId.isBlank()) {
+            _uiState.value = AdminUiState.Error("Owner is required")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest["organizations"].insert(OrganizationDto(
-                    name = name,
-                    type = type,
-                    description = description,
-                    ownerId = ownerId,
-                    enrollmentMode = enrollmentMode,
-                    isActive = true
-                ))
-                _uiState.value = AdminUiState.Success("\"$name\" created")
+            handleResult(adminRepository.createOrganization(name, type, description, ownerId, enrollmentMode)) {
                 loadOrganizations()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to create organization", e)
-                _uiState.value = AdminUiState.Error("Failed to create organization: ${e.message}")
             }
         }
     }
 
     fun deleteOrganization(orgId: String) {
+        if (orgId.isBlank()) {
+            _uiState.value = AdminUiState.Error("Organization ID is missing")
+            return
+        }
         _uiState.value = AdminUiState.Loading
         viewModelScope.launch {
-            try {
-                val supabase = SupabaseClientProvider.getClient()
-                supabase.postgrest["organizations"].delete {
-                    filter { eq("id", orgId) }
-                }
-                _uiState.value = AdminUiState.Success("Organization deleted")
-                loadOrganizations()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete organization", e)
-                _uiState.value = AdminUiState.Error("Failed to delete organization: ${e.message}")
-            }
+            handleResult(adminRepository.deleteOrganization(orgId)) { loadOrganizations() }
         }
     }
 
@@ -356,8 +245,8 @@ class AdminViewModel : ViewModel() {
 }
 
 sealed class AdminUiState {
-    object Idle : AdminUiState()
-    object Loading : AdminUiState()
+    data object Idle : AdminUiState()
+    data object Loading : AdminUiState()
     data class Success(val message: String) : AdminUiState()
     data class Error(val message: String) : AdminUiState()
 }
