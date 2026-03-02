@@ -11,6 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.data.remote.dto.BusinessRequestDto
+import androidx.compose.ui.graphics.Color
+import com.kryptoxotis.nexus.presentation.theme.AdminBackground
+import com.kryptoxotis.nexus.presentation.theme.AdminSurface
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,13 +29,20 @@ fun BusinessRequestsScreen(
         viewModel.loadPendingRequests()
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     LaunchedEffect(uiState) {
         if (uiState is AdminUiState.Success) {
             viewModel.resetState()
         }
+        if (uiState is AdminUiState.Error) {
+            snackbarHostState.showSnackbar((uiState as AdminUiState.Error).message)
+        }
     }
 
     Scaffold(
+        containerColor = AdminBackground,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Business Requests") },
@@ -92,9 +103,6 @@ fun BusinessRequestsScreen(
             }
         }
 
-        if (uiState is AdminUiState.Error) {
-            // Error will be shown inline
-        }
     }
 }
 
@@ -105,7 +113,30 @@ private fun RequestCard(
     onApprove: () -> Unit,
     onReject: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    var showRejectDialog by remember { mutableStateOf(false) }
+
+    if (showRejectDialog) {
+        AlertDialog(
+            onDismissRequest = { showRejectDialog = false },
+            title = { Text("Reject Request") },
+            text = { Text("Are you sure you want to reject ${request.businessName}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRejectDialog = false
+                    onReject()
+                }) { Text("Reject", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRejectDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = AdminSurface),
+        colors = CardDefaults.cardColors(containerColor = AdminSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -188,7 +219,7 @@ private fun RequestCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = onReject,
+                    onClick = { showRejectDialog = true },
                     enabled = !isLoading,
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
