@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -28,10 +29,21 @@ import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
-import com.kryptoxotis.nexus.presentation.theme.NexusOrange
 import com.kryptoxotis.nexus.presentation.theme.NexusBlue
+import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neonGlow
+import com.kryptoxotis.nexus.presentation.theme.resolveCardAppearance
 import com.kryptoxotis.nexus.util.QrCodeGenerator
 import com.kryptoxotis.nexus.util.QrContentResolver
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.kryptoxotis.nexus.presentation.theme.neuCircle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,49 +72,94 @@ fun CardWalletScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCards by remember(cards, searchQuery) {
+        derivedStateOf {
+            cards.filter { searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true) }
+        }
+    }
+
+    Scaffold { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header
+            item(key = "header") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column {
-                        Text("Nexus")
+                        Text(
+                            "Nexus",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
                         if (accountType != null) {
                             Text(
-                                text = accountType.name.lowercase().replaceFirstChar { it.uppercase() },
+                                text = accountType.name.lowercase()
+                                    .replaceFirstChar { it.uppercase() },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToContacts) {
-                        Icon(Icons.Default.People, contentDescription = "Contacts")
-                    }
-                    if (isAuthenticated) {
-                        IconButton(onClick = onNavigateToBusinessPasses) {
-                            Icon(Icons.Default.Badge, contentDescription = "Business Passes")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .neuCircle(elevation = 6.dp)
+                                .clickable { onNavigateToContacts() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.People,
+                                contentDescription = "Contacts",
+                                tint = Color(0xFF777777),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
-                        IconButton(onClick = onNavigateToAccounts) {
-                            Icon(Icons.Default.AccountCircle, contentDescription = "Accounts")
+                        if (isAuthenticated) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .neuCircle(elevation = 6.dp)
+                                    .clickable { onNavigateToBusinessPasses() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Badge,
+                                    contentDescription = "Business Passes",
+                                    tint = Color(0xFF777777),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .neuCircle(elevation = 6.dp)
+                                    .clickable { onNavigateToAccounts() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.AccountCircle,
+                                    contentDescription = "Accounts",
+                                    tint = Color(0xFF777777),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAddCard) {
-                Icon(Icons.Default.Add, contentDescription = "Add Card")
             }
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+
             // Business request status banner
             if (businessRequest?.status == "pending") {
                 item {
@@ -135,46 +192,102 @@ fun CardWalletScreen(
                 }
             }
 
-            // Active card hero
-            item {
+            // Active card compact banner OR search + create
+            item(key = "status_area") {
                 if (activeCard != null) {
-                    ActiveCardHero(
+                    ActiveCardBanner(
                         card = activeCard!!,
-                        onClick = {
-                            onNavigateToCardDetail(activeCard!!.id)
-                        }
+                        onClick = { onNavigateToCardDetail(activeCard!!.id) }
                     )
                 } else {
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Search bar (inset well)
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .neuInset(cornerRadius = 16.dp)
                         ) {
-                            Icon(
-                                Icons.Default.Nfc,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                textStyle = TextStyle(
+                                    color = Color(0xFFD4D4D4),
+                                    fontSize = 14.sp
+                                ),
+                                singleLine = true,
+                                cursorBrush = SolidColor(NexusBlue),
+                                decorationBox = { innerTextField ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Search,
+                                            contentDescription = null,
+                                            tint = Color(0xFF444444),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            if (searchQuery.isEmpty()) {
+                                                Text(
+                                                    "Search cards...",
+                                                    color = Color(0xFF555555),
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    }
+                                }
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No active card",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = "Activate a card to use with NFC",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        }
+                        // Create a Card button
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .neuRaised(cornerRadius = 16.dp)
+                                .clickable { onNavigateToAddCard() }
+                                .padding(horizontal = 20.dp, vertical = 16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .neuInset(cornerRadius = 22.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = NexusBlue,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        "Create a Card",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        "Add a new pass to use with NFC",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
+            // Card list
             if (cards.isEmpty()) {
                 item(key = "empty_state") {
                     Box(
@@ -183,9 +296,7 @@ fun CardWalletScreen(
                             .padding(vertical = 48.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 Icons.Default.CreditCard,
                                 contentDescription = null,
@@ -194,12 +305,12 @@ fun CardWalletScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "No cards yet",
+                                "No cards yet",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )
                             Text(
-                                text = "Tap + to add your first card",
+                                "Create a card above to get started",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -209,14 +320,14 @@ fun CardWalletScreen(
             } else {
                 item(key = "my_cards_header") {
                     Text(
-                        text = "My Cards",
+                        "My Cards",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
-                items(cards, key = { it.id }) { card ->
+                items(filteredCards, key = { it.id }) { card ->
                     CardItem(
                         card = card,
                         isActive = card.isActive,
@@ -387,12 +498,19 @@ private fun CardQrSheet(card: PersonalCard) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // QR Code
+        // QR Code — dark cards (black bg, colored text): black bg + colored QR
+        //           light cards (colored bg, white text): card-color bg + black QR
         val qrContent = QrContentResolver.resolve(card)
+        val (_, isDarkCard) = NexusCardColors.parse(card.color)
+        val appearance = resolveCardAppearance(card.color)
+        val cardColor = appearance.neonColor.copy(alpha = 1f)
+        val qrFg = if (isDarkCard) cardColor.toArgb() else 0xFF000000.toInt()
+        val qrBg = if (isDarkCard) 0xFF0A0A0A.toInt() else cardColor.toArgb()
+        val boxBg = if (isDarkCard) Color(0xFF0A0A0A) else cardColor
         var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-        LaunchedEffect(qrContent) {
+        LaunchedEffect(qrContent, qrFg, qrBg) {
             qrBitmap = try {
-                QrCodeGenerator.generate(qrContent, 400)
+                QrCodeGenerator.generate(qrContent, 400, foregroundColor = qrFg, backgroundColor = qrBg)
             } catch (e: Exception) {
                 null
             }
@@ -407,7 +525,7 @@ private fun CardQrSheet(card: PersonalCard) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
+                        .background(boxBg)
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -429,94 +547,56 @@ private fun CardQrSheet(card: PersonalCard) {
 }
 
 @Composable
-private fun ActiveCardHero(card: PersonalCard, onClick: () -> Unit) {
-    val gradientColors = if (card.color != null) {
-        try {
-            val c = Color(android.graphics.Color.parseColor(card.color))
-            listOf(c.copy(alpha = 0.9f), c.copy(alpha = 0.5f))
-        } catch (_: Exception) {
-            listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
-        }
-    } else {
-        listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
-    }
+private fun ActiveCardBanner(card: PersonalCard, onClick: () -> Unit) {
+    val appearance = resolveCardAppearance(card.color, hasImage = card.imageUrl != null)
 
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .neuRaised(cornerRadius = 16.dp, neonColor = appearance.neonColor),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            width = 2.dp,
-            brush = Brush.linearGradient(listOf(NexusOrange, NexusOrange.copy(alpha = 0.5f)))
-        )
+        border = BorderStroke(1.5.dp, appearance.borderColor.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(colors = gradientColors)
-                )
+                .background(appearance.gradient)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (card.imageUrl != null) {
-                AsyncImage(
-                    model = card.imageUrl,
-                    contentDescription = "Card image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    contentScale = ContentScale.Crop
-                )
-                // Dark scrim over image for text readability
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .background(Color.Black.copy(alpha = 0.4f))
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(NexusBlue)
                 )
-            }
-            Column(modifier = Modifier.padding(24.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column {
                     Text(
-                        text = "ACTIVE",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.8f)
+                        text = card.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = appearance.textColor
                     )
-                    Icon(
-                        Icons.Default.Nfc,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.8f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = card.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White
-                )
-                val heroSubtitle = if (card.cardType == CardType.BUSINESS_CARD && card.content != null) {
-                    BusinessCardData.fromJson(card.content).subtitle()
-                } else {
-                    card.content
-                }
-                if (heroSubtitle != null) {
                     Text(
-                        text = heroSubtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
-                        maxLines = 1
+                        text = "Ready to tap",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = appearance.textColor.copy(alpha = 0.5f)
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = card.cardType.name.replace("_", " "),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.6f)
-                )
             }
+            Icon(
+                Icons.Default.Nfc,
+                contentDescription = "NFC Active",
+                tint = appearance.textColor.copy(alpha = 0.4f),
+                modifier = Modifier.size(32.dp)
+            )
         }
     }
 }
@@ -532,24 +612,12 @@ private fun CardItem(
 ) {
     val isCoin = card.cardShape == "coin"
     val hasImage = card.imageUrl != null
-    val cardTypeLabel = card.cardType.name.replace("_", " ").lowercase()
-        .replaceFirstChar { it.uppercase() }
+    val appearance = resolveCardAppearance(card.color, hasImage = hasImage)
     val glowBorder = if (isActive) BorderStroke(
-        width = 2.dp,
-        brush = Brush.linearGradient(listOf(NexusOrange, NexusOrange.copy(alpha = 0.5f)))
+        width = 1.dp,
+        brush = Brush.linearGradient(listOf(appearance.borderColor, appearance.borderColor.copy(alpha = 0.4f)))
     ) else null
-
-    // Dark gradient by default, or use card.color if set
-    val gradientColors = if (card.color != null) {
-        try {
-            val c = Color(android.graphics.Color.parseColor(card.color))
-            listOf(c.copy(alpha = 0.9f), c.copy(alpha = 0.5f))
-        } catch (_: Exception) {
-            listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
-        }
-    } else {
-        listOf(Color(0xFF1A1A1A), Color(0xFF3A3A3A))
-    }
+    val activeGlow = if (isActive) Modifier.neonGlow(appearance.neonColor, cornerRadius = 16.dp, elevation = 10.dp) else Modifier
 
     if (isCoin) {
         // Coin (circle) layout
@@ -567,7 +635,9 @@ private fun CardItem(
                 shape = CircleShape
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(appearance.gradient),
                     contentAlignment = Alignment.Center
                 ) {
                     if (hasImage) {
@@ -583,50 +653,51 @@ private fun CardItem(
                                 .background(Color.Black.copy(alpha = 0.4f))
                         )
                     }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(16.dp)
+                    // Title centered
+                    Text(
+                        text = card.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = appearance.textColor,
+                        maxLines = 2,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    // QR at bottom
+                    IconButton(
+                        onClick = onQrClick,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .size(32.dp)
                     ) {
-                        Text(
-                            text = card.title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = if (hasImage) Color.White else MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2
+                        Icon(
+                            Icons.Default.QrCode2,
+                            contentDescription = "QR Code",
+                            modifier = Modifier.size(18.dp),
+                            tint = appearance.textColor.copy(alpha = 0.7f)
                         )
-                        if (isActive) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Icon(
-                                Icons.Default.Nfc,
-                                contentDescription = "NFC Active",
-                                modifier = Modifier.size(16.dp),
-                                tint = if (hasImage) Color.White else MaterialTheme.colorScheme.primary
-                            )
-                        }
                     }
                 }
             }
         }
     } else {
-        // Card layout (image and no-image unified)
+        // Card layout
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(activeGlow)
+                .neuRaised(cornerRadius = 16.dp, elevation = 10.dp, neonColor = if (isActive) appearance.neonColor else null)
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = onLongClick
                 ),
-            shape = RoundedCornerShape(12.dp),
-            border = glowBorder
+            shape = RoundedCornerShape(16.dp),
+            border = glowBorder,
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1.586f)
-                    .then(
-                        if (!hasImage) Modifier.background(
-                            Brush.linearGradient(colors = gradientColors)
-                        ) else Modifier
-                    )
+                    .background(appearance.gradient)
             ) {
                 if (hasImage) {
                     AsyncImage(
@@ -641,52 +712,27 @@ private fun CardItem(
                             .background(Color.Black.copy(alpha = 0.45f))
                     )
                 }
-                // Content overlay
-                Column(
+                // Title centered, QR bottom-right
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .padding(16.dp)
                 ) {
-                    // Top: type label
                     Text(
-                        text = cardTypeLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
+                        text = card.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = appearance.textColor,
+                        modifier = Modifier.align(Alignment.Center)
                     )
-                    // Bottom row: title/content + QR button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
+                    IconButton(
+                        onClick = onQrClick,
+                        modifier = Modifier.align(Alignment.BottomEnd)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = card.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.White
-                            )
-                            val itemSubtitle = if (card.cardType == CardType.BUSINESS_CARD && card.content != null) {
-                                BusinessCardData.fromJson(card.content).subtitle()
-                            } else {
-                                card.content
-                            }
-                            if (itemSubtitle != null) {
-                                Text(
-                                    text = itemSubtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.8f),
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                        IconButton(onClick = onQrClick) {
-                            Icon(
-                                Icons.Default.QrCode2,
-                                contentDescription = "QR Code",
-                                tint = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
+                        Icon(
+                            Icons.Default.QrCode2,
+                            contentDescription = "QR Code",
+                            tint = appearance.textColor.copy(alpha = 0.8f)
+                        )
                     }
                 }
             }
