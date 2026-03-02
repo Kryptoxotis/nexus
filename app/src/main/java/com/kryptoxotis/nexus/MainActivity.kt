@@ -5,6 +5,7 @@ import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.CardEmulation
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -116,12 +117,16 @@ class MainActivity : ComponentActivity() {
         // Sync data when app returns to foreground
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                if (authViewModel.getCurrentUserId() != null) {
-                    cardRepository.refreshUserId()
-                    receivedCardRepository.refreshUserId()
-                    cardRepository.syncFromSupabase()
-                    businessPassRepository.syncFromSupabase()
-                    receivedCardRepository.syncFromSupabase()
+                try {
+                    if (authViewModel.getCurrentUserId() != null) {
+                        cardRepository.refreshUserId()
+                        receivedCardRepository.refreshUserId()
+                        cardRepository.syncFromSupabase()
+                        businessPassRepository.syncFromSupabase()
+                        receivedCardRepository.syncFromSupabase()
+                    }
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Sync failed", e)
                 }
             }
         }
@@ -129,8 +134,10 @@ class MainActivity : ComponentActivity() {
         // Pre-cache NDEF bytes whenever the active card changes.
         // The HCE service reads from SharedPreferences (~1ms) instead of Room.
         lifecycleScope.launch {
-            cardViewModel.activeCard.collect { card ->
-                NdefCache.write(applicationContext, card)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                cardViewModel.activeCard.collect { card ->
+                    NdefCache.write(applicationContext, card)
+                }
             }
         }
 
