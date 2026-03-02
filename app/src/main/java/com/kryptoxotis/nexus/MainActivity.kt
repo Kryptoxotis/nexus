@@ -164,14 +164,18 @@ class MainActivity : ComponentActivity() {
                             onSignedIn = {
                                 val state = authViewModel.authState.value
                                 coroutineScope.launch {
-                                    cardRepository.refreshUserId()
-                                    receivedCardRepository.refreshUserId()
-                                    val userId = authViewModel.getCurrentUserId()
-                                    if (userId != null) {
-                                        cardRepository.migrateLocalUserCards(userId)
-                                        cardRepository.syncFromSupabase()
-                                        businessPassRepository.syncFromSupabase()
-                                        receivedCardRepository.syncFromSupabase()
+                                    try {
+                                        cardRepository.refreshUserId()
+                                        receivedCardRepository.refreshUserId()
+                                        val userId = authViewModel.getCurrentUserId()
+                                        if (userId != null) {
+                                            cardRepository.migrateLocalUserCards(userId)
+                                            cardRepository.syncFromSupabase()
+                                            businessPassRepository.syncFromSupabase()
+                                            receivedCardRepository.syncFromSupabase()
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", "Post-login sync failed", e)
                                     }
                                 }
                                 when (state) {
