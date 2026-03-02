@@ -152,6 +152,8 @@ fun AddCardScreen(
                     val mimeType = context.contentResolver.getType(uri)
                     if (bytes != null) {
                         viewModel.uploadFile(bytes, "card-image-${System.currentTimeMillis()}.jpg", mimeType)
+                    } else {
+                        isUploadingImage = false
                     }
                 } else {
                     viewModel.addCard(
@@ -581,7 +583,12 @@ fun AddCardScreen(
                             val uri = selectedFileUri
                             val name = selectedFileName
                             if (uri != null && name != null) {
-                                val fileSize = context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
+                                val fileSize = try {
+                                    context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
+                                } catch (_: Exception) {
+                                    viewModel.setError("Could not access file")
+                                    return@Button
+                                }
                                 if (fileSize > 10 * 1024 * 1024) {
                                     viewModel.setError("File must be under 10 MB")
                                     return@Button
@@ -590,6 +597,8 @@ fun AddCardScreen(
                                 val mimeType = context.contentResolver.getType(uri)
                                 if (bytes != null) {
                                     viewModel.uploadFile(bytes, name, mimeType)
+                                } else {
+                                    viewModel.setError("Could not read file")
                                 }
                             }
                         } else if (selectedImageUri != null) {
@@ -600,6 +609,9 @@ fun AddCardScreen(
                             val mimeType = context.contentResolver.getType(uri)
                             if (bytes != null) {
                                 viewModel.uploadFile(bytes, "card-image-${System.currentTimeMillis()}.jpg", mimeType)
+                            } else {
+                                isUploadingImage = false
+                                viewModel.setError("Could not read image")
                             }
                         } else if (selectedType == CardType.BUSINESS_CARD) {
                             val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
