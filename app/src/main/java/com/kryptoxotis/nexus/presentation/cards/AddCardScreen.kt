@@ -3,9 +3,14 @@ package com.kryptoxotis.nexus.presentation.cards
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,14 +20,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
+import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neonGlow
+import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.neuCircle
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +56,8 @@ fun AddCardScreen(
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var icon by remember { mutableStateOf("") }
-    var color by remember { mutableStateOf("") }
+    var selectedColorHex by remember { mutableStateOf(NexusCardColors.palette[0].brightHex) }
+    var isDarkMode by remember { mutableStateOf(false) }
     var cardShape by remember { mutableStateOf("card") }
 
     // Business card fields
@@ -104,17 +125,18 @@ fun AddCardScreen(
                         title = title,
                         content = fileUploadUrl,
                         icon = icon.ifBlank { null },
-                        color = color.ifBlank { null },
+                        color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                         imageUrl = url,
                         cardShape = cardShape
                     )
                 } else {
+                    val type = selectedType ?: return@LaunchedEffect
                     viewModel.addCard(
-                        cardType = selectedType!!,
+                        cardType = type,
                         title = title,
                         content = content.ifBlank { null },
                         icon = icon.ifBlank { null },
-                        color = color.ifBlank { null },
+                        color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                         imageUrl = url,
                         cardShape = cardShape
                     )
@@ -137,7 +159,7 @@ fun AddCardScreen(
                         title = title,
                         content = url,
                         icon = icon.ifBlank { null },
-                        color = color.ifBlank { null },
+                        color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                         imageUrl = imageUploadUrl,
                         cardShape = cardShape
                     )
@@ -150,78 +172,120 @@ fun AddCardScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (selectedType == null) "Choose Card Type" else "Add Card") },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (selectedType != null) selectedType = null
-                        else onNavigateBack()
-                    }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         if (selectedType == null) {
-            // Type selector
+            // Type selector — 2-column grid
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = if (myCardOnly) "Create My Card" else "What type of card?",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                if (!myCardOnly) {
-                    CardTypeOption(
-                        icon = Icons.Default.Link,
-                        title = "Link",
-                        description = "Website URL - opens browser when tapped via NFC",
-                        onClick = { selectedType = CardType.LINK }
-                    )
-
-                    CardTypeOption(
-                        icon = Icons.Default.AttachFile,
-                        title = "File",
-                        description = "Upload a file to share",
-                        onClick = { selectedType = CardType.FILE }
-                    )
-
-                    CardTypeOption(
-                        icon = Icons.Default.Contacts,
-                        title = "Contact",
-                        description = "Contact info card",
-                        onClick = { selectedType = CardType.CONTACT }
-                    )
-
-                    CardTypeOption(
-                        icon = Icons.Default.Share,
-                        title = "Social Media",
-                        description = "Social media profile link",
-                        onClick = { selectedType = CardType.SOCIAL_MEDIA }
-                    )
-
-                    CardTypeOption(
-                        icon = Icons.Default.CreditCard,
-                        title = "Custom",
-                        description = "Custom text or data card",
-                        onClick = { selectedType = CardType.CUSTOM }
-                    )
+                // Header with back button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .neuCircle(elevation = 6.dp)
+                            .clickable { onNavigateBack() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF777777),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            if (myCardOnly) "Create My Card" else "Create Card",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Choose a type",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
-                CardTypeOption(
-                    icon = Icons.Default.Badge,
-                    title = "Business Card",
-                    description = "Professional contact card with structured fields",
-                    onClick = { selectedType = CardType.BUSINESS_CARD }
-                )
+                if (!myCardOnly) {
+                    // Row 1: Link + Contact
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CardTypeOption(
+                            icon = Icons.Default.Link,
+                            title = "Link",
+                            description = "Opens a URL when tapped via NFC",
+                            onClick = { selectedType = CardType.LINK },
+                            modifier = Modifier.weight(1f)
+                        )
+                        CardTypeOption(
+                            icon = Icons.Default.Contacts,
+                            title = "Contact",
+                            description = "Share your contact info card",
+                            onClick = { selectedType = CardType.CONTACT },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Row 2: Social Media + Business Card
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CardTypeOption(
+                            icon = Icons.Default.Share,
+                            title = "Social Media",
+                            description = "Link to your social profile",
+                            onClick = { selectedType = CardType.SOCIAL_MEDIA },
+                            modifier = Modifier.weight(1f)
+                        )
+                        CardTypeOption(
+                            icon = Icons.Default.Badge,
+                            title = "Business Card",
+                            description = "Professional card with structured fields",
+                            onClick = { selectedType = CardType.BUSINESS_CARD },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Row 3: File + Custom
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CardTypeOption(
+                            icon = Icons.Default.AttachFile,
+                            title = "File",
+                            description = "Upload a file to share",
+                            onClick = { selectedType = CardType.FILE },
+                            modifier = Modifier.weight(1f)
+                        )
+                        CardTypeOption(
+                            icon = Icons.Default.CreditCard,
+                            title = "Custom",
+                            description = "Custom text or data",
+                            onClick = { selectedType = CardType.CUSTOM },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                } else {
+                    CardTypeOption(
+                        icon = Icons.Default.Badge,
+                        title = "Business Card",
+                        description = "Professional card with structured fields",
+                        onClick = { selectedType = CardType.BUSINESS_CARD },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         } else {
             // Card form
@@ -233,118 +297,55 @@ fun AddCardScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "Card Type: ${selectedType!!.name.replace("_", " ").lowercase()
-                        .replaceFirstChar { it.uppercase() }}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
+                // Header with back button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .neuCircle(elevation = 6.dp)
+                            .clickable { selectedType = null },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF777777),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Text(
+                        text = "Add Card",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 if (selectedType == CardType.BUSINESS_CARD) {
                     // Structured business card fields
-                    OutlinedTextField(
-                        value = bcName,
-                        onValueChange = { bcName = it },
-                        label = { Text("Full Name *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("John Doe") }
+                    NeuInput(value = bcName, onValueChange = { bcName = it }, label = "Full Name *")
+                    NeuInput(value = bcJobTitle, onValueChange = { bcJobTitle = it }, label = "Job Title")
+                    NeuInput(value = bcCompany, onValueChange = { bcCompany = it }, label = "Company")
+                    NeuInput(
+                        value = bcPhone, onValueChange = { bcPhone = it }, label = "Phone",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
-                    OutlinedTextField(
-                        value = bcJobTitle,
-                        onValueChange = { bcJobTitle = it },
-                        label = { Text("Job Title") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("Software Engineer") }
+                    NeuInput(
+                        value = bcEmail, onValueChange = { bcEmail = it }, label = "Email",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                     )
-                    OutlinedTextField(
-                        value = bcCompany,
-                        onValueChange = { bcCompany = it },
-                        label = { Text("Company") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("Acme Inc.") }
+                    NeuInput(
+                        value = bcWebsite, onValueChange = { bcWebsite = it }, label = "Website",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
                     )
-                    OutlinedTextField(
-                        value = bcPhone,
-                        onValueChange = { bcPhone = it },
-                        label = { Text("Phone") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        placeholder = { Text("+1 555-123-4567") }
-                    )
-                    OutlinedTextField(
-                        value = bcEmail,
-                        onValueChange = { bcEmail = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        placeholder = { Text("john@example.com") }
-                    )
-                    OutlinedTextField(
-                        value = bcWebsite,
-                        onValueChange = { bcWebsite = it },
-                        label = { Text("Website") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                        placeholder = { Text("https://example.com") }
-                    )
-                    OutlinedTextField(
-                        value = bcLinkedin,
-                        onValueChange = { bcLinkedin = it },
-                        label = { Text("LinkedIn") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("https://linkedin.com/in/johndoe") }
-                    )
-                    OutlinedTextField(
-                        value = bcInstagram,
-                        onValueChange = { bcInstagram = it },
-                        label = { Text("Instagram") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("https://instagram.com/johndoe") }
-                    )
-                    OutlinedTextField(
-                        value = bcTwitter,
-                        onValueChange = { bcTwitter = it },
-                        label = { Text("Twitter / X") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("https://x.com/johndoe") }
-                    )
-                    OutlinedTextField(
-                        value = bcGithub,
-                        onValueChange = { bcGithub = it },
-                        label = { Text("GitHub") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("https://github.com/johndoe") }
-                    )
+                    NeuInput(value = bcLinkedin, onValueChange = { bcLinkedin = it }, label = "LinkedIn")
+                    NeuInput(value = bcInstagram, onValueChange = { bcInstagram = it }, label = "Instagram")
+                    NeuInput(value = bcTwitter, onValueChange = { bcTwitter = it }, label = "Twitter / X")
+                    NeuInput(value = bcGithub, onValueChange = { bcGithub = it }, label = "GitHub")
                 } else {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Title *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                when (selectedType) {
-                                    CardType.LINK -> "My Website"
-                                    CardType.FILE -> "My Resume"
-                                    CardType.CONTACT -> "John Doe"
-                                    CardType.SOCIAL_MEDIA -> "Instagram"
-                                    CardType.CUSTOM -> "My Card"
-                                    else -> ""
-                                }
-                            )
-                        }
-                    )
+                    NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
                 }
 
                 if (selectedType == CardType.FILE) {
@@ -401,33 +402,17 @@ fun AddCardScreen(
                     }
                 } else if (selectedType != CardType.BUSINESS_CARD) {
                     // Standard content field for non-FILE, non-BUSINESS_CARD types
-                    OutlinedTextField(
+                    NeuInput(
                         value = content,
                         onValueChange = { content = it },
-                        label = {
-                            Text(
-                                when (selectedType) {
-                                    CardType.LINK -> "URL *"
-                                    CardType.CONTACT -> "Contact Info"
-                                    CardType.SOCIAL_MEDIA -> "Profile URL *"
-                                    CardType.CUSTOM -> "Content"
-                                    else -> "Content"
-                                }
-                            )
+                        label = when (selectedType) {
+                            CardType.LINK -> "URL *"
+                            CardType.CONTACT -> "Contact Info"
+                            CardType.SOCIAL_MEDIA -> "Profile URL *"
+                            else -> "Content"
                         },
-                        modifier = Modifier.fillMaxWidth(),
                         singleLine = selectedType == CardType.LINK || selectedType == CardType.SOCIAL_MEDIA,
                         minLines = if (selectedType == CardType.CONTACT || selectedType == CardType.CUSTOM) 3 else 1,
-                        placeholder = {
-                            Text(
-                                when (selectedType) {
-                                    CardType.LINK -> "https://example.com"
-                                    CardType.SOCIAL_MEDIA -> "https://instagram.com/username"
-                                    CardType.CONTACT -> "Phone: ...\nEmail: ..."
-                                    else -> ""
-                                }
-                            )
-                        },
                         keyboardOptions = if (selectedType == CardType.LINK || selectedType == CardType.SOCIAL_MEDIA) {
                             KeyboardOptions(keyboardType = KeyboardType.Uri)
                         } else {
@@ -435,6 +420,23 @@ fun AddCardScreen(
                         }
                     )
                 }
+
+                // Live preview
+                val previewTitle = if (selectedType == CardType.BUSINESS_CARD) bcName else title
+                val previewSubtitle = when (selectedType) {
+                    CardType.BUSINESS_CARD -> listOfNotNull(
+                        bcJobTitle.ifBlank { null },
+                        bcCompany.ifBlank { null }
+                    ).joinToString(" at ")
+                    else -> content
+                }
+                CardPreview(
+                    title = previewTitle,
+                    subtitle = previewSubtitle,
+                    cardShape = cardShape,
+                    storedColor = NexusCardColors.encode(selectedColorHex, isDarkMode),
+                    imageUri = selectedImageUri
+                )
 
                 // Card shape selector
                 Text(
@@ -446,97 +448,89 @@ fun AddCardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    FilterChip(
-                        selected = cardShape == "card",
-                        onClick = { cardShape = "card" },
-                        label = { Text("Card") },
-                        leadingIcon = if (cardShape == "card") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = cardShape == "coin",
-                        onClick = { cardShape = "coin" },
-                        label = { Text("Coin") },
-                        leadingIcon = if (cardShape == "coin") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (cardShape == "card") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                            .clickable { cardShape = "card" }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("Card", color = MaterialTheme.colorScheme.onSurface) }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (cardShape == "coin") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                            .clickable { cardShape = "coin" }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("Coin", color = MaterialTheme.colorScheme.onSurface) }
                 }
 
-                // Card color (only when no image selected)
-                if (selectedImageUri == null) {
+                // Light / Dark mode toggle
+                Text(
+                    text = "Card Mode",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (!isDarkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                            .clickable { isDarkMode = false }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("Light", color = MaterialTheme.colorScheme.onSurface) }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (isDarkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                            .clickable { isDarkMode = true }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("Dark", color = MaterialTheme.colorScheme.onSurface) }
+                }
+
+                // Color palette
+                Text(
+                    text = "Card Color",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    NexusCardColors.palette.forEach { entry ->
+                        val isSelected = selectedColorHex == entry.brightHex
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .then(
+                                    if (isSelected) Modifier.neonGlow(entry.bright, cornerRadius = 10.dp, elevation = 8.dp)
+                                    else Modifier
+                                )
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Brush.linearGradient(listOf(entry.bright, entry.dark)))
+                                .then(
+                                    if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(10.dp))
+                                    else Modifier
+                                )
+                                .clickable { selectedColorHex = entry.brightHex }
+                        )
+                    }
+                }
+                // Selected color name
+                val selectedEntry = NexusCardColors.findByHex(selectedColorHex)
+                if (selectedEntry != null) {
                     Text(
-                        text = "Card Color",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = selectedEntry.name,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = color == "",
-                            onClick = { color = "" },
-                            label = { Text("Default") },
-                            leadingIcon = if (color == "") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = color == "#FF6B35",
-                            onClick = { color = "#FF6B35" },
-                            label = { Text("Orange") },
-                            leadingIcon = if (color == "#FF6B35") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = color == "#4A90D9",
-                            onClick = { color = "#4A90D9" },
-                            label = { Text("Blue") },
-                            leadingIcon = if (color == "#4A90D9") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = color == "#2ECC71",
-                            onClick = { color = "#2ECC71" },
-                            label = { Text("Green") },
-                            leadingIcon = if (color == "#2ECC71") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = color == "#9B59B6",
-                            onClick = { color = "#9B59B6" },
-                            label = { Text("Purple") },
-                            leadingIcon = if (color == "#9B59B6") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = color == "#E74C3C",
-                            onClick = { color = "#E74C3C" },
-                            label = { Text("Red") },
-                            leadingIcon = if (color == "#E74C3C") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
                 }
 
                 // Card image (optional, all card types)
@@ -573,7 +567,8 @@ fun AddCardScreen(
                         // Validate URLs for link/social types
                         if ((selectedType == CardType.LINK || selectedType == CardType.SOCIAL_MEDIA) && content.isNotBlank()) {
                             content = content.trim()
-                            if (content.startsWith("javascript:") || content.startsWith("data:")) {
+                            val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
+                            if (blockedSchemes.any { content.lowercase().startsWith(it) }) {
                                 viewModel.setError("Invalid URL scheme")
                                 return@Button
                             }
@@ -607,6 +602,12 @@ fun AddCardScreen(
                                 viewModel.uploadFile(bytes, "card-image-${System.currentTimeMillis()}.jpg", mimeType)
                             }
                         } else if (selectedType == CardType.BUSINESS_CARD) {
+                            val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
+                            val urlFields = listOf(bcWebsite, bcLinkedin, bcInstagram, bcTwitter, bcGithub)
+                            if (urlFields.any { it.isNotBlank() && blockedSchemes.any { scheme -> it.trim().lowercase().startsWith(scheme) } }) {
+                                viewModel.setError("Invalid URL scheme in one of the link fields")
+                                return@Button
+                            }
                             val bcData = BusinessCardData(
                                 name = bcName, jobTitle = bcJobTitle, company = bcCompany,
                                 phone = bcPhone, email = bcEmail, website = bcWebsite,
@@ -619,16 +620,17 @@ fun AddCardScreen(
                                 title = bcName,
                                 content = bcData.toJson(),
                                 icon = icon.ifBlank { null },
-                                color = color.ifBlank { null },
+                                color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                                 cardShape = cardShape
                             )
                         } else {
+                            val type = selectedType ?: return@Button
                             viewModel.addCard(
-                                cardType = selectedType!!,
+                                cardType = type,
                                 title = title,
                                 content = content.ifBlank { null },
                                 icon = icon.ifBlank { null },
-                                color = color.ifBlank { null },
+                                color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                                 cardShape = cardShape
                             )
                         }
@@ -637,6 +639,8 @@ fun AddCardScreen(
                     enabled = (if (selectedType == CardType.BUSINESS_CARD) bcName.isNotBlank() else title.isNotBlank())
                             && uiState !is CardUiState.Loading
                             && (selectedType != CardType.FILE || selectedFileUri != null)
+                            && (selectedType != CardType.LINK || content.isNotBlank())
+                            && (selectedType != CardType.SOCIAL_MEDIA || content.isNotBlank())
                 ) {
                     if (uiState is CardUiState.Loading) {
                         CircularProgressIndicator(
@@ -667,37 +671,99 @@ fun AddCardScreen(
 }
 
 @Composable
+private fun NeuInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+) {
+    var isFocused by remember { mutableStateOf(false) }
+    val isActive = isFocused || value.isNotEmpty()
+    val hasAsterisk = "*" in label
+    val cleanLabel = label.replace(" *", "").replace("*", "").trim()
+    val labelColor by animateColorAsState(
+        if (isFocused) Color(0xFF037A68) else Color(0xFF666666), label = "lc"
+    )
+    val labelSize by animateFloatAsState(if (isActive) 11f else 14f, label = "ls")
+    val shape = RoundedCornerShape(16.dp)
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = singleLine,
+        minLines = if (!singleLine) minLines else 1,
+        modifier = modifier
+            .fillMaxWidth()
+            .neuInset(cornerRadius = 16.dp)
+            .then(
+                if (isFocused) Modifier.border(
+                    1.5.dp, Color(0xFF037A68).copy(alpha = 0.5f), shape
+                ) else Modifier
+            )
+            .onFocusChanged { isFocused = it.isFocused }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        textStyle = TextStyle(color = Color(0xFFD4D4D4), fontSize = 15.sp),
+        keyboardOptions = keyboardOptions,
+        cursorBrush = SolidColor(Color(0xFF037A68)),
+        decorationBox = { innerTextField ->
+            Column {
+                Row {
+                    Text(cleanLabel, color = labelColor, fontSize = labelSize.sp)
+                    if (hasAsterisk) {
+                        Text(" *", color = Color(0xFFF95B1A), fontSize = labelSize.sp)
+                    }
+                }
+                if (isActive) Spacer(Modifier.height(4.dp))
+                innerTextField()
+            }
+        }
+    )
+}
+
+@Composable
 private fun CardTypeOption(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = modifier
+            .neuRaised(cornerRadius = 18.dp)
+            .clickable { onClick() }
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Icon in a dark circle
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF0C0C0C)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
