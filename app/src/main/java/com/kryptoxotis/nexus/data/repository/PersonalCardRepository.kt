@@ -142,6 +142,20 @@ class PersonalCardRepository(
         }
     }
 
+    /** Activate a card for NFC without modifying its content in the DB.
+     *  The caller writes the override content directly to NdefCache. */
+    suspend fun activateCardOnly(cardId: String): Result<Unit> {
+        return try {
+            val userId = getCurrentUserId()
+            cardDao.activateCardAtomically(userId, cardId)
+            Log.d(TAG, "Card activated (no content change): $cardId")
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to activate card", e)
+            Result.Error("Failed to activate card: ${e.message}", e)
+        }
+    }
+
     suspend fun deactivateCard(cardId: String): Result<Unit> {
         return try {
             val entity = cardDao.getCardById(cardId) ?: return Result.Error("Card not found")
@@ -200,6 +214,83 @@ class PersonalCardRepository(
         }
     }
 
+    suspend fun createStack(cardId1: String, cardId2: String): Result<String> {
+        return try {
+            val stackId = java.util.UUID.randomUUID().toString()
+            val now = java.time.Instant.now().toString()
+            val entity1 = cardDao.getCardById(cardId1) ?: return Result.Error("Card not found")
+            val entity2 = cardDao.getCardById(cardId2) ?: return Result.Error("Card not found")
+            val updated1 = entity1.copy(stackId = stackId, updatedAt = now)
+            val updated2 = entity2.copy(stackId = stackId, updatedAt = now)
+            cardDao.updateCard(updated1)
+            cardDao.updateCard(updated2)
+            coroutineScope {
+                launch { pushEntityToSupabase(updated1) }
+                launch { pushEntityToSupabase(updated2) }
+            }
+            Result.Success(stackId)
+        } catch (e: Exception) {
+            Result.Error("Failed to create stack: ${e.message}", e)
+        }
+    }
+
+    suspend fun addToStack(cardId: String, stackId: String): Result<Unit> {
+        return try {
+            val now = java.time.Instant.now().toString()
+            val entity = cardDao.getCardById(cardId) ?: return Result.Error("Card not found")
+            val updated = entity.copy(stackId = stackId, updatedAt = now)
+            cardDao.updateCard(updated)
+            pushEntityToSupabase(updated)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error("Failed to add to stack: ${e.message}", e)
+        }
+    }
+
+    suspend fun removeFromStack(cardId: String): Result<Unit> {
+        return try {
+            val now = java.time.Instant.now().toString()
+            val entity = cardDao.getCardById(cardId) ?: return Result.Error("Card not found")
+            val oldStackId = entity.stackId
+            val updated = entity.copy(stackId = null, updatedAt = now)
+            cardDao.updateCard(updated)
+            pushEntityToSupabase(updated)
+
+            // Auto-dissolve if only 1 card remains in the stack
+            if (oldStackId != null) {
+                val userId = getCurrentUserId()
+                val remaining = cardDao.getCardsByUser(userId).filter { it.stackId == oldStackId }
+                if (remaining.size <= 1) {
+                    for (card in remaining) {
+                        val dissolved = card.copy(stackId = null, updatedAt = now)
+                        cardDao.updateCard(dissolved)
+                        pushEntityToSupabase(dissolved)
+                    }
+                }
+            }
+
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error("Failed to remove from stack: ${e.message}", e)
+        }
+    }
+
+    suspend fun dissolveStack(stackId: String): Result<Unit> {
+        return try {
+            val now = java.time.Instant.now().toString()
+            val userId = getCurrentUserId()
+            val cards = cardDao.getCardsByUser(userId).filter { it.stackId == stackId }
+            for (card in cards) {
+                val updated = card.copy(stackId = null, updatedAt = now)
+                cardDao.updateCard(updated)
+                pushEntityToSupabase(updated)
+            }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error("Failed to dissolve stack: ${e.message}", e)
+        }
+    }
+
     suspend fun reorderCards(cardIds: List<String>): Result<Unit> {
         return try {
             val updatedEntities = mutableListOf<PersonalCardEntity>()
@@ -252,6 +343,7 @@ class PersonalCardRepository(
                         color = remote.color,
                         imageUrl = remote.imageUrl,
                         cardShape = remote.cardShape,
+                        stackId = remote.stackId,
                         isActive = false,
                         orderIndex = remote.orderIndex,
                         createdAt = remote.createdAt ?: java.time.Instant.now().toString(),
@@ -273,6 +365,7 @@ class PersonalCardRepository(
                             cardShape = remote.cardShape,
                             isActive = local.isActive,
                             orderIndex = remote.orderIndex,
+                            stackId = remote.stackId,
                             updatedAt = remoteUpdated
                         ))
                     }
@@ -355,6 +448,7 @@ class PersonalCardRepository(
                 cardShape = entity.cardShape,
                 isActive = entity.isActive,
                 orderIndex = entity.orderIndex,
+                stackId = entity.stackId,
                 createdAt = entity.createdAt,
                 updatedAt = entity.updatedAt
             ))

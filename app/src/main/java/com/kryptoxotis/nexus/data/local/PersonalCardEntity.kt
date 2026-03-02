@@ -19,6 +19,7 @@ data class PersonalCardEntity(
     val cardShape: String = "card",
     val isActive: Boolean,
     val orderIndex: Int,
+    val stackId: String? = null,
     val createdAt: String,
     val updatedAt: String
 ) {
@@ -34,6 +35,7 @@ data class PersonalCardEntity(
         cardShape = cardShape,
         isActive = isActive,
         orderIndex = orderIndex,
+        stackId = stackId,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -51,6 +53,7 @@ data class PersonalCardEntity(
             cardShape = card.cardShape,
             isActive = card.isActive,
             orderIndex = card.orderIndex,
+            stackId = card.stackId,
             createdAt = card.createdAt,
             updatedAt = card.updatedAt
         )

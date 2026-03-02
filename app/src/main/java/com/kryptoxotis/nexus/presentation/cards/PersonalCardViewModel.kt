@@ -99,6 +99,29 @@ class PersonalCardViewModel(
         }
     }
 
+    /**
+     * Activate a card for NFC and write override content directly to the NFC cache.
+     * The card's actual DB content is never modified.
+     */
+    fun activateCardWithOverride(cardId: String, isUri: Boolean, nfcContent: String, context: android.content.Context) {
+        viewModelScope.launch {
+            when (val result = cardRepository.activateCardOnly(cardId)) {
+                is Result.Success -> {
+                    // Small delay to let the normal activeCard→cache flow finish first,
+                    // then overwrite with our specific content
+                    kotlinx.coroutines.delay(100)
+                    if (isUri) {
+                        com.kryptoxotis.nexus.service.NdefCache.writeUri(context, nfcContent)
+                    } else {
+                        com.kryptoxotis.nexus.service.NdefCache.writeVCard(context, nfcContent)
+                    }
+                    _uiState.value = CardUiState.Success("Ready to share via NFC")
+                }
+                is Result.Error -> _uiState.value = CardUiState.Error(result.message)
+            }
+        }
+    }
+
     fun deactivateCard(cardId: String) {
         viewModelScope.launch {
             when (val result = cardRepository.deactivateCard(cardId)) {
@@ -139,6 +162,30 @@ class PersonalCardViewModel(
     fun reorderCards(cardIds: List<String>) {
         viewModelScope.launch {
             cardRepository.reorderCards(cardIds)
+        }
+    }
+
+    fun createStack(cardId1: String, cardId2: String) {
+        viewModelScope.launch {
+            cardRepository.createStack(cardId1, cardId2)
+        }
+    }
+
+    fun addToStack(cardId: String, stackId: String) {
+        viewModelScope.launch {
+            cardRepository.addToStack(cardId, stackId)
+        }
+    }
+
+    fun removeFromStack(cardId: String) {
+        viewModelScope.launch {
+            cardRepository.removeFromStack(cardId)
+        }
+    }
+
+    fun dissolveStack(stackId: String) {
+        viewModelScope.launch {
+            cardRepository.dissolveStack(stackId)
         }
     }
 

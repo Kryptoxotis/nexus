@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Cloud shape in Kryptoxotis Teal (#0A7968) -->
+    <path
+        android:fillColor="#0A7968"
+        android:pathData="M54,36 C48.5,36 43.6,38.8 40.6,43.0
+        C40.1,42.9 39.5,42.8 39,42.8
+        C34.0,42.8 30,46.8 30,51.8
+        C30,56.8 34.0,60.8 39,60.8
+        L69,60.8
+        C74.5,60.8 79,56.3 79,50.8
+        C79,45.3 74.5,40.8 69,40.8
+        C68.3,40.8 67.6,40.9 66.9,41.1
+        C64.3,37.9 59.4,36 54,36 Z" />
+
+    <!-- Small highlight on cloud -->
+    <path
+        android:fillColor="#0D9B83"
+        android:pathData="M54,38 C49.5,38 45.5,40.3 43.0,43.8
+        C42.3,43.6 41.7,43.5 41,43.5
+        C41.5,43.5 42.0,43.6 42.5,43.7
+        C45.2,40.5 49.3,38.5 54,38.5
+        C59.0,38.5 63.3,40.8 65.8,44.2
+        C66.2,44.1 66.6,44.0 67.0,43.9
+        C64.2,40.3 59.4,38 54,38 Z" />
+
+    <!-- "N" lettermark centered below cloud -->
+    <path
+        android:fillColor="#0A7968"
+        android:pathData="M46,64 L46,76 L49,76 L49,68.5 L56,76 L59,76 L59,64 L56,64 L56,71.5 L49,64 Z" />
+
+</vector>

@@ -2,12 +2,14 @@ package com.kryptoxotis.nexus.presentation.cards
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,8 +47,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.presentation.theme.neuCircle
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CardWalletScreen(
     viewModel: PersonalCardViewModel,
@@ -76,12 +87,33 @@ fun CardWalletScreen(
     var searchQuery by remember { mutableStateOf("") }
     val filteredCards by remember(cards, searchQuery) {
         derivedStateOf {
-            cards.filter { searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true) }
+            cards.filter { it.cardType != CardType.BUSINESS_CARD && (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)) }
         }
     }
 
+    // Drag-and-drop reorder state
+    val hapticFeedback = LocalHapticFeedback.current
+    val lazyListState = rememberLazyListState()
+    var dragDidMove by remember { mutableStateOf(false) }
+    var reorderableCards by remember { mutableStateOf(filteredCards) }
+    LaunchedEffect(filteredCards) { reorderableCards = filteredCards }
+
+    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        val fromIndex = reorderableCards.indexOfFirst { it.id == from.key }
+        val toIndex = reorderableCards.indexOfFirst { it.id == to.key }
+        if (fromIndex != -1 && toIndex != -1) {
+            reorderableCards = reorderableCards.toMutableList().apply {
+                add(toIndex, removeAt(fromIndex))
+            }
+            dragDidMove = true
+        }
+    }
+
+    val dragEnabled = searchQuery.isBlank()
+
     Scaffold { paddingValues ->
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
@@ -321,30 +353,52 @@ fun CardWalletScreen(
             } else {
                 item(key = "my_cards_header") {
                     Text(
-                        "My Cards",
+                        "My Nexus",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
-                items(filteredCards, key = { it.id }) { card ->
-                    CardItem(
-                        card = card,
-                        isActive = card.isActive,
-                        onClick = {
-                            viewModel.activateCard(card.id)
-                            onNavigateToCardDetail(card.id)
-                        },
-                        onLongClick = {
-                            selectedCard = card
-                            showEditSheet = true
-                        },
-                        onQrClick = {
-                            selectedCard = card
-                            showQrSheet = true
-                        }
-                    )
+                items(reorderableCards, key = { it.id }) { card ->
+                    ReorderableItem(reorderableLazyListState, key = card.id) { isDragging ->
+                        val dragHandle = Modifier.longPressDraggableHandle(
+                            onDragStarted = {
+                                dragDidMove = false
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            },
+                            onDragStopped = {
+                                if (dragDidMove) {
+                                    viewModel.reorderCards(reorderableCards.map { it.id })
+                                } else {
+                                    selectedCard = card
+                                    showEditSheet = true
+                                }
+                                dragDidMove = false
+                            }
+                        )
+                        CardItem(
+                            card = card,
+                            isActive = card.isActive,
+                            isDragging = isDragging,
+                            dragEnabled = dragEnabled,
+                            extraModifier = dragHandle,
+                            onClick = {
+                                viewModel.activateCard(card.id)
+                                onNavigateToCardDetail(card.id)
+                            },
+                            onLongPressEdit = {
+                                selectedCard = card
+                                showEditSheet = true
+                            },
+                            onQrClick = {
+                                selectedCard = card
+                                showQrSheet = true
+                            },
+                            onDragStarted = {},
+                            onDragStopped = {}
+                        )
+                    }
                 }
             }
         }
@@ -612,33 +666,70 @@ private fun ActiveCardBanner(card: PersonalCard, onClick: () -> Unit) {
 private fun CardItem(
     card: PersonalCard,
     isActive: Boolean,
+    isDragging: Boolean,
+    isStackDropTarget: Boolean = false,
+    dragEnabled: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
-    onQrClick: () -> Unit
+    onLongPressEdit: () -> Unit,
+    onQrClick: () -> Unit,
+    onDragStarted: () -> Unit,
+    onDragStopped: () -> Unit,
+    extraModifier: Modifier = Modifier
 ) {
     val isCoin = card.cardShape == "coin"
     val hasImage = card.imageUrl != null
     val appearance = resolveCardAppearance(card.color, hasImage = hasImage)
-    val glowBorder = if (isActive) BorderStroke(
-        width = 1.dp,
-        brush = Brush.linearGradient(listOf(appearance.borderColor, appearance.borderColor.copy(alpha = 0.4f)))
-    ) else null
+    val cardBorder = BorderStroke(
+        width = if (isActive) 3.dp else 2.5.dp,
+        brush = Brush.linearGradient(
+            listOf(
+                appearance.borderColor.copy(alpha = if (isActive) 0.8f else 0.5f),
+                appearance.borderColor.copy(alpha = if (isActive) 0.4f else 0.2f)
+            )
+        )
+    )
     val activeGlow = if (isActive) Modifier.neonGlow(appearance.neonColor, cornerRadius = 16.dp, elevation = 10.dp) else Modifier
+
+    // Drag visual feedback
+    val targetScale = when {
+        isDragging -> 1.05f
+        isStackDropTarget -> 1.08f
+        else -> 1f
+    }
+    val dragScale by animateFloatAsState(targetScale, label = "dragScale")
+    val dragAlpha by animateFloatAsState(if (isDragging) 0.85f else 1f, label = "dragAlpha")
+    val dragModifier = Modifier.graphicsLayer {
+        scaleX = dragScale
+        scaleY = dragScale
+        alpha = dragAlpha
+    }
+
+    // Gesture modifier
+    fun Modifier.cardGestures(): Modifier = if (dragEnabled) {
+        this.combinedClickable(
+            onClick = onClick,
+            onLongClick = { } // consumed by longPressDraggableHandle in extraModifier
+        ).then(extraModifier)
+    } else {
+        this.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongPressEdit
+        )
+    }
 
     if (isCoin) {
         // Coin (circle) layout
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick
-                ),
+                .then(dragModifier)
+                .cardGestures(),
             contentAlignment = Alignment.Center
         ) {
             Card(
                 modifier = Modifier.size(140.dp),
-                shape = CircleShape
+                shape = CircleShape,
+                border = BorderStroke(2.5.dp, appearance.borderColor.copy(alpha = 0.5f))
             ) {
                 Box(
                     modifier = Modifier
@@ -659,7 +750,6 @@ private fun CardItem(
                                 .background(Color.Black.copy(alpha = 0.4f))
                         )
                     }
-                    // Title centered
                     Text(
                         text = card.title,
                         style = MaterialTheme.typography.titleSmall,
@@ -667,7 +757,6 @@ private fun CardItem(
                         maxLines = 2,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                    // QR at bottom
                     IconButton(
                         onClick = onQrClick,
                         modifier = Modifier
@@ -689,14 +778,12 @@ private fun CardItem(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(dragModifier)
                 .then(activeGlow)
                 .neuRaised(cornerRadius = 16.dp, elevation = 10.dp, neonColor = if (isActive) appearance.neonColor else null)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick
-                ),
+                .cardGestures(),
             shape = RoundedCornerShape(16.dp),
-            border = glowBorder,
+            border = cardBorder,
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Box(
@@ -745,3 +832,4 @@ private fun CardItem(
         }
     }
 }
+

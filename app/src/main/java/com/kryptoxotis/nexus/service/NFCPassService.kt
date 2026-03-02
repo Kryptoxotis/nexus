@@ -78,6 +78,8 @@ class NFCPassService : HostApduService() {
                 uri.startsWith("http://www.") -> Pair(0x01.toByte(), uri.removePrefix("http://www."))
                 uri.startsWith("https://") -> Pair(0x04.toByte(), uri.removePrefix("https://"))
                 uri.startsWith("http://") -> Pair(0x03.toByte(), uri.removePrefix("http://"))
+                uri.startsWith("tel:") -> Pair(0x05.toByte(), uri.removePrefix("tel:"))
+                uri.startsWith("mailto:") -> Pair(0x06.toByte(), uri.removePrefix("mailto:"))
                 else -> Pair(0x04.toByte(), uri)
             }
 

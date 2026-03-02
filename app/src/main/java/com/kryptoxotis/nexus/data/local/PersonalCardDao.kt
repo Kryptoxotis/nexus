@@ -53,6 +53,12 @@ interface PersonalCardDao {
         }
     }
 
+    @Query("UPDATE personal_cards SET stackId = :stackId WHERE id = :cardId")
+    suspend fun setStackId(cardId: String, stackId: String?)
+
+    @Query("UPDATE personal_cards SET stackId = NULL WHERE stackId = :stackId")
+    suspend fun dissolveStack(stackId: String)
+
     @Query("DELETE FROM personal_cards WHERE userId = :userId")
     suspend fun deleteAllCardsByUser(userId: String)
 

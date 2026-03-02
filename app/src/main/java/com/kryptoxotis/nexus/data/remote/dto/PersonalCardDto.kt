@@ -22,6 +22,8 @@ data class PersonalCardDto(
     val isActive: Boolean = false,
     @SerialName("order_index")
     val orderIndex: Int = 0,
+    @SerialName("stack_id")
+    val stackId: String? = null,
     @SerialName("created_at")
     val createdAt: String? = null,
     @SerialName("updated_at")

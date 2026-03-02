@@ -309,7 +309,8 @@ class MainActivity : ComponentActivity() {
                             onNavigateToDetail = { id -> navController.navigate("contact_detail/$id") },
                             onNavigateToScanCard = { navController.navigate("scan_card") },
                             onNavigateToCreateMyCard = { navController.navigate("add_card?myCard=true") },
-                            onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") }
+                            onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") },
+                            onNavigateToCardDetail = { id -> navController.navigate("card_detail/$id") }
                         )
                     }
 

@@ -27,6 +27,12 @@ data class BusinessCardData(
     val instagram: String = "",
     val twitter: String = "",
     val github: String = "",
+    val facebook: String = "",
+    val youtube: String = "",
+    val tiktok: String = "",
+    val discord: String = "",
+    val twitch: String = "",
+    val whatsapp: String = "",
     val organizationId: String = ""
 ) {
     fun toJson(): String {
@@ -42,6 +48,12 @@ data class BusinessCardData(
         obj.put("instagram", instagram)
         obj.put("twitter", twitter)
         obj.put("github", github)
+        obj.put("facebook", facebook)
+        obj.put("youtube", youtube)
+        obj.put("tiktok", tiktok)
+        obj.put("discord", discord)
+        obj.put("twitch", twitch)
+        obj.put("whatsapp", whatsapp)
         obj.put("organizationId", organizationId)
         return obj.toString()
     }
@@ -61,6 +73,12 @@ data class BusinessCardData(
         if (instagram.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=instagram:$instagram")
         if (twitter.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=twitter:$twitter")
         if (github.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=github:$github")
+        if (facebook.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=facebook:$facebook")
+        if (youtube.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=youtube:$youtube")
+        if (tiktok.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=tiktok:$tiktok")
+        if (discord.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=discord:$discord")
+        if (twitch.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=twitch:$twitch")
+        if (whatsapp.isNotBlank()) sb.appendLine("X-SOCIALPROFILE;type=whatsapp:$whatsapp")
         if (organizationId.isNotBlank()) sb.appendLine("X-NEXUS-ORG:$organizationId")
         sb.appendLine("END:VCARD")
         return sb.toString().trimEnd()
@@ -89,6 +107,12 @@ data class BusinessCardData(
                     instagram = obj.optString("instagram", ""),
                     twitter = obj.optString("twitter", ""),
                     github = obj.optString("github", ""),
+                    facebook = obj.optString("facebook", ""),
+                    youtube = obj.optString("youtube", ""),
+                    tiktok = obj.optString("tiktok", ""),
+                    discord = obj.optString("discord", ""),
+                    twitch = obj.optString("twitch", ""),
+                    whatsapp = obj.optString("whatsapp", ""),
                     organizationId = obj.optString("organizationId", "")
                 )
             } catch (_: Exception) {
@@ -110,6 +134,7 @@ data class PersonalCard(
     val cardShape: String = "card",
     val isActive: Boolean = false,
     val orderIndex: Int = 0,
+    val stackId: String? = null,
     val createdAt: String,
     val updatedAt: String
 ) {

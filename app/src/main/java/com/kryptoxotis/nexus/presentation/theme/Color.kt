@@ -3,20 +3,15 @@ package com.kryptoxotis.nexus.presentation.theme
 import androidx.compose.ui.graphics.Color
 
 // Primary palette - Kryptoxotis Teal
-val NexusTeal = Color(0xFF0A7968)
+val NexusTeal = Color(0xFF037A68)
 val NexusTealLight = Color(0xFF0AD7A5)
-val NexusTealDark = Color(0xFF064D42)
-val NexusTealGlow = Color(0x590A7968) // 35% alpha
+val NexusTealDark = Color(0xFF025E50)
+val NexusTealGlow = Color(0x59037A68) // 35% alpha
 
 // Accent orange
-val NexusOrange = Color(0xFFE8551A)
-val NexusOrangeLight = Color(0xFFFF8C5A)
-val NexusOrangeDark = Color(0xFFB8430F)
-
-// Secondary palette - Electric Blue (Material3 secondary/tertiary)
-val NexusBlue = Color(0xFF3B82F6)
-val NexusBlueLight = Color(0xFF60A5FA)
-val NexusBlueDark = Color(0xFF2563EB)
+val NexusOrange = Color(0xFFFA5700)
+val NexusOrangeLight = Color(0xFFFF8C4A)
+val NexusOrangeDark = Color(0xFFC44500)
 
 // Backgrounds & surfaces (black / dark gray)
 val NexusBackground = Color(0xFF0A0A0A)

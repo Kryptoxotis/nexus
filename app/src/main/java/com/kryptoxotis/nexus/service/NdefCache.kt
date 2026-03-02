@@ -44,6 +44,22 @@ object NdefCache {
         }
     }
 
+    /** Write a raw URI directly to the cache (for sub-card NFC without modifying the card in DB) */
+    fun writeUri(context: Context, uri: String) {
+        val bytes = NFCPassService.createNdefMessage(uri, isUri = true)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_NDEF_BYTES, Base64.encodeToString(bytes, Base64.NO_WRAP)).apply()
+        Log.d(TAG, "Cached URI override: ${bytes.size} NDEF bytes")
+    }
+
+    /** Write a raw vCard directly to the cache */
+    fun writeVCard(context: Context, vcard: String) {
+        val bytes = NFCPassService.createNdefMessage(vcard, isUri = false)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_NDEF_BYTES, Base64.encodeToString(bytes, Base64.NO_WRAP)).apply()
+        Log.d(TAG, "Cached vCard override: ${bytes.size} NDEF bytes")
+    }
+
     fun read(context: Context): ByteArray? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val encoded = prefs.getString(KEY_NDEF_BYTES, null) ?: return null
