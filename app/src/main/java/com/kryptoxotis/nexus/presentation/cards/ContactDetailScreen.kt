@@ -14,6 +14,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import android.content.Context
+import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+
+private fun safeLaunchUrl(context: Context, rawUrl: String) {
+    val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
+    val trimmed = rawUrl.trim()
+    if (blockedSchemes.any { trimmed.lowercase().startsWith(it) }) return
+    val url = if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) "https://$trimmed" else trimmed
+    try {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        context.startActivity(intent)
+    } catch (_: Exception) { }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,40 +133,24 @@ fun ContactDetailScreen(
                 )
             }
             if (c.website.isNotBlank()) {
-                ContactField(
-                    icon = Icons.Default.Language,
-                    label = "Website",
-                    value = c.website,
-                    onClick = {
-                        val url = if (c.website.startsWith("http")) c.website else "https://${c.website}"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        context.startActivity(intent)
-                    }
-                )
+                ContactField(icon = Icons.Default.Language, label = "Website", value = c.website,
+                    onClick = { safeLaunchUrl(context, c.website) })
             }
             if (c.linkedin.isNotBlank()) {
-                ContactField(icon = Icons.Default.Work, label = "LinkedIn", value = c.linkedin, onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(c.linkedin))
-                    context.startActivity(intent)
-                })
+                ContactField(icon = Icons.Default.Work, label = "LinkedIn", value = c.linkedin,
+                    onClick = { safeLaunchUrl(context, c.linkedin) })
             }
             if (c.instagram.isNotBlank()) {
-                ContactField(icon = Icons.Default.CameraAlt, label = "Instagram", value = c.instagram, onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(c.instagram))
-                    context.startActivity(intent)
-                })
+                ContactField(icon = Icons.Default.CameraAlt, label = "Instagram", value = c.instagram,
+                    onClick = { safeLaunchUrl(context, c.instagram) })
             }
             if (c.twitter.isNotBlank()) {
-                ContactField(icon = Icons.Default.Tag, label = "Twitter / X", value = c.twitter, onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(c.twitter))
-                    context.startActivity(intent)
-                })
+                ContactField(icon = Icons.Default.Tag, label = "Twitter / X", value = c.twitter,
+                    onClick = { safeLaunchUrl(context, c.twitter) })
             }
             if (c.github.isNotBlank()) {
-                ContactField(icon = Icons.Default.Code, label = "GitHub", value = c.github, onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(c.github))
-                    context.startActivity(intent)
-                })
+                ContactField(icon = Icons.Default.Code, label = "GitHub", value = c.github,
+                    onClick = { safeLaunchUrl(context, c.github) })
             }
         }
     }
@@ -185,8 +186,10 @@ private fun ContactField(
     onClick: (() -> Unit)? = null
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick ?: {}
+        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp),
+        onClick = onClick ?: {},
+        colors = CardDefaults.cardColors(containerColor = NexusSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
