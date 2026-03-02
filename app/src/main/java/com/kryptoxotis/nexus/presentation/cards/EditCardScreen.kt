@@ -1,18 +1,30 @@
 package com.kryptoxotis.nexus.presentation.cards
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
+import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neonGlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +44,9 @@ fun EditCardScreen(
 
     var title by remember(card.id) { mutableStateOf(card.title) }
     var content by remember(card.id) { mutableStateOf(card.content ?: "") }
-    var color by remember(card.id) { mutableStateOf(card.color ?: "") }
+    val (initialHex, initialDark) = remember(card.id) { NexusCardColors.parse(card.color) }
+    var selectedColorHex by remember(card.id) { mutableStateOf(initialHex) }
+    var isDarkMode by remember(card.id) { mutableStateOf(initialDark) }
     var cardShape by remember(card.id) { mutableStateOf(card.cardShape) }
 
     // Business card fields (parsed from JSON content)
@@ -129,6 +143,22 @@ fun EditCardScreen(
                 )
             }
 
+            // Live preview
+            val previewTitle = if (card.cardType == CardType.BUSINESS_CARD) bcName else title
+            val previewSubtitle = if (card.cardType == CardType.BUSINESS_CARD) {
+                listOfNotNull(
+                    bcJobTitle.ifBlank { null },
+                    bcCompany.ifBlank { null }
+                ).joinToString(" at ")
+            } else content
+            CardPreview(
+                title = previewTitle,
+                subtitle = previewSubtitle,
+                cardShape = cardShape,
+                storedColor = NexusCardColors.encode(selectedColorHex, isDarkMode),
+                imageUri = card.imageUrl
+            )
+
             // Card shape selector
             Text(
                 text = "Card Shape",
@@ -139,97 +169,88 @@ fun EditCardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                FilterChip(
-                    selected = cardShape == "card",
-                    onClick = { cardShape = "card" },
-                    label = { Text("Card") },
-                    leadingIcon = if (cardShape == "card") {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
-                )
-                FilterChip(
-                    selected = cardShape == "coin",
-                    onClick = { cardShape = "coin" },
-                    label = { Text("Coin") },
-                    leadingIcon = if (cardShape == "coin") {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
-                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (cardShape == "card") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                        .clickable { cardShape = "card" }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text("Card", color = MaterialTheme.colorScheme.onSurface) }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (cardShape == "coin") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                        .clickable { cardShape = "coin" }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text("Coin", color = MaterialTheme.colorScheme.onSurface) }
             }
 
-            // Card color
-            if (card.imageUrl == null) {
+            // Light / Dark mode toggle
+            Text(
+                text = "Card Mode",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (!isDarkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                        .clickable { isDarkMode = false }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text("Light", color = MaterialTheme.colorScheme.onSurface) }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (isDarkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                        .clickable { isDarkMode = true }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text("Dark", color = MaterialTheme.colorScheme.onSurface) }
+            }
+
+            // Color palette
+            Text(
+                text = "Card Color",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                NexusCardColors.palette.forEach { entry ->
+                    val isSelected = selectedColorHex == entry.brightHex
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .then(
+                                if (isSelected) Modifier.neonGlow(entry.bright, cornerRadius = 10.dp, elevation = 8.dp)
+                                else Modifier
+                            )
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Brush.linearGradient(listOf(entry.bright, entry.dark)))
+                            .then(
+                                if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(10.dp))
+                                else Modifier
+                            )
+                            .clickable { selectedColorHex = entry.brightHex }
+                    )
+                }
+            }
+            val selectedEntry = NexusCardColors.findByHex(selectedColorHex)
+            if (selectedEntry != null) {
                 Text(
-                    text = "Card Color",
-                    style = MaterialTheme.typography.titleSmall,
+                    text = selectedEntry.name,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = color == "",
-                        onClick = { color = "" },
-                        label = { Text("Default") },
-                        leadingIcon = if (color == "") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = color == "#FF6B35",
-                        onClick = { color = "#FF6B35" },
-                        label = { Text("Orange") },
-                        leadingIcon = if (color == "#FF6B35") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = color == "#4A90D9",
-                        onClick = { color = "#4A90D9" },
-                        label = { Text("Blue") },
-                        leadingIcon = if (color == "#4A90D9") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = color == "#2ECC71",
-                        onClick = { color = "#2ECC71" },
-                        label = { Text("Green") },
-                        leadingIcon = if (color == "#2ECC71") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = color == "#9B59B6",
-                        onClick = { color = "#9B59B6" },
-                        label = { Text("Purple") },
-                        leadingIcon = if (color == "#9B59B6") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = color == "#E74C3C",
-                        onClick = { color = "#E74C3C" },
-                        label = { Text("Red") },
-                        leadingIcon = if (color == "#E74C3C") {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -237,17 +258,23 @@ fun EditCardScreen(
             Button(
                 onClick = {
                     // Validate URLs for link/social types
+                    val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
                     if ((card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA) && content.isNotBlank()) {
-                        val trimmed = content.trim()
-                        if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:")) {
+                        content = content.trim()
+                        if (blockedSchemes.any { content.lowercase().startsWith(it) }) {
                             viewModel.setError("Invalid URL scheme")
                             return@Button
                         }
-                        if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-                            content = "https://$trimmed"
+                        if (!content.startsWith("http://") && !content.startsWith("https://")) {
+                            content = "https://$content"
                         }
                     }
                     if (card.cardType == CardType.BUSINESS_CARD) {
+                        val urlFields = listOf(bcWebsite, bcLinkedin, bcInstagram, bcTwitter, bcGithub)
+                        if (urlFields.any { it.isNotBlank() && blockedSchemes.any { scheme -> it.trim().lowercase().startsWith(scheme) } }) {
+                            viewModel.setError("Invalid URL scheme in one of the link fields")
+                            return@Button
+                        }
                         val bcData = BusinessCardData(
                             name = bcName, jobTitle = bcJobTitle, company = bcCompany,
                             phone = bcPhone, email = bcEmail, website = bcWebsite,
@@ -258,7 +285,7 @@ fun EditCardScreen(
                             cardId = card.id,
                             title = bcName,
                             content = bcData.toJson(),
-                            color = color.ifBlank { null },
+                            color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                             cardShape = cardShape
                         )
                     } else {
@@ -266,7 +293,7 @@ fun EditCardScreen(
                             cardId = card.id,
                             title = title,
                             content = content.ifBlank { null },
-                            color = color.ifBlank { null },
+                            color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                             cardShape = cardShape
                         )
                     }
