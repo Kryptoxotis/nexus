@@ -136,7 +136,11 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 cardViewModel.activeCard.collect { card ->
-                    NdefCache.write(applicationContext, card)
+                    try {
+                        NdefCache.write(applicationContext, card)
+                    } catch (e: Exception) {
+                        Log.e("MainActivity", "NDEF cache write failed", e)
+                    }
                 }
             }
         }
