@@ -509,11 +509,16 @@ private fun CardQrSheet(card: PersonalCard) {
         val boxBg = if (isDarkCard) Color(0xFF0A0A0A) else cardColor
         var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
         LaunchedEffect(qrContent, qrFg, qrBg) {
+            val old = qrBitmap
             qrBitmap = try {
                 QrCodeGenerator.generate(qrContent, 400, foregroundColor = qrFg, backgroundColor = qrBg)
             } catch (e: Exception) {
                 null
             }
+            old?.recycle()
+        }
+        DisposableEffect(Unit) {
+            onDispose { qrBitmap?.recycle() }
         }
 
         val bitmap = qrBitmap
