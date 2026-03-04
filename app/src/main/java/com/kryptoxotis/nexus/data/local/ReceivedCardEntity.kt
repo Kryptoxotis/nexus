@@ -18,6 +18,12 @@ data class ReceivedCardEntity(
     val instagram: String = "",
     val twitter: String = "",
     val github: String = "",
+    val facebook: String = "",
+    val youtube: String = "",
+    val tiktok: String = "",
+    val discord: String = "",
+    val twitch: String = "",
+    val whatsapp: String = "",
     val notes: String = "",
     val receivedAt: String
 )

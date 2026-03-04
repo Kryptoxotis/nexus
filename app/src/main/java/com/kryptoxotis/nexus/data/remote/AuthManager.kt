@@ -123,16 +123,22 @@ class AuthManager(private val context: Context) {
                 Log.d(TAG, "Session restored")
                 true
             } else {
-                Log.w(TAG, "Session refresh returned no session, clearing stale account")
-                removeAccount(activeEmail)
+                Log.w(TAG, "Session refresh returned no session")
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to restore session — token may be expired", e)
-            // Clear the stale account so the user isn't stuck
-            val activeEmail = try { getActiveEmail() } catch (_: Exception) { null }
-            if (activeEmail != null) {
-                try { removeAccount(activeEmail) } catch (_: Exception) { }
+            Log.e(TAG, "Failed to restore session", e)
+            // Only clear account for auth-specific errors (invalid/expired refresh token).
+            // Network errors should NOT wipe saved credentials.
+            val isAuthError = e.message?.let {
+                "invalid" in it.lowercase() || "expired" in it.lowercase() || "revoked" in it.lowercase()
+            } ?: false
+            if (isAuthError) {
+                Log.w(TAG, "Auth token invalid, clearing stale account")
+                val activeEmail = try { getActiveEmail() } catch (_: Exception) { null }
+                if (activeEmail != null) {
+                    try { removeAccount(activeEmail) } catch (_: Exception) { }
+                }
             }
             false
         }

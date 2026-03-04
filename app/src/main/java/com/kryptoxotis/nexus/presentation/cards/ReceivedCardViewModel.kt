@@ -32,14 +32,23 @@ class ReceivedCardViewModel(
         linkedin: String = "",
         instagram: String = "",
         twitter: String = "",
-        github: String = ""
+        github: String = "",
+        facebook: String = "",
+        youtube: String = "",
+        tiktok: String = "",
+        discord: String = "",
+        twitch: String = "",
+        whatsapp: String = ""
     ) {
         viewModelScope.launch {
             repository.saveContact(
                 name = name, jobTitle = jobTitle, company = company,
                 phone = phone, email = email, website = website,
                 linkedin = linkedin, instagram = instagram,
-                twitter = twitter, github = github
+                twitter = twitter, github = github,
+                facebook = facebook, youtube = youtube,
+                tiktok = tiktok, discord = discord,
+                twitch = twitch, whatsapp = whatsapp
             )
         }
     }

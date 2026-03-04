@@ -2,36 +2,101 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:viewportWidth="200"
+    android:viewportHeight="240">
 
-    <!-- Cloud shape in Kryptoxotis Teal (#0A7968) -->
-    <path
-        android:fillColor="#0A7968"
-        android:pathData="M54,36 C48.5,36 43.6,38.8 40.6,43.0
-        C40.1,42.9 39.5,42.8 39,42.8
-        C34.0,42.8 30,46.8 30,51.8
-        C30,56.8 34.0,60.8 39,60.8
-        L69,60.8
-        C74.5,60.8 79,56.3 79,50.8
-        C79,45.3 74.5,40.8 69,40.8
-        C68.3,40.8 67.6,40.9 66.9,41.1
-        C64.3,37.9 59.4,36 54,36 Z" />
+    <!-- Back card - purple, rotated 18° around (100,160) -->
+    <group
+        android:pivotX="100"
+        android:pivotY="160"
+        android:rotation="18">
+        <path
+            android:pathData="M60,16 L128,16 A14,14 0 0,1 142,30 L142,128 A14,14 0 0,1 128,142 L60,142 A14,14 0 0,1 46,128 L46,30 A14,14 0 0,1 60,16 Z"
+            android:fillColor="#1a1a1a"
+            android:strokeColor="#9163dd"
+            android:strokeWidth="2.5"/>
+    </group>
 
-    <!-- Small highlight on cloud -->
-    <path
-        android:fillColor="#0D9B83"
-        android:pathData="M54,38 C49.5,38 45.5,40.3 43.0,43.8
-        C42.3,43.6 41.7,43.5 41,43.5
-        C41.5,43.5 42.0,43.6 42.5,43.7
-        C45.2,40.5 49.3,38.5 54,38.5
-        C59.0,38.5 63.3,40.8 65.8,44.2
-        C66.2,44.1 66.6,44.0 67.0,43.9
-        C64.2,40.3 59.4,38 54,38 Z" />
+    <!-- Middle card - orange, rotated 8° around (100,160) -->
+    <group
+        android:pivotX="100"
+        android:pivotY="160"
+        android:rotation="8">
+        <path
+            android:pathData="M58,20 L126,20 A14,14 0 0,1 140,34 L140,132 A14,14 0 0,1 126,146 L58,146 A14,14 0 0,1 44,132 L44,34 A14,14 0 0,1 58,20 Z"
+            android:fillColor="#1a1a1a"
+            android:strokeColor="#fa5700"
+            android:strokeWidth="2.5"/>
+    </group>
 
-    <!-- "N" lettermark centered below cloud -->
+    <!-- Front card - teal, rotated -2° around (100,160) -->
+    <group
+        android:pivotX="100"
+        android:pivotY="160"
+        android:rotation="-2">
+        <path
+            android:pathData="M56,24 L124,24 A14,14 0 0,1 138,38 L138,136 A14,14 0 0,1 124,150 L56,150 A14,14 0 0,1 42,136 L42,38 A14,14 0 0,1 56,24 Z"
+            android:fillColor="#1a1a1a"
+            android:strokeColor="#037A68"
+            android:strokeWidth="2.5"/>
+        <!-- Line details on front card -->
+        <path
+            android:pathData="M58,56 L106,56"
+            android:strokeColor="#037A68"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:strokeAlpha="0.25"/>
+        <path
+            android:pathData="M58,72 L90,72"
+            android:strokeColor="#037A68"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:strokeAlpha="0.15"/>
+        <path
+            android:pathData="M58,88 L96,88"
+            android:strokeColor="#037A68"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:strokeAlpha="0.1"/>
+        <!-- Small rectangle (QR placeholder) -->
+        <path
+            android:pathData="M58,108 L74,108 A4,4 0 0,1 78,112 L78,124 A4,4 0 0,1 74,128 L58,128 A4,4 0 0,1 54,124 L54,112 A4,4 0 0,1 58,108 Z"
+            android:strokeColor="#037A68"
+            android:strokeWidth="1.5"
+            android:fillColor="#00000000"
+            android:strokeAlpha="0.12"/>
+    </group>
+
+    <!-- NFC signal icon - orange -->
+    <!-- Center dot -->
     <path
-        android:fillColor="#0A7968"
-        android:pathData="M46,64 L46,76 L49,76 L49,68.5 L56,76 L59,76 L59,64 L56,64 L56,71.5 L49,64 Z" />
+        android:pathData="M100,196 A3,3 0 1,1 100.01,196"
+        android:fillColor="#fa5700"/>
+    <!-- Arc 1 (smallest) -->
+    <path
+        android:pathData="M92,192 A12,12 0 0,1 108,192"
+        android:strokeColor="#fa5700"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+    <!-- Arc 2 -->
+    <path
+        android:pathData="M87,188 A18,18 0 0,1 113,188"
+        android:strokeColor="#fa5700"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.7"/>
+    <!-- Arc 3 (largest) -->
+    <path
+        android:pathData="M82,184 A24,24 0 0,1 118,184"
+        android:strokeColor="#fa5700"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.4"/>
 
 </vector>

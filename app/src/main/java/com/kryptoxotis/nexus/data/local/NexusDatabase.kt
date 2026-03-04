@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [PersonalCardEntity::class, BusinessPassEntity::class, ReceivedCardEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class NexusDatabase : RoomDatabase() {
@@ -27,6 +27,17 @@ abstract class NexusDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE received_cards ADD COLUMN facebook TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE received_cards ADD COLUMN youtube TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE received_cards ADD COLUMN tiktok TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE received_cards ADD COLUMN discord TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE received_cards ADD COLUMN twitch TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE received_cards ADD COLUMN whatsapp TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): NexusDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -37,7 +48,7 @@ abstract class NexusDatabase : RoomDatabase() {
                     // Only wipe data when migrating from old pre-release schemas (1-5).
                     // For version 6+, add explicit Migration objects instead.
                     .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6)
-                    .addMigrations(MIGRATION_7_8)
+                    .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
                     .build()
                 INSTANCE = instance
                 instance

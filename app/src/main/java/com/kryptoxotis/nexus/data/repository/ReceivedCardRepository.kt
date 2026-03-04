@@ -57,7 +57,13 @@ class ReceivedCardRepository(
         linkedin: String = "",
         instagram: String = "",
         twitter: String = "",
-        github: String = ""
+        github: String = "",
+        facebook: String = "",
+        youtube: String = "",
+        tiktok: String = "",
+        discord: String = "",
+        twitch: String = "",
+        whatsapp: String = ""
     ): Result<Unit> {
         return try {
             val userId = getCurrentUserId()
@@ -77,6 +83,12 @@ class ReceivedCardRepository(
                 instagram = instagram,
                 twitter = twitter,
                 github = github,
+                facebook = facebook,
+                youtube = youtube,
+                tiktok = tiktok,
+                discord = discord,
+                twitch = twitch,
+                whatsapp = whatsapp,
                 receivedAt = now
             )
             dao.insert(entity)
@@ -130,6 +142,12 @@ class ReceivedCardRepository(
                         instagram = dto.instagram,
                         twitter = dto.twitter,
                         github = dto.github,
+                        facebook = dto.facebook,
+                        youtube = dto.youtube,
+                        tiktok = dto.tiktok,
+                        discord = dto.discord,
+                        twitch = dto.twitch,
+                        whatsapp = dto.whatsapp,
                         notes = dto.notes,
                         receivedAt = dto.receivedAt ?: java.time.Instant.now().toString()
                     ))
@@ -158,6 +176,12 @@ class ReceivedCardRepository(
                 instagram = entity.instagram,
                 twitter = entity.twitter,
                 github = entity.github,
+                facebook = entity.facebook,
+                youtube = entity.youtube,
+                tiktok = entity.tiktok,
+                discord = entity.discord,
+                twitch = entity.twitch,
+                whatsapp = entity.whatsapp,
                 notes = entity.notes,
                 receivedAt = entity.receivedAt
             ))

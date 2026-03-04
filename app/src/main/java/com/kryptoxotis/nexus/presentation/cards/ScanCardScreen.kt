@@ -125,7 +125,7 @@ fun ScanCardScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = if (isVCard) "Business card received!" else "Card received!",
+                    text = if (isVCard) "Nexus received!" else "Card received!",
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
@@ -154,6 +154,33 @@ fun ScanCardScreen(
                         )
                     }
 
+                    // Clickable links for each non-empty field
+                    Spacer(modifier = Modifier.height(12.dp))
+                    val linkItems = listOfNotNull(
+                        if (parsed.phone.isNotBlank()) Triple("Phone", parsed.phone, "tel:${parsed.phone}") else null,
+                        if (parsed.email.isNotBlank()) Triple("Email", parsed.email, "mailto:${parsed.email}") else null,
+                        if (parsed.website.isNotBlank()) Triple("Website", parsed.website, parsed.website) else null,
+                        if (parsed.instagram.isNotBlank()) Triple("Instagram", parsed.instagram, parsed.instagram) else null,
+                        if (parsed.twitter.isNotBlank()) Triple("X", parsed.twitter, parsed.twitter) else null,
+                        if (parsed.github.isNotBlank()) Triple("GitHub", parsed.github, parsed.github) else null,
+                        if (parsed.linkedin.isNotBlank()) Triple("LinkedIn", parsed.linkedin, parsed.linkedin) else null,
+                        if (parsed.facebook.isNotBlank()) Triple("Facebook", parsed.facebook, parsed.facebook) else null,
+                        if (parsed.youtube.isNotBlank()) Triple("YouTube", parsed.youtube, parsed.youtube) else null,
+                        if (parsed.tiktok.isNotBlank()) Triple("TikTok", parsed.tiktok, parsed.tiktok) else null,
+                        if (parsed.discord.isNotBlank()) Triple("Discord", parsed.discord, parsed.discord) else null,
+                        if (parsed.twitch.isNotBlank()) Triple("Twitch", parsed.twitch, parsed.twitch) else null,
+                        if (parsed.whatsapp.isNotBlank()) Triple("WhatsApp", parsed.whatsapp, "https://wa.me/${parsed.whatsapp.replace(Regex("[^0-9+]"), "")}") else null
+                    )
+                    linkItems.forEach { (label, display, uri) ->
+                        TextButton(onClick = {
+                            try {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri)))
+                            } catch (_: Exception) {}
+                        }) {
+                            Text("$label: $display", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
                     if (!contactSaved) {
                         Button(onClick = {
@@ -167,79 +194,31 @@ fun ScanCardScreen(
                                 linkedin = parsed.linkedin,
                                 instagram = parsed.instagram,
                                 twitter = parsed.twitter,
-                                github = parsed.github
+                                github = parsed.github,
+                                facebook = parsed.facebook,
+                                youtube = parsed.youtube,
+                                tiktok = parsed.tiktok,
+                                discord = parsed.discord,
+                                twitch = parsed.twitch,
+                                whatsapp = parsed.whatsapp
                             )
                             contactSaved = true
                         }) {
-                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Save Contact")
+                            Text("Save Nexus")
                         }
                     } else {
+                        // Auto-navigate back after saving
+                        LaunchedEffect(Unit) {
+                            kotlinx.coroutines.delay(800)
+                            onNavigateBack()
+                        }
                         Text(
-                            text = "Contact saved!",
+                            text = "Nexus saved!",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
-                    }
-
-                    // Join organization via NFC
-                    if (businessViewModel != null && parsed.organizationId.isNotBlank()) {
-                        val bizUiState by businessViewModel.uiState.collectAsState()
-                        var orgJoined by remember { mutableStateOf(false) }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        if (!orgJoined) {
-                            Button(onClick = {
-                                businessViewModel.enrollInOrganization(
-                                    parsed.organizationId,
-                                    parsed.company.ifBlank { null }
-                                )
-                                orgJoined = true
-                            }) {
-                                Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Join ${parsed.company.ifBlank { "Organization" }}")
-                            }
-                        } else if (bizUiState is BusinessUiState.Error) {
-                            Text(
-                                text = (bizUiState as BusinessUiState.Error).message,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        } else {
-                            Text(
-                                text = "Enrollment requested!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    // Save to wallet as a card
-                    if (personalCardViewModel != null) {
-                        var walletSaved by remember { mutableStateOf(false) }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        if (!walletSaved) {
-                            OutlinedButton(onClick = {
-                                val title = parsed.name.ifBlank { "Scanned Contact" }
-                                personalCardViewModel.addCard(
-                                    cardType = CardType.CONTACT,
-                                    title = title,
-                                    content = result
-                                )
-                                walletSaved = true
-                            }) {
-                                Icon(Icons.Default.AddCard, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Save to Wallet")
-                            }
-                        } else {
-                            Text(
-                                text = "Saved to wallet!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
                     }
                 } else if (result != null) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -298,14 +277,7 @@ fun ScanCardScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedButton(onClick = {
-                    scanResult = null
-                    isScanning = true
-                    contactSaved = false
-                }) {
-                    Text("Scan Again")
-                }
+                // Scan again is available by navigating back and re-entering
             }
         }
     }
@@ -473,6 +445,12 @@ private data class ParsedVCard(
     val instagram: String = "",
     val twitter: String = "",
     val github: String = "",
+    val facebook: String = "",
+    val youtube: String = "",
+    val tiktok: String = "",
+    val discord: String = "",
+    val twitch: String = "",
+    val whatsapp: String = "",
     val organizationId: String = ""
 )
 
@@ -487,6 +465,12 @@ private fun parseVCard(vcard: String): ParsedVCard {
     var instagram = ""
     var twitter = ""
     var github = ""
+    var facebook = ""
+    var youtube = ""
+    var tiktok = ""
+    var discord = ""
+    var twitch = ""
+    var whatsapp = ""
     var organizationId = ""
 
     for (line in vcard.lines()) {
@@ -499,23 +483,17 @@ private fun parseVCard(vcard: String): ParsedVCard {
             trimmed.startsWith("EMAIL:") -> email = trimmed.removePrefix("EMAIL:")
             trimmed.startsWith("URL:") -> website = trimmed.removePrefix("URL:")
             trimmed.startsWith("X-NEXUS-ORG:") -> organizationId = trimmed.removePrefix("X-NEXUS-ORG:")
-            trimmed.startsWith("ADR:") -> {
-                // ADR:;;address;;;;
-                val parts = trimmed.removePrefix("ADR:").split(";")
-                // skip empty parts, join non-empty
-            }
-            trimmed.contains("type=linkedin", ignoreCase = true) -> {
-                linkedin = trimmed.substringAfter(":")
-            }
-            trimmed.contains("type=instagram", ignoreCase = true) -> {
-                instagram = trimmed.substringAfter(":")
-            }
-            trimmed.contains("type=twitter", ignoreCase = true) -> {
-                twitter = trimmed.substringAfter(":")
-            }
-            trimmed.contains("type=github", ignoreCase = true) -> {
-                github = trimmed.substringAfter(":")
-            }
+            trimmed.startsWith("ADR:") -> { /* skip */ }
+            trimmed.contains("type=linkedin", ignoreCase = true) -> linkedin = trimmed.substringAfter(":")
+            trimmed.contains("type=instagram", ignoreCase = true) -> instagram = trimmed.substringAfter(":")
+            trimmed.contains("type=twitter", ignoreCase = true) -> twitter = trimmed.substringAfter(":")
+            trimmed.contains("type=github", ignoreCase = true) -> github = trimmed.substringAfter(":")
+            trimmed.contains("type=facebook", ignoreCase = true) -> facebook = trimmed.substringAfter(":")
+            trimmed.contains("type=youtube", ignoreCase = true) -> youtube = trimmed.substringAfter(":")
+            trimmed.contains("type=tiktok", ignoreCase = true) -> tiktok = trimmed.substringAfter(":")
+            trimmed.contains("type=discord", ignoreCase = true) -> discord = trimmed.substringAfter(":")
+            trimmed.contains("type=twitch", ignoreCase = true) -> twitch = trimmed.substringAfter(":")
+            trimmed.contains("type=whatsapp", ignoreCase = true) -> whatsapp = trimmed.substringAfter(":")
         }
     }
 
@@ -524,6 +502,9 @@ private fun parseVCard(vcard: String): ParsedVCard {
         phone = phone, email = email, website = website,
         linkedin = linkedin, instagram = instagram,
         twitter = twitter, github = github,
+        facebook = facebook, youtube = youtube,
+        tiktok = tiktok, discord = discord,
+        twitch = twitch, whatsapp = whatsapp,
         organizationId = organizationId
     )
 }

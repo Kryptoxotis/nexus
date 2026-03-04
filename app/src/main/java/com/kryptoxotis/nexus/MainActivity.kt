@@ -1,9 +1,13 @@
 package com.kryptoxotis.nexus
 
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
+import android.content.IntentFilter
 import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.nfc.cardemulation.CardEmulation
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -41,6 +45,7 @@ import com.kryptoxotis.nexus.data.repository.OrganizationRepository
 import com.kryptoxotis.nexus.data.repository.PersonalCardRepository
 import com.kryptoxotis.nexus.data.repository.ReceivedCardRepository
 import com.kryptoxotis.nexus.domain.model.AccountType
+import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.admin.AdminDashboardScreen
 import com.kryptoxotis.nexus.presentation.admin.AdminViewModel
 import com.kryptoxotis.nexus.presentation.admin.BusinessRequestsScreen
@@ -58,6 +63,9 @@ import com.kryptoxotis.nexus.presentation.business.IssuePassScreen
 import com.kryptoxotis.nexus.presentation.business.MemberListScreen
 import com.kryptoxotis.nexus.presentation.business.OrgSettingsScreen
 import com.kryptoxotis.nexus.service.NdefCache
+import com.kryptoxotis.nexus.service.WidgetBridge
+import com.kryptoxotis.nexus.widget.NexusCardWidget
+import androidx.glance.appwidget.updateAll
 import com.kryptoxotis.nexus.presentation.cards.AddCardScreen
 import com.kryptoxotis.nexus.presentation.cards.CardDetailScreen
 import com.kryptoxotis.nexus.presentation.cards.CardWalletScreen
@@ -66,6 +74,7 @@ import com.kryptoxotis.nexus.presentation.cards.ContactsScreen
 import com.kryptoxotis.nexus.presentation.cards.EditCardScreen
 import com.kryptoxotis.nexus.presentation.cards.ScanCardScreen
 import com.kryptoxotis.nexus.presentation.cards.PersonalCardViewModel
+import com.kryptoxotis.nexus.presentation.cards.SharedLinkScreen
 import com.kryptoxotis.nexus.presentation.cards.ReceivedCardViewModel
 import com.kryptoxotis.nexus.presentation.profile.AccountSwitcherScreen
 import com.kryptoxotis.nexus.presentation.profile.ProfileSetupScreen
@@ -73,9 +82,12 @@ import com.kryptoxotis.nexus.presentation.theme.NexusTheme
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    private val _sharedUrl = MutableStateFlow<String?>(null)
 
     private lateinit var cardRepository: PersonalCardRepository
     private lateinit var receivedCardRepository: ReceivedCardRepository
@@ -114,11 +126,16 @@ class MainActivity : ComponentActivity() {
 
         authViewModel.checkSession()
 
+        // Handle shared URL from ShareReceiverActivity trampoline
+        handleShareIntent(intent)
+
         // Sync data when app returns to foreground
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 try {
-                    if (authViewModel.getCurrentUserId() != null) {
+                    val userId = authViewModel.getCurrentUserId()
+                    if (userId != null) {
+                        WidgetBridge.writeUserId(applicationContext, userId)
                         cardRepository.refreshUserId()
                         receivedCardRepository.refreshUserId()
                         cardRepository.syncFromSupabase()
@@ -133,11 +150,14 @@ class MainActivity : ComponentActivity() {
 
         // Pre-cache NDEF bytes whenever the active card changes.
         // The HCE service reads from SharedPreferences (~1ms) instead of Room.
+        // Skip if a shared URL is active — don't overwrite it.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 cardViewModel.activeCard.collect { card ->
+                    if (_sharedUrl.value != null) return@collect
                     try {
                         NdefCache.write(applicationContext, card)
+                        NexusCardWidget().updateAll(applicationContext)
                     } catch (e: Exception) {
                         Log.e("MainActivity", "NDEF cache write failed", e)
                     }
@@ -169,10 +189,12 @@ class MainActivity : ComponentActivity() {
                                         receivedCardRepository.refreshUserId()
                                         val userId = authViewModel.getCurrentUserId()
                                         if (userId != null) {
+                                            WidgetBridge.writeUserId(this@MainActivity, userId)
                                             cardRepository.migrateLocalUserCards(userId)
                                             cardRepository.syncFromSupabase()
                                             businessPassRepository.syncFromSupabase()
                                             receivedCardRepository.syncFromSupabase()
+                                            NexusCardWidget().updateAll(this@MainActivity)
                                         }
                                     } catch (e: Exception) {
                                         Log.e("MainActivity", "Post-login sync failed", e)
@@ -436,6 +458,40 @@ class MainActivity : ComponentActivity() {
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
+
+                    composable("share_link") {
+                        val url = _sharedUrl.collectAsState().value ?: ""
+                        SharedLinkScreen(
+                            url = url,
+                            onSave = {
+                                cardViewModel.addCard(
+                                    cardType = CardType.LINK,
+                                    title = url,
+                                    content = url
+                                )
+                                _sharedUrl.value = null
+                                // Restore active card in NdefCache
+                                NdefCache.write(this@MainActivity, cardViewModel.activeCard.value)
+                                navController.navigate("card_wallet") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
+                            onDiscard = {
+                                _sharedUrl.value = null
+                                // Restore active card in NdefCache
+                                NdefCache.write(this@MainActivity, cardViewModel.activeCard.value)
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                }
+
+                // Navigate to share screen when a URL is shared
+                val sharedUrl by _sharedUrl.collectAsState()
+                LaunchedEffect(sharedUrl) {
+                    if (sharedUrl != null) {
+                        navController.navigate("share_link")
+                    }
                 }
 
                 LaunchedEffect(authState) {
@@ -459,9 +515,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Suppress("NewApi")
     override fun onResume() {
         super.onResume()
+        // Check for pending shared URL (from ShareReceiverActivity via SharedPreferences)
+        val prefs = getSharedPreferences("nexus_share", MODE_PRIVATE)
+        val pendingUrl = prefs.getString("pending_url", null)
+        if (pendingUrl != null) {
+            prefs.edit().remove("pending_url").apply()
+            NdefCache.writeUri(this, pendingUrl) // ensure cache is fresh
+            _sharedUrl.value = pendingUrl
+        }
         if (isNfcSupported) {
+            try {
+                // Clean up any stale reader mode from ScanCardScreen
+                nfcAdapter?.disableReaderMode(this)
+            } catch (_: Exception) {}
             try {
                 val cardEmulation = CardEmulation.getInstance(nfcAdapter!!)
                 cardEmulation.setPreferredService(
@@ -469,12 +538,42 @@ class MainActivity : ComponentActivity() {
                     ComponentName(this, com.kryptoxotis.nexus.service.NFCPassService::class.java)
                 )
             } catch (_: Exception) {}
+            if (Build.VERSION.SDK_INT >= 35) {
+                try {
+                    // Disable polling, keep HCE listen mode — acts like a passive NFC card
+                    nfcAdapter?.setDiscoveryTechnology(
+                        this,
+                        NfcAdapter.FLAG_READER_DISABLE,
+                        NfcAdapter.FLAG_LISTEN_KEEP
+                    )
+                } catch (_: Exception) {}
+            } else {
+                try {
+                    // Fallback: intercept tag reads silently to suppress dialog
+                    val pendingIntent = PendingIntent.getActivity(
+                        this, 0,
+                        Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                        PendingIntent.FLAG_MUTABLE
+                    )
+                    nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
+                } catch (_: Exception) {}
+            }
         }
     }
 
+    @Suppress("NewApi")
     override fun onPause() {
         super.onPause()
         if (isNfcSupported) {
+            if (Build.VERSION.SDK_INT >= 35) {
+                try {
+                    nfcAdapter?.resetDiscoveryTechnology(this)
+                } catch (_: Exception) {}
+            } else {
+                try {
+                    nfcAdapter?.disableForegroundDispatch(this)
+                } catch (_: Exception) {}
+            }
             try {
                 val cardEmulation = CardEmulation.getInstance(nfcAdapter!!)
                 cardEmulation.unsetPreferredService(this)
@@ -484,7 +583,28 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Silently consume any NFC intents that arrive
+        // Handle shared URL from trampoline
+        handleShareIntent(intent)
+        // NFC tag discovered — ignore it to release RF field
+        val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+        if (tag != null) {
+            try {
+                nfcAdapter?.ignore(tag, 500, null, null)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        // Try intent extra first, then check SharedPreferences fallback
+        var url = intent?.getStringExtra("shared_url")
+        if (url == null) {
+            val prefs = getSharedPreferences("nexus_share", MODE_PRIVATE)
+            url = prefs.getString("pending_url", null)
+            if (url != null) prefs.edit().remove("pending_url").apply()
+        }
+        if (url != null) {
+            _sharedUrl.value = url
+        }
     }
 
     private fun initSupabase() {

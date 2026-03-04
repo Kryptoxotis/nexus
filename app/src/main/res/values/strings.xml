@@ -46,6 +46,10 @@
     <string name="error_nfc_disabled">NFC is disabled. Please enable it in settings.</string>
     <string name="error_no_active_pass">No active pass. Please activate a pass first.</string>
 
+    <!-- Widget Strings -->
+    <string name="widget_label">Nexus Card</string>
+    <string name="widget_description">Show your Nexus card and quickly toggle NFC sharing</string>
+
     <!-- NFC Strings -->
     <string name="nfc_service_desc">NFC Pass Emulation Service</string>
     <string name="tap_to_use">Hold near reader to use your pass</string>

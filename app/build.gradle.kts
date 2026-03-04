@@ -136,6 +136,10 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
+    // Glance (home screen widget)
+    implementation("androidx.glance:glance:1.1.1")
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+
     // DataStore for multi-account session storage
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 

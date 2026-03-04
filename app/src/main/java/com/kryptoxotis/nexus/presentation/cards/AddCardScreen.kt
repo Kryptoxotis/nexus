@@ -254,7 +254,7 @@ fun AddCardScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    // Row 2: Social Media + Business Card
+                    // Row 2: Social Media + Nexus
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -268,8 +268,8 @@ fun AddCardScreen(
                         )
                         CardTypeOption(
                             icon = Icons.Default.Badge,
-                            title = "Business Card",
-                            description = "Professional card with structured fields",
+                            title = "Nexus",
+                            description = "Your digital identity card",
                             onClick = { selectedType = CardType.BUSINESS_CARD },
                             modifier = Modifier.weight(1f)
                         )
@@ -297,8 +297,8 @@ fun AddCardScreen(
                 } else {
                     CardTypeOption(
                         icon = Icons.Default.Badge,
-                        title = "Business Card",
-                        description = "Professional card with structured fields",
+                        title = "Nexus",
+                        description = "Your digital identity card",
                         onClick = { selectedType = CardType.BUSINESS_CARD },
                         modifier = Modifier.fillMaxWidth()
                     )

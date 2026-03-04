@@ -2,8 +2,6 @@ package com.kryptoxotis.nexus.presentation.auth
 
 import android.app.Activity
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.kryptoxotis.nexus.presentation.theme.NexusLogo
 
 @Composable
 fun LoginScreen(
@@ -34,12 +33,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            Icons.Default.Nfc,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+        NexusLogo(size = 100.dp)
 
         Spacer(modifier = Modifier.height(24.dp))
 
