@@ -1,0 +1,250 @@
+package com.kryptoxotis.nexus.presentation.admin
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.kryptoxotis.nexus.data.remote.dto.BusinessRequestDto
+import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BusinessRequestsScreen(
+    viewModel: AdminViewModel,
+    onNavigateBack: () -> Unit
+) {
+    val requests by viewModel.pendingRequests.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadPendingRequests()
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        if (uiState is AdminUiState.Success) {
+            viewModel.resetState()
+        }
+        if (uiState is AdminUiState.Error) {
+            snackbarHostState.showSnackbar((uiState as AdminUiState.Error).message)
+        }
+    }
+
+    Scaffold(
+        containerColor = NexusBackground,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Business Requests") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        if (requests.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No pending requests",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = "${requests.size} pending request(s)",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                items(requests, key = { it.id ?: "" }) { request ->
+                    RequestCard(
+                        request = request,
+                        isLoading = uiState is AdminUiState.Loading,
+                        onApprove = { viewModel.approveRequest(request) },
+                        onReject = { viewModel.rejectRequest(request.id ?: "") }
+                    )
+                }
+            }
+        }
+
+    }
+}
+
+@Composable
+private fun RequestCard(
+    request: BusinessRequestDto,
+    isLoading: Boolean,
+    onApprove: () -> Unit,
+    onReject: () -> Unit
+) {
+    var showRejectDialog by remember { mutableStateOf(false) }
+
+    if (showRejectDialog) {
+        AlertDialog(
+            onDismissRequest = { showRejectDialog = false },
+            title = { Text("Reject Request") },
+            text = { Text("Are you sure you want to reject ${request.businessName}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRejectDialog = false
+                    onReject()
+                }) { Text("Reject", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRejectDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
+        colors = CardDefaults.cardColors(containerColor = NexusSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Business,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = request.businessName,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (request.businessType != null) {
+                        Text(
+                            text = request.businessType,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            if (request.contactEmail != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Contact: ${request.contactEmail}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (request.message != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                // Parse JSON message for org details; fallback to plain text
+                val parsedMsg = try {
+                    val jsonElement = Json.parseToJsonElement(request.message)
+                    val obj = jsonElement.jsonObject
+                    val userMsg = obj["userMessage"]?.jsonPrimitive?.content?.ifBlank { null }
+                    val desc = obj["description"]?.jsonPrimitive?.content?.ifBlank { null }
+                    val mode = obj["enrollmentMode"]?.jsonPrimitive?.content?.ifBlank { null }
+                    Triple(userMsg, desc, mode)
+                } catch (_: Exception) {
+                    Triple(request.message, null, null)
+                }
+                if (parsedMsg.first != null) {
+                    Text(
+                        text = parsedMsg.first!!,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                if (parsedMsg.second != null) {
+                    Text(
+                        text = "Description: ${parsedMsg.second}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (parsedMsg.third != null) {
+                    Text(
+                        text = "Enrollment: ${parsedMsg.third}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = { showRejectDialog = true },
+                    enabled = !isLoading,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Reject")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = onApprove,
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Approve")
+                    }
+                }
+            }
+        }
+    }
+}

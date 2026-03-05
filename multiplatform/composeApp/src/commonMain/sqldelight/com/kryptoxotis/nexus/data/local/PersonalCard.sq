@@ -1,0 +1,50 @@
+CREATE TABLE personalCard (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    cardType TEXT NOT NULL DEFAULT 'custom',
+    title TEXT NOT NULL,
+    content TEXT,
+    icon TEXT,
+    color TEXT,
+    imageUrl TEXT,
+    cardShape TEXT NOT NULL DEFAULT 'card',
+    isActive INTEGER NOT NULL DEFAULT 0,
+    orderIndex INTEGER NOT NULL DEFAULT 0,
+    stackId TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM personalCard WHERE userId = ? ORDER BY orderIndex ASC;
+
+selectById:
+SELECT * FROM personalCard WHERE id = ?;
+
+selectActive:
+SELECT * FROM personalCard WHERE userId = ? AND isActive = 1 LIMIT 1;
+
+insert:
+INSERT OR REPLACE INTO personalCard(id, userId, cardType, title, content, icon, color, imageUrl, cardShape, isActive, orderIndex, stackId, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateCard:
+UPDATE personalCard SET title = ?, content = ?, color = ?, cardShape = ?, updatedAt = ? WHERE id = ?;
+
+activate:
+UPDATE personalCard SET isActive = 1, updatedAt = ? WHERE id = ?;
+
+deactivateAll:
+UPDATE personalCard SET isActive = 0, updatedAt = ? WHERE userId = ?;
+
+deleteById:
+DELETE FROM personalCard WHERE id = ?;
+
+deleteAllForUser:
+DELETE FROM personalCard WHERE userId = ?;
+
+updateOrderIndex:
+UPDATE personalCard SET orderIndex = ?, updatedAt = ? WHERE id = ?;
+
+updateStackId:
+UPDATE personalCard SET stackId = ?, updatedAt = ? WHERE id = ?;

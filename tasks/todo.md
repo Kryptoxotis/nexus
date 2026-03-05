@@ -1,33 +1,47 @@
-# Share Link → Instant NFC Emulate
+# CMP Port — Compilation Fixes
 
-## Tasks
-- [x] 1. Update `AndroidManifest.xml` — add `singleTop` launch mode + `ACTION_SEND` intent filter
-- [x] 2. Update `MainActivity.kt` — handle share intent, add `_sharedUrl` state, navigate to share screen
-- [x] 3. Create `SharedLinkScreen.kt` — minimal UI with NFC icon, URL display, Save/Discard buttons
-- [ ] 4. Build and verify
+## Issues Fixed
+
+### Critical: DI / Database Wiring
+- [x] 1. AppModule creates NexusDatabase + local data sources and passes them to repositories
+- [x] 2. PersonalCardRepository gets PersonalCardLocalDataSource via AppModule.init()
+- [x] 3. ReceivedCardRepository gets ReceivedCardLocalDataSource via AppModule.init()
+- [x] 4. BusinessPassRepository gets BusinessPassLocalDataSource via AppModule.init()
+- [x] 5. DatabaseDriverFactory.android gets Context from MainActivity
+- [x] 6. Removed unused AdminRepository import from AppModule
+
+### Critical: Platform Fixes
+- [x] 7. Fixed UrlLauncher.android.kt — uses application context via UrlLauncherContext singleton
+- [x] 8. NfcManager.android already has Context param — wired separately
+- [x] 9. Supabase URL/key set in MainActivity.onCreate() and iOS initApp()
+
+### Build Infrastructure
+- [x] 10. Added Gradle wrapper (gradlew, gradle-wrapper.jar, gradle-wrapper.properties)
+- [x] 11. Copied local.properties from parent project for Android SDK path
+
+### Compilation Fixes
+- [x] 12. kotlinx-datetime 0.6.1 → 0.7.1 (pulled by Supabase BOM), `Clock`/`Instant` moved to kotlin.time
+- [x] 13. Added @OptIn(ExperimentalTime::class) to all repositories + BusinessPass
+- [x] 14. Fixed AuthManager signInWith — IDToken from builtin package
+- [x] 15. Fixed AccountSwitcherScreen — nullable displayName
+- [x] 16. Added kotlin.native.ignoreDisabledTargets + disabled hierarchy template warnings
+
+### iOS Setup
+- [ ] 17. Create Xcode project (xcodeproj) — manual step, requires macOS
+
+### Final
+- [x] 18. ✅ `assembleDebug` BUILD SUCCESSFUL — 23MB debug APK at composeApp/build/outputs/apk/debug/
 
 ## Review
 
-### Changes Summary
+### What Was Fixed
+- **DI wiring**: AppModule.init(DatabaseDriverFactory) creates the SQLDelight NexusDatabase and passes it through local data sources to repositories
+- **Platform context**: Android UrlLauncher uses `UrlLauncherContext.appContext` set in MainActivity; DatabaseDriverFactory receives Context
+- **kotlinx-datetime 0.7.x migration**: `Clock` and `Instant` moved from `kotlinx.datetime` to `kotlin.time` stdlib, requires `@OptIn(ExperimentalTime::class)`
+- **Supabase Auth**: `IDToken` provider is in `io.github.jan.supabase.auth.providers.builtin`, not `providers`
+- **iOS entry point**: `initApp()` called in Swift to set Supabase credentials + init database before UI loads
 
-**AndroidManifest.xml** (2 additions)
-- Added `android:launchMode="singleTop"` to prevent duplicate activities when shared to repeatedly
-- Added `ACTION_SEND` + `text/plain` intent filter so Nexus appears in the Android share sheet
-
-**MainActivity.kt** (~25 lines added)
-- Added `_sharedUrl` MutableStateFlow to hold the incoming shared URL
-- Added `handleShareIntent()` that extracts text from `ACTION_SEND` intents and writes it to `NdefCache.writeUri()` for instant NFC emulation
-- Called `handleShareIntent()` from both `onCreate` and `onNewIntent`
-- Added `"share_link"` composable route with Save (calls `addCard` then navigates to wallet) and Discard (clears NdefCache then finishes activity) callbacks
-- Added `LaunchedEffect(sharedUrl)` to auto-navigate to the share screen when a URL is shared
-
-**SharedLinkScreen.kt** (NEW, ~100 lines)
-- Pure presentation composable: Share icon + "NFC Ready" header + URL display box + Save/Discard buttons
-- No ViewModel dependency — just callbacks
-- Uses existing theme colors (NexusBackground, NexusTeal, NexusSurface, NexusTextPrimary, NexusTextSecondary)
-
-### What was NOT changed
-- No DB schema changes
-- No new ViewModels or repositories
-- No changes to NdefCache, PersonalCardViewModel, or NFCPassService
-- Reuses existing `NdefCache.writeUri()` and `PersonalCardViewModel.addCard()` as-is
+### Build Status
+- **Android debug APK**: ✅ Builds successfully
+- **Android release APK**: Needs signing config
+- **iOS**: Needs macOS with Xcode to build (iosMain targets disabled on Windows)

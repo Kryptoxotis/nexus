@@ -1,0 +1,38 @@
+CREATE TABLE receivedCard (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    jobTitle TEXT NOT NULL DEFAULT '',
+    company TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    website TEXT NOT NULL DEFAULT '',
+    linkedin TEXT NOT NULL DEFAULT '',
+    instagram TEXT NOT NULL DEFAULT '',
+    twitter TEXT NOT NULL DEFAULT '',
+    github TEXT NOT NULL DEFAULT '',
+    facebook TEXT NOT NULL DEFAULT '',
+    youtube TEXT NOT NULL DEFAULT '',
+    tiktok TEXT NOT NULL DEFAULT '',
+    discord TEXT NOT NULL DEFAULT '',
+    twitch TEXT NOT NULL DEFAULT '',
+    whatsapp TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    receivedAt TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM receivedCard WHERE userId = ? ORDER BY receivedAt DESC;
+
+selectById:
+SELECT * FROM receivedCard WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO receivedCard(id, userId, name, jobTitle, company, phone, email, website, linkedin, instagram, twitter, github, facebook, youtube, tiktok, discord, twitch, whatsapp, notes, receivedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM receivedCard WHERE id = ?;
+
+deleteAllForUser:
+DELETE FROM receivedCard WHERE userId = ?;

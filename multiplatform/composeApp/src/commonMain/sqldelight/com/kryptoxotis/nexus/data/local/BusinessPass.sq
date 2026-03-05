@@ -1,0 +1,27 @@
+CREATE TABLE businessPass (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    organizationId TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    expiresAt TEXT,
+    useCount INTEGER NOT NULL DEFAULT 0,
+    metadata TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM businessPass WHERE userId = ?;
+
+selectById:
+SELECT * FROM businessPass WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO businessPass(id, userId, organizationId, status, expiresAt, useCount, metadata, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM businessPass WHERE id = ?;
+
+deleteAllForUser:
+DELETE FROM businessPass WHERE userId = ?;
