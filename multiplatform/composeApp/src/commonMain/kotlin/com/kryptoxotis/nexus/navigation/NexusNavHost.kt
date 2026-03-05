@@ -67,7 +67,8 @@ fun NexusNavHost(
     receivedCardViewModel: ReceivedCardViewModel,
     businessViewModel: BusinessViewModel,
     adminViewModel: AdminViewModel,
-    onPostLoginSync: suspend () -> Unit = {}
+    onPostLoginSync: suspend () -> Unit = {},
+    onSignInClick: () -> Unit = {}
 ) {
     val authState by authViewModel.authState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -79,6 +80,7 @@ fun NexusNavHost(
         composable("login") {
             LoginScreen(
                 authViewModel = authViewModel,
+                onSignInClick = onSignInClick,
                 onSignedIn = {
                     val state = authViewModel.authState.value
                     coroutineScope.launch { onPostLoginSync() }

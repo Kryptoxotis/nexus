@@ -12,7 +12,8 @@ import com.kryptoxotis.nexus.presentation.theme.NexusLogo
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,
-    onSignedIn: () -> Unit
+    onSignedIn: () -> Unit,
+    onSignInClick: () -> Unit
 ) {
     val authState by authViewModel.authState.collectAsState()
 
@@ -72,7 +73,7 @@ fun LoginScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { /* Platform-specific sign-in triggered externally */ },
+                    onClick = onSignInClick,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Try Again")
@@ -80,7 +81,7 @@ fun LoginScreen(
             }
             else -> {
                 Button(
-                    onClick = { /* Platform-specific sign-in triggered externally */ },
+                    onClick = onSignInClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)

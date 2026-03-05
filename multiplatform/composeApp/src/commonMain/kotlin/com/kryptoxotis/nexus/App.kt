@@ -8,7 +8,7 @@ import com.kryptoxotis.nexus.navigation.NexusNavHost
 import com.kryptoxotis.nexus.presentation.theme.NexusTheme
 
 @Composable
-fun App() {
+fun App(onSignInClick: () -> Unit = {}) {
     LaunchedEffect(Unit) { AppModule.onAppStart() }
 
     NexusTheme {
@@ -20,7 +20,8 @@ fun App() {
             cardViewModel = AppModule.cardViewModel,
             receivedCardViewModel = AppModule.receivedCardViewModel,
             businessViewModel = AppModule.businessViewModel,
-            adminViewModel = AppModule.adminViewModel
+            adminViewModel = AppModule.adminViewModel,
+            onSignInClick = onSignInClick
         )
     }
 }

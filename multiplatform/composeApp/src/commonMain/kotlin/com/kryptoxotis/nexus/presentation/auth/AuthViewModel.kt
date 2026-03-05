@@ -164,6 +164,8 @@ class AuthViewModel(
 
     fun resetError() { _authState.value = AuthState.NotAuthenticated }
 
+    fun setError(message: String) { _authState.value = AuthState.Error(message) }
+
     override fun onCleared() {
         super.onCleared()
         stopBusinessRequestPolling()
