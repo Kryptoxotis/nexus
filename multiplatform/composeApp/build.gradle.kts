@@ -167,6 +167,32 @@ android {
     }
 }
 
+// Generate IosConfig.kt with secrets for iOS (like Android BuildConfig)
+val generateIosConfig by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/iosConfig/com/kryptoxotis/nexus")
+    outputs.dir(outputDir)
+    doLast {
+        val dir = outputDir.get().asFile
+        dir.mkdirs()
+        val supabaseUrl = secrets.getProperty("SUPABASE_URL")?.takeIf { it.isNotBlank() } ?: ""
+        val supabaseAnonKey = secrets.getProperty("SUPABASE_ANON_KEY")?.takeIf { it.isNotBlank() } ?: ""
+        val googleWebClientId = secrets.getProperty("GOOGLE_WEB_CLIENT_ID")?.takeIf { it.isNotBlank() } ?: ""
+        dir.resolve("IosConfig.kt").writeText("""
+            package com.kryptoxotis.nexus
+
+            object IosConfig {
+                const val SUPABASE_URL = "$supabaseUrl"
+                const val SUPABASE_ANON_KEY = "$supabaseAnonKey"
+                const val GOOGLE_WEB_CLIENT_ID = "$googleWebClientId"
+            }
+        """.trimIndent())
+    }
+}
+
+kotlin.sourceSets.getByName("iosMain") {
+    kotlin.srcDir(generateIosConfig.map { layout.buildDirectory.dir("generated/iosConfig") })
+}
+
 sqldelight {
     databases {
         create("NexusDatabase") {

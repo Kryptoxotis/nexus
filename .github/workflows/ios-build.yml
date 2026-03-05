@@ -39,27 +39,9 @@ jobs:
     - name: Grant execute permission
       run: chmod +x multiplatform/gradlew
 
-    - name: Build iOS Framework
-      run: |
-        cd multiplatform
-        ./gradlew :composeApp:linkDebugFrameworkIosArm64
-
-    - name: Stage framework for Xcode
-      run: |
-        cd multiplatform
-        # Copy the built framework to where Xcode's FRAMEWORK_SEARCH_PATHS expects it
-        FRAMEWORK_SRC="composeApp/build/bin/iosArm64/debugFramework/ComposeApp.framework"
-        FRAMEWORK_DST="composeApp/build/xcode-frameworks/Debug/iphoneos"
-        mkdir -p "$FRAMEWORK_DST"
-        cp -R "$FRAMEWORK_SRC" "$FRAMEWORK_DST/"
-        echo "Framework staged at: $FRAMEWORK_DST"
-        ls -la "$FRAMEWORK_DST/ComposeApp.framework/"
-
     - name: Build iOS App (Device)
       run: |
         cd multiplatform/iosApp
-        # Skip the Gradle shell script phase (framework already built and staged)
-        # by setting KOTLIN_FRAMEWORK_BUILD_TYPE so embedAndSign becomes a no-op
         xcodebuild build \
           -project iosApp.xcodeproj \
           -scheme iosApp \
@@ -68,14 +50,12 @@ jobs:
           -derivedDataPath build \
           CODE_SIGNING_ALLOWED=NO \
           CODE_SIGN_IDENTITY="-" \
-          KOTLIN_FRAMEWORK_BUILD_TYPE=Debug \
-          SCRIPT_INPUT_FILE_COUNT=0 \
-          2>&1 | tee xcodebuild.log | tail -40
+          2>&1 | tee xcodebuild.log | tail -50
 
-        # Check for build errors
-        if grep -q "BUILD FAILED\|error:" xcodebuild.log; then
-          echo "=== ERRORS ==="
+        if grep -q "BUILD FAILED" xcodebuild.log; then
+          echo "=== BUILD ERRORS ==="
           grep "error:" xcodebuild.log | head -20
+          exit 1
         fi
 
     - name: Verify and create unsigned IPA
@@ -87,32 +67,27 @@ jobs:
         fi
 
         if [ -z "$APP_PATH" ]; then
-          echo "ERROR: No .app found in build directory"
-          find build -type d | head -30
+          echo "ERROR: No .app found"
           exit 1
         fi
 
         echo "Found app at: $APP_PATH"
         ls -la "$APP_PATH/"
 
-        # Verify the app has an executable
         APP_NAME=$(basename "$APP_PATH" .app)
         if [ ! -f "$APP_PATH/$APP_NAME" ]; then
-          echo "ERROR: No executable found in .app bundle"
-          echo "Contents of .app:"
+          echo "ERROR: No executable in .app bundle"
           find "$APP_PATH" -type f
           exit 1
         fi
 
-        echo "Executable found: $APP_PATH/$APP_NAME"
+        echo "Executable: $APP_PATH/$APP_NAME"
         file "$APP_PATH/$APP_NAME"
 
-        # Create IPA
         mkdir -p Payload
         cp -r "$APP_PATH" Payload/
         zip -r "$GITHUB_WORKSPACE/NexusCMP-unsigned.ipa" Payload
         rm -rf Payload
-
         echo "IPA size: $(du -h "$GITHUB_WORKSPACE/NexusCMP-unsigned.ipa" | cut -f1)"
 
     - name: Upload IPA

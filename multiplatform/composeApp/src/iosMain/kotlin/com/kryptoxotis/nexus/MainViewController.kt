@@ -9,8 +9,8 @@ fun MainViewController() = ComposeUIViewController {
     App()
 }
 
-fun initApp(supabaseUrl: String, supabaseAnonKey: String) {
-    SupabaseClientProvider.supabaseUrl = supabaseUrl
-    SupabaseClientProvider.supabaseAnonKey = supabaseAnonKey
+fun initApp() {
+    SupabaseClientProvider.supabaseUrl = IosConfig.SUPABASE_URL
+    SupabaseClientProvider.supabaseAnonKey = IosConfig.SUPABASE_ANON_KEY
     AppModule.init(DatabaseDriverFactory())
 }
