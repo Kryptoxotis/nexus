@@ -7,6 +7,7 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.runBlocking
+import kotlin.concurrent.Volatile
 
 object SupabaseClientProvider {
 
@@ -17,9 +18,7 @@ object SupabaseClientProvider {
     private var client: SupabaseClient? = null
 
     fun getClient(): SupabaseClient {
-        return client ?: synchronized(this) {
-            client ?: createClient().also { client = it }
-        }
+        return client ?: createClient().also { client = it }
     }
 
     private fun createClient(): SupabaseClient {
@@ -38,9 +37,7 @@ object SupabaseClientProvider {
     }
 
     fun resetClient() {
-        synchronized(this) {
-            try { runBlocking { client?.close() } } catch (_: Exception) {}
-            client = null
-        }
+        try { runBlocking { client?.close() } } catch (_: Exception) {}
+        client = null
     }
 }
