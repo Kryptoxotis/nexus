@@ -1,40 +1,41 @@
 package com.kryptoxotis.nexus.platform
 
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
-import org.jetbrains.skia.Bitmap
-import org.jetbrains.skia.ColorAlphaType
-import org.jetbrains.skia.ColorType
-import org.jetbrains.skia.ImageInfo
-import platform.CoreImage.CIContext
-import platform.CoreImage.CIFilter
-import platform.CoreImage.filterWithName
-import platform.Foundation.NSString
-import platform.Foundation.NSUTF8StringEncoding
-import platform.Foundation.dataUsingEncoding
+import androidx.compose.ui.graphics.Paint
 
 actual object QrGenerator {
     actual suspend fun generate(content: String, size: Int): ImageBitmap {
-        val data = (content as NSString).dataUsingEncoding(NSUTF8StringEncoding)
-            ?: throw IllegalStateException("Failed to encode QR content")
+        // Simple placeholder QR-like pattern on iOS
+        // Real QR generation would use CIFilter with proper interop
+        val bitmap = ImageBitmap(size, size)
+        val canvas = Canvas(bitmap)
+        val paint = Paint()
 
-        val filter = CIFilter.filterWithName("CIQRCodeGenerator")
-            ?: throw IllegalStateException("CIQRCodeGenerator not available")
-        filter.setDefaults()
-        filter.setValue(data, forKey = "inputMessage")
-        filter.setValue("M", forKey = "inputCorrectionLevel")
+        // White background
+        paint.color = Color.White
+        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
 
-        val ciImage = filter.valueForKey("outputImage")
-            ?: throw IllegalStateException("QR generation failed")
+        // Draw a simple pattern to indicate QR placeholder
+        paint.color = Color.Black
+        val moduleSize = size / 21f // Standard QR has 21x21 modules minimum
 
-        // For now, generate a simple placeholder bitmap
-        // Full CIImage → pixel extraction requires more complex CoreGraphics bridging
-        val pixels = IntArray(size * size) { 0xFF000000.toInt() }
+        // Draw finder patterns (top-left, top-right, bottom-left corners)
+        drawFinderPattern(canvas, paint, 0f, 0f, moduleSize)
+        drawFinderPattern(canvas, paint, (size - 7 * moduleSize), 0f, moduleSize)
+        drawFinderPattern(canvas, paint, 0f, (size - 7 * moduleSize), moduleSize)
 
-        val skiaBitmap = Bitmap()
-        skiaBitmap.allocPixels(ImageInfo(size, size, ColorType.BGRA_8888, ColorAlphaType.PREMUL))
-        skiaBitmap.installPixels(pixels)
+        return bitmap
+    }
 
-        return skiaBitmap.toComposeImageBitmap()
+    private fun drawFinderPattern(canvas: Canvas, paint: Paint, x: Float, y: Float, moduleSize: Float) {
+        // Outer border
+        canvas.drawRect(x, y, x + 7 * moduleSize, y + moduleSize, paint)
+        canvas.drawRect(x, y + 6 * moduleSize, x + 7 * moduleSize, y + 7 * moduleSize, paint)
+        canvas.drawRect(x, y, x + moduleSize, y + 7 * moduleSize, paint)
+        canvas.drawRect(x + 6 * moduleSize, y, x + 7 * moduleSize, y + 7 * moduleSize, paint)
+        // Inner square
+        canvas.drawRect(x + 2 * moduleSize, y + 2 * moduleSize, x + 5 * moduleSize, y + 5 * moduleSize, paint)
     }
 }
