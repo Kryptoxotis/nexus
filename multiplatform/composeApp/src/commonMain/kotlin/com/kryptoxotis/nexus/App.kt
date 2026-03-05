@@ -21,7 +21,8 @@ fun App(onSignInClick: () -> Unit = {}) {
             receivedCardViewModel = AppModule.receivedCardViewModel,
             businessViewModel = AppModule.businessViewModel,
             adminViewModel = AppModule.adminViewModel,
-            onSignInClick = onSignInClick
+            onSignInClick = onSignInClick,
+            onPostLoginSync = { AppModule.onPostLoginSync() }
         )
     }
 }

@@ -43,6 +43,16 @@ object AppModule {
     }
 
     fun onAppStart() {
+        personalCardRepository.refreshUserId()
+        receivedCardRepository.refreshUserId()
         authViewModel.checkSession()
+    }
+
+    suspend fun onPostLoginSync() {
+        personalCardRepository.refreshUserId()
+        receivedCardRepository.refreshUserId()
+        personalCardRepository.syncFromSupabase()
+        receivedCardRepository.syncFromSupabase()
+        businessPassRepository.syncFromSupabase()
     }
 }
