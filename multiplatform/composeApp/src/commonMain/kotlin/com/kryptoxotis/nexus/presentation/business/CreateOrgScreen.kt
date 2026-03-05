@@ -10,6 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.EnrollmentMode
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +59,7 @@ fun CreateOrgScreen(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Organization Name *") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuInset(),
                 singleLine = true
             )
 
@@ -64,7 +67,7 @@ fun CreateOrgScreen(
                 value = type,
                 onValueChange = { type = it },
                 label = { Text("Business Type") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuInset(),
                 singleLine = true,
                 placeholder = { Text("e.g. Restaurant, Gym, Retail") }
             )
@@ -73,7 +76,7 @@ fun CreateOrgScreen(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuInset(),
                 minLines = 3
             )
 
@@ -133,7 +136,7 @@ fun CreateOrgScreen(
                         enrollmentMode = enrollmentMode
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp),
                 enabled = name.isNotBlank() && uiState !is BusinessUiState.Loading
             ) {
                 if (uiState is BusinessUiState.Loading) {
@@ -148,9 +151,9 @@ fun CreateOrgScreen(
 
             if (uiState is BusinessUiState.Error) {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
                 ) {
                     Text(
                         text = (uiState as BusinessUiState.Error).message,

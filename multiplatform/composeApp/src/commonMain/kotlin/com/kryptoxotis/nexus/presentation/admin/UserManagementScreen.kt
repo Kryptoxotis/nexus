@@ -3,6 +3,7 @@ package com.kryptoxotis.nexus.presentation.admin
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -10,7 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.data.remote.dto.AllowedEmailDto
 import com.kryptoxotis.nexus.data.remote.dto.ProfileDto
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
@@ -18,6 +21,7 @@ import com.kryptoxotis.nexus.presentation.theme.NexusDeep
 import com.kryptoxotis.nexus.presentation.theme.NexusOrange
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.NexusTeal
+import com.kryptoxotis.nexus.presentation.theme.neuInset
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 private sealed class UserRow {
@@ -106,23 +110,40 @@ fun UserManagementScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search users...") },
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = NexusTeal) },
-                trailingIcon = {
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .neuInset(cornerRadius = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = NexusTeal)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (searchQuery.isBlank()) {
+                            Text(
+                                "Search users...",
+                                style = TextStyle(color = Color(0xFF888888), fontSize = 14.sp)
+                            )
+                        }
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = TextStyle(color = Color(0xFFD4D4D4), fontSize = 14.sp),
+                            singleLine = true
+                        )
+                    }
                     if (searchQuery.isNotBlank()) {
                         IconButton(onClick = { searchQuery = "" }) {
                             Icon(Icons.Default.Clear, contentDescription = "Clear")
                         }
                     }
                 }
-            )
+            }
 
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
@@ -186,11 +207,11 @@ private fun PendingItem(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    Card(
-            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
-            colors = CardDefaults.cardColors(containerColor = NexusSurface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -279,11 +300,11 @@ private fun UserItem(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val isAdmin = user.accountType == "admin"
 
-    Card(
-            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
-            colors = CardDefaults.cardColors(containerColor = NexusSurface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

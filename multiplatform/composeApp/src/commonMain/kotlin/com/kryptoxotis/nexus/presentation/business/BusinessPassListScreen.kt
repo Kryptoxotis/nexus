@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.BusinessPass
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.domain.model.PassStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +86,7 @@ fun BusinessPassListScreen(
 
 @Composable
 private fun BusinessPassItem(pass: BusinessPass) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

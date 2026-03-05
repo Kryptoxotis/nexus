@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.platform.NfcManager
 import com.kryptoxotis.nexus.platform.openUrl
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,7 +106,10 @@ fun ScanCardScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onNavigateBack) {
+                Button(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
+                ) {
                     Text("Go Back")
                 }
             } else {
@@ -185,7 +189,7 @@ fun ScanCardScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
                     if (!contactSaved) {
-                        Button(onClick = {
+                        Button(modifier = Modifier.neuRaised(cornerRadius = 16.dp, elevation = 8.dp), onClick = {
                             receivedCardViewModel.saveContact(
                                 name = parsed.name,
                                 jobTitle = parsed.jobTitle,
@@ -238,7 +242,7 @@ fun ScanCardScreen(
                     }
                     if (isUrl) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = {
+                        Button(modifier = Modifier.neuRaised(cornerRadius = 16.dp, elevation = 8.dp), onClick = {
                             try {
                                 openUrl(result)
                             } catch (_: Exception) {
@@ -259,7 +263,7 @@ fun ScanCardScreen(
                         var walletSaved by remember { mutableStateOf(false) }
                         Spacer(modifier = Modifier.height(8.dp))
                         if (!walletSaved) {
-                            OutlinedButton(onClick = {
+                            OutlinedButton(modifier = Modifier.neuRaised(cornerRadius = 16.dp, elevation = 6.dp), onClick = {
                                 val cardType =
                                     if (isUrl) CardType.LINK else CardType.CUSTOM
                                 val cardTitle = if (isUrl) {

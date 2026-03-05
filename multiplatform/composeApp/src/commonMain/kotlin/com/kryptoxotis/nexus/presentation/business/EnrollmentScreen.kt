@@ -9,8 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.EnrollmentMode
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.domain.model.Organization
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +72,8 @@ fun EnrollmentScreen(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .neuInset(),
                 placeholder = { Text("Search organizations...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                 singleLine = true,
@@ -197,7 +201,7 @@ private fun OrgEnrollmentCard(
     isLoading: Boolean,
     onEnroll: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

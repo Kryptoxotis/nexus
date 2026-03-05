@@ -11,6 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.EnrollmentMode
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +79,7 @@ fun OrgSettingsScreen(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Organization Name") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuInset(),
                 singleLine = true
             )
 
@@ -84,7 +87,7 @@ fun OrgSettingsScreen(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuInset(),
                 minLines = 3
             )
 
@@ -142,7 +145,7 @@ fun OrgSettingsScreen(
                     value = staticPin,
                     onValueChange = { staticPin = it },
                     label = { Text("Static PIN") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().neuInset(),
                     singleLine = true
                 )
             }
@@ -158,7 +161,7 @@ fun OrgSettingsScreen(
                         allowSelfEnrollment = allowSelfEnrollment
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp),
                 enabled = uiState !is BusinessUiState.Loading
             ) {
                 if (uiState is BusinessUiState.Loading) {
@@ -186,7 +189,7 @@ fun OrgSettingsScreen(
                     value = newPin,
                     onValueChange = { newPin = it },
                     label = { Text("New PIN Code") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).neuInset(),
                     singleLine = true
                 )
                 Button(
@@ -202,9 +205,9 @@ fun OrgSettingsScreen(
 
             if (uiState is BusinessUiState.Error) {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
                 ) {
                     Text(
                         text = (uiState as BusinessUiState.Error).message,
@@ -216,9 +219,9 @@ fun OrgSettingsScreen(
 
             if (uiState is BusinessUiState.Success) {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
                 ) {
                     Text(
                         text = (uiState as BusinessUiState.Success).message,

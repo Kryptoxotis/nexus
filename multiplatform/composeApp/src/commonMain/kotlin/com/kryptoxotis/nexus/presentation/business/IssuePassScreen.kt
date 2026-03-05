@@ -12,6 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.kryptoxotis.nexus.presentation.theme.neuInset
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +82,7 @@ fun IssuePassScreen(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("User Email *") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuInset(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 placeholder = { Text("user@example.com") }
@@ -91,7 +94,7 @@ fun IssuePassScreen(
                 onClick = {
                     localError = "Issuing passes by email is not yet implemented. Use enrollment instead."
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp),
                 enabled = email.isNotBlank() && uiState !is BusinessUiState.Loading
             ) {
                 if (uiState is BusinessUiState.Loading) {
@@ -107,9 +110,9 @@ fun IssuePassScreen(
             val errorMessage = localError ?: (uiState as? BusinessUiState.Error)?.message
             if (errorMessage != null) {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
                 ) {
                     Text(
                         text = errorMessage,

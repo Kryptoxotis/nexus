@@ -6,8 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.presentation.theme.NexusLogo
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @Composable
 fun LoginScreen(
@@ -60,10 +62,11 @@ fun LoginScreen(
             }
             is AuthState.Error -> {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
                 ) {
                     Text(
                         text = (authState as AuthState.Error).message,
@@ -85,6 +88,7 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
+                        .neuRaised(cornerRadius = 16.dp, elevation = 8.dp)
                 ) {
                     Text("Sign in with Google", style = MaterialTheme.typography.titleMedium)
                 }

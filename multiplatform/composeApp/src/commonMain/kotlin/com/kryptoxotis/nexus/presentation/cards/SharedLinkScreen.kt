@@ -113,9 +113,7 @@ fun SharedLinkScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(NexusSurface)
-                .border(1.dp, NexusTeal.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                .neuRaised(cornerRadius = 16.dp, elevation = 8.dp, neonColor = NexusTeal)
                 .padding(20.dp)
         ) {
             Column {
@@ -142,7 +140,7 @@ fun SharedLinkScreen(
         // Actions at the bottom
         Button(
             onClick = onSave,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 12.dp, elevation = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = NexusTeal),
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -153,7 +151,7 @@ fun SharedLinkScreen(
 
         OutlinedButton(
             onClick = onDiscard,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 12.dp, elevation = 6.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = NexusTextSecondary)
         ) {

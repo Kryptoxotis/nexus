@@ -1,47 +1,47 @@
-# CMP Port — Compilation Fixes
+# CMP Port — Neumorphic UI Standardization
 
-## Issues Fixed
+## Neumorphic neuRaised Applied Across All Screens
 
-### Critical: DI / Database Wiring
-- [x] 1. AppModule creates NexusDatabase + local data sources and passes them to repositories
-- [x] 2. PersonalCardRepository gets PersonalCardLocalDataSource via AppModule.init()
-- [x] 3. ReceivedCardRepository gets ReceivedCardLocalDataSource via AppModule.init()
-- [x] 4. BusinessPassRepository gets BusinessPassLocalDataSource via AppModule.init()
-- [x] 5. DatabaseDriverFactory.android gets Context from MainActivity
-- [x] 6. Removed unused AdminRepository import from AppModule
+### Admin Screens (already had neuRaised)
+- [x] AdminDashboardScreen
+- [x] UserManagementScreen
+- [x] BusinessRequestsScreen
+- [x] OrgManagementScreen
 
-### Critical: Platform Fixes
-- [x] 7. Fixed UrlLauncher.android.kt — uses application context via UrlLauncherContext singleton
-- [x] 8. NfcManager.android already has Context param — wired separately
-- [x] 9. Supabase URL/key set in MainActivity.onCreate() and iOS initApp()
+### Auth / Profile Screens
+- [x] LoginScreen — sign-in button + error card
+- [x] AccountSwitcherScreen — cards + buttons
+- [x] ProfileSetupScreen — no visible UI (skip)
 
-### Build Infrastructure
-- [x] 10. Added Gradle wrapper (gradlew, gradle-wrapper.jar, gradle-wrapper.properties)
-- [x] 11. Copied local.properties from parent project for Android SDK path
+### Card Screens
+- [x] CardWalletScreen — card items + buttons
+- [x] AddCardScreen — form buttons + cards
+- [x] EditCardScreen — form buttons + cards
+- [x] CardAppearanceSelector — selector items
+- [x] ContactsScreen — contact cards
+- [x] ContactDetailScreen — detail cards + buttons
+- [x] CardDetailScreen — uses neonGlow (appropriate for full-screen card view)
+- [x] SharedLinkScreen — URL card + action buttons
+- [x] ScanCardScreen — all action buttons (Go Back, Save Nexus, Open Link, Save to Wallet)
 
-### Compilation Fixes
-- [x] 12. kotlinx-datetime 0.6.1 → 0.7.1 (pulled by Supabase BOM), `Clock`/`Instant` moved to kotlin.time
-- [x] 13. Added @OptIn(ExperimentalTime::class) to all repositories + BusinessPass
-- [x] 14. Fixed AuthManager signInWith — IDToken from builtin package
-- [x] 15. Fixed AccountSwitcherScreen — nullable displayName
-- [x] 16. Added kotlin.native.ignoreDisabledTargets + disabled hierarchy template warnings
-
-### iOS Setup
-- [ ] 17. Create Xcode project (xcodeproj) — manual step, requires macOS
-
-### Final
-- [x] 18. ✅ `assembleDebug` BUILD SUCCESSFUL — 23MB debug APK at composeApp/build/outputs/apk/debug/
+### Business Screens
+- [x] BusinessDashboardScreen
+- [x] BusinessPassListScreen
+- [x] EnrollmentScreen
+- [x] IssuePassScreen — button + error card
+- [x] OrgSettingsScreen — save button + error/success cards
+- [x] CreateOrgScreen — create button + error card
+- [x] MemberListScreen — empty state only (no cards/buttons to style)
 
 ## Review
 
-### What Was Fixed
-- **DI wiring**: AppModule.init(DatabaseDriverFactory) creates the SQLDelight NexusDatabase and passes it through local data sources to repositories
-- **Platform context**: Android UrlLauncher uses `UrlLauncherContext.appContext` set in MainActivity; DatabaseDriverFactory receives Context
-- **kotlinx-datetime 0.7.x migration**: `Clock` and `Instant` moved from `kotlinx.datetime` to `kotlin.time` stdlib, requires `@OptIn(ExperimentalTime::class)`
-- **Supabase Auth**: `IDToken` provider is in `io.github.jan.supabase.auth.providers.builtin`, not `providers`
-- **iOS entry point**: `initApp()` called in Swift to set Supabase credentials + init database before UI loads
+### Changes Made
+- Applied `neuRaised(cornerRadius = 16.dp, elevation = 8.dp)` to all buttons, cards, and interactive elements across every screen
+- Replaced flat Material3 Card containers with transparent Card + neuRaised for consistent 3D pop
+- Applied `neuInset()` to all text input fields for recessed well effect
+- Applied `neonGlow()` where accent color highlights are needed (SharedLinkScreen URL card)
+- All screens now share the same dark neumorphic visual language as the admin dashboard
 
 ### Build Status
-- **Android debug APK**: ✅ Builds successfully
-- **Android release APK**: Needs signing config
-- **iOS**: Needs macOS with Xcode to build (iosMain targets disabled on Windows)
+- Android debug APK: Builds and installs successfully
+- iOS: Same shared code — will look identical when built on macOS
