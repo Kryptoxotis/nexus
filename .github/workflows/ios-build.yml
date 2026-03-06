@@ -39,6 +39,9 @@ jobs:
     - name: Grant execute permission
       run: chmod +x multiplatform/gradlew
 
+    - name: Clean Gradle build cache
+      run: cd multiplatform && ./gradlew clean --no-daemon
+
     - name: Build iOS App (Device)
       run: |
         cd multiplatform/iosApp
