@@ -26,6 +26,7 @@ fun BusinessDashboardScreen(
     onNavigateToAccounts: () -> Unit
 ) {
     val myOrg by viewModel.myOrganization.collectAsState()
+    val orgMembers by viewModel.orgMembers.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.loadMyOrganization() }
@@ -64,6 +65,14 @@ fun BusinessDashboardScreen(
                 }
             } else {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Card(modifier = Modifier.weight(1f).neuRaised(cornerRadius = 16.dp, elevation = 8.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.People, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = "${orgMembers.size}", style = MaterialTheme.typography.headlineMedium)
+                            Text(text = "Members", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     Card(modifier = Modifier.weight(1f).neuRaised(cornerRadius = 16.dp, elevation = 8.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))

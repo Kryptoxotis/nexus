@@ -10,7 +10,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 actual object QrGenerator {
-    actual suspend fun generate(content: String, size: Int): ImageBitmap =
+    actual suspend fun generate(
+        content: String,
+        size: Int,
+        foregroundColor: Int,
+        backgroundColor: Int
+    ): ImageBitmap =
         withContext(Dispatchers.Default) {
             val hints = mapOf(
                 EncodeHintType.MARGIN to 1,
@@ -20,7 +25,7 @@ actual object QrGenerator {
             val pixels = IntArray(size * size)
             for (y in 0 until size) {
                 for (x in 0 until size) {
-                    pixels[y * size + x] = if (bitMatrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
+                    pixels[y * size + x] = if (bitMatrix[x, y]) foregroundColor else backgroundColor
                 }
             }
             Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()

@@ -1,47 +1,25 @@
-# CMP Port — Neumorphic UI Standardization
+# CMP Issues Fix Plan
 
-## Neumorphic neuRaised Applied Across All Screens
+## Issues to Fix
 
-### Admin Screens (already had neuRaised)
-- [x] AdminDashboardScreen
-- [x] UserManagementScreen
-- [x] BusinessRequestsScreen
-- [x] OrgManagementScreen
+### 1. App Icon Missing
+- [ ] Copy ic_launcher PNGs from `app/src/main/res/mipmap-*` to CMP's `composeApp/src/androidMain/res/mipmap-*`
+- [ ] Add `android:icon` and `android:roundIcon` to CMP's AndroidManifest.xml
+- [ ] For iOS: create AppIcon asset catalog in iosApp/
 
-### Auth / Profile Screens
-- [x] LoginScreen — sign-in button + error card
-- [x] AccountSwitcherScreen — cards + buttons
-- [x] ProfileSetupScreen — no visible UI (skip)
+### 2. iOS Sign-In Crashes App
+- [ ] iOS `PlatformAuthManager` calls `supabase.auth.signInWith(Google)` which opens a browser — but the app has no URL scheme configured to handle the OAuth callback
+- [ ] Add Supabase OAuth redirect URL scheme to iOS Info.plist
+- [ ] Handle the OAuth callback in the iOS app entry point
 
-### Card Screens
-- [x] CardWalletScreen — card items + buttons
-- [x] AddCardScreen — form buttons + cards
-- [x] EditCardScreen — form buttons + cards
-- [x] CardAppearanceSelector — selector items
-- [x] ContactsScreen — contact cards
-- [x] ContactDetailScreen — detail cards + buttons
-- [x] CardDetailScreen — uses neonGlow (appropriate for full-screen card view)
-- [x] SharedLinkScreen — URL card + action buttons
-- [x] ScanCardScreen — all action buttons (Go Back, Save Nexus, Open Link, Save to Wallet)
+### 3. Neumorphic UI Not Consistent Everywhere
+- [ ] Audit every screen's Scaffold/TopAppBar/background to use NexusBackground consistently
+- [ ] Make ALL Scaffold backgrounds use NexusBackground (not default Material surface)
+- [ ] Make ALL TopAppBar backgrounds use NexusBackground
+- [ ] Ensure buttons, cards, and interactive elements across all screens use neuRaised
+- [ ] The goal: match the reference image — dark background everywhere, raised 3D elements with highlights/shadows
 
-### Business Screens
-- [x] BusinessDashboardScreen
-- [x] BusinessPassListScreen
-- [x] EnrollmentScreen
-- [x] IssuePassScreen — button + error card
-- [x] OrgSettingsScreen — save button + error/success cards
-- [x] CreateOrgScreen — create button + error card
-- [x] MemberListScreen — empty state only (no cards/buttons to style)
-
-## Review
-
-### Changes Made
-- Applied `neuRaised(cornerRadius = 16.dp, elevation = 8.dp)` to all buttons, cards, and interactive elements across every screen
-- Replaced flat Material3 Card containers with transparent Card + neuRaised for consistent 3D pop
-- Applied `neuInset()` to all text input fields for recessed well effect
-- Applied `neonGlow()` where accent color highlights are needed (SharedLinkScreen URL card)
-- All screens now share the same dark neumorphic visual language as the admin dashboard
-
-### Build Status
-- Android debug APK: Builds and installs successfully
-- iOS: Same shared code — will look identical when built on macOS
+## Priority Order
+1. Fix #3 first (UI consistency) — biggest visual impact, shared code affects both platforms
+2. Fix #1 (app icon) — quick win
+3. Fix #2 (iOS sign-in) — needs testing on device

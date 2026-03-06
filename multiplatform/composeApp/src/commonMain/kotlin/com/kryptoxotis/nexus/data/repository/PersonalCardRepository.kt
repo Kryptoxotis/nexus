@@ -115,14 +115,18 @@ class PersonalCardRepository(
         }
     }
 
+    suspend fun deactivateAllCards() {
+        try {
+            val userId = getCurrentUserId() ?: return
+            localDataSource.deactivateAll(userId, now())
+        } catch (_: Exception) { }
+    }
+
     suspend fun deactivateCard(cardId: String): Result<Unit> {
         return try {
-            val card = localDataSource.getCardById(cardId) ?: return Result.Error("Card not found")
+            val userId = getCurrentUserId() ?: return Result.Error("Not authenticated")
             val timestamp = now()
-            localDataSource.updateCard(cardId, card.title, card.content, card.color, card.cardShape, timestamp)
-            // Re-fetch to get updated state
-            val updated = localDataSource.getCardById(cardId)
-            if (updated != null) pushCardToSupabase(updated)
+            localDataSource.deactivateAll(userId, timestamp)
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error("Failed to deactivate card: ${e.message}", e)

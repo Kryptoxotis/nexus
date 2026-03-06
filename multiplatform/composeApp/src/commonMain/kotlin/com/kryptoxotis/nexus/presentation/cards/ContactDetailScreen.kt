@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.platform.openUrl
+import com.kryptoxotis.nexus.presentation.theme.SocialIcons
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.resolveCardAppearance
 
@@ -95,37 +96,37 @@ fun ContactDetailScreen(
                 NexusField("Website", c.website, c.website, Color(0xFF037A68), Icons.Default.Language)
             )
             if (c.instagram.isNotBlank()) add(
-                NexusField("Instagram", c.instagram, c.instagram, Color(0xFFD62976), Icons.Default.CameraAlt)
+                NexusField("Instagram", c.instagram, c.instagram, Color(0xFFD62976), SocialIcons.Instagram)
             )
             if (c.twitter.isNotBlank()) add(
-                NexusField("X", c.twitter, c.twitter, Color(0xFFEFEFEF), Icons.Default.Tag)
+                NexusField("X", c.twitter, c.twitter, Color(0xFFEFEFEF), SocialIcons.X)
             )
             if (c.github.isNotBlank()) add(
-                NexusField("GitHub", c.github, c.github, Color(0xFFEFEFEF), Icons.Default.Code)
+                NexusField("GitHub", c.github, c.github, Color(0xFFEFEFEF), SocialIcons.GitHub)
             )
             if (c.linkedin.isNotBlank()) add(
-                NexusField("LinkedIn", c.linkedin, c.linkedin, Color(0xFF0A66C2), Icons.Default.Person)
+                NexusField("LinkedIn", c.linkedin, c.linkedin, Color(0xFF0A66C2), SocialIcons.LinkedIn)
             )
             if (c.facebook.isNotBlank()) add(
-                NexusField("Facebook", c.facebook, c.facebook, Color(0xFF1877F2), Icons.Default.ThumbUp)
+                NexusField("Facebook", c.facebook, c.facebook, Color(0xFF1877F2), SocialIcons.Facebook)
             )
             if (c.youtube.isNotBlank()) add(
-                NexusField("YouTube", c.youtube, c.youtube, Color(0xFFFF0000), Icons.Default.PlayCircle)
+                NexusField("YouTube", c.youtube, c.youtube, Color(0xFFFF0000), SocialIcons.YouTube)
             )
             if (c.tiktok.isNotBlank()) add(
-                NexusField("TikTok", c.tiktok, c.tiktok, Color(0xFFEE1D52), Icons.Default.MusicNote)
+                NexusField("TikTok", c.tiktok, c.tiktok, Color(0xFFEE1D52), SocialIcons.TikTok)
             )
             if (c.discord.isNotBlank()) add(
-                NexusField("Discord", c.discord, c.discord, Color(0xFF5865F2), Icons.Default.Headset)
+                NexusField("Discord", c.discord, c.discord, Color(0xFF5865F2), SocialIcons.Discord)
             )
             if (c.twitch.isNotBlank()) add(
-                NexusField("Twitch", c.twitch, c.twitch, Color(0xFF9146FF), Icons.Default.Videocam)
+                NexusField("Twitch", c.twitch, c.twitch, Color(0xFF9146FF), SocialIcons.Twitch)
             )
             if (c.whatsapp.isNotBlank()) add(
                 NexusField(
                     "WhatsApp", c.whatsapp,
                     "https://wa.me/${c.whatsapp.replace(Regex("[^0-9+]"), "")}",
-                    Color(0xFF25D366), Icons.Default.Chat
+                    Color(0xFF25D366), SocialIcons.WhatsApp
                 )
             )
         }

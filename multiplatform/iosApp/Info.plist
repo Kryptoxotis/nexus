@@ -21,11 +21,24 @@
         <key>UIApplicationSupportsMultipleScenes</key>
         <false/>
     </dict>
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
     <key>NFCReaderUsageDescription</key>
     <string>Nexus uses NFC to read digital business cards</string>
     <key>com.apple.developer.nfc.readersession.formats</key>
     <array>
         <string>NDEF</string>
+    </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.kryptoxotis.nexus</string>
+            </array>
+            <key>CFBundleURLName</key>
+            <string>com.kryptoxotis.nexus</string>
+        </dict>
     </array>
 </dict>
 </plist>

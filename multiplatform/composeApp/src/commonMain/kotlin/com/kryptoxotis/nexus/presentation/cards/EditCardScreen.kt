@@ -17,16 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.SocialIcons
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neuInset
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditCardScreen(
     cardId: String,
@@ -63,6 +65,34 @@ fun EditCardScreen(
     var bcInstagram by remember(card.id) { mutableStateOf(initialBc.instagram) }
     var bcTwitter by remember(card.id) { mutableStateOf(initialBc.twitter) }
     var bcGithub by remember(card.id) { mutableStateOf(initialBc.github) }
+    var bcFacebook by remember(card.id) { mutableStateOf(initialBc.facebook) }
+    var bcYoutube by remember(card.id) { mutableStateOf(initialBc.youtube) }
+    var bcTiktok by remember(card.id) { mutableStateOf(initialBc.tiktok) }
+    var bcDiscord by remember(card.id) { mutableStateOf(initialBc.discord) }
+    var bcTwitch by remember(card.id) { mutableStateOf(initialBc.twitch) }
+    var bcWhatsapp by remember(card.id) { mutableStateOf(initialBc.whatsapp) }
+
+    // Enabled fields — initialized from which fields have content
+    var enabledFields by remember(card.id) {
+        mutableStateOf(buildSet {
+            add("name") // always on
+            if (initialBc.jobTitle.isNotBlank()) add("jobTitle")
+            if (initialBc.company.isNotBlank()) add("company")
+            if (initialBc.phone.isNotBlank()) add("phone")
+            if (initialBc.email.isNotBlank()) add("email")
+            if (initialBc.website.isNotBlank()) add("website")
+            if (initialBc.linkedin.isNotBlank()) add("linkedin")
+            if (initialBc.instagram.isNotBlank()) add("instagram")
+            if (initialBc.twitter.isNotBlank()) add("twitter")
+            if (initialBc.github.isNotBlank()) add("github")
+            if (initialBc.facebook.isNotBlank()) add("facebook")
+            if (initialBc.youtube.isNotBlank()) add("youtube")
+            if (initialBc.tiktok.isNotBlank()) add("tiktok")
+            if (initialBc.discord.isNotBlank()) add("discord")
+            if (initialBc.twitch.isNotBlank()) add("twitch")
+            if (initialBc.whatsapp.isNotBlank()) add("whatsapp")
+        })
+    }
 
     // Navigate back on successful update
     LaunchedEffect(uiState) {
@@ -100,16 +130,129 @@ fun EditCardScreen(
             )
 
             if (card.cardType == CardType.BUSINESS_CARD) {
-                OutlinedTextField(value = bcName, onValueChange = { bcName = it }, label = { Text("Full Name *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcJobTitle, onValueChange = { bcJobTitle = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcCompany, onValueChange = { bcCompany = it }, label = { Text("Company") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcPhone, onValueChange = { bcPhone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
-                OutlinedTextField(value = bcEmail, onValueChange = { bcEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
-                OutlinedTextField(value = bcWebsite, onValueChange = { bcWebsite = it }, label = { Text("Website") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-                OutlinedTextField(value = bcLinkedin, onValueChange = { bcLinkedin = it }, label = { Text("LinkedIn") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcInstagram, onValueChange = { bcInstagram = it }, label = { Text("Instagram") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcTwitter, onValueChange = { bcTwitter = it }, label = { Text("Twitter / X") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcGithub, onValueChange = { bcGithub = it }, label = { Text("GitHub") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                // Field toggle icons
+                data class FieldToggle(
+                    val key: String,
+                    val label: String,
+                    val brandColor: Color,
+                    val icon: ImageVector
+                )
+
+                val fieldOptions = listOf(
+                    FieldToggle("jobTitle", "Job Title", Color(0xFFB0BEC5), Icons.Default.Work),
+                    FieldToggle("company", "Company", Color(0xFF90A4AE), Icons.Default.Business),
+                    FieldToggle("phone", "Phone", Color(0xFF037A68), Icons.Default.Phone),
+                    FieldToggle("email", "Email", Color(0xFFFA5700), Icons.Default.Email),
+                    FieldToggle("website", "Website", Color(0xFF037A68), Icons.Default.Language),
+                    FieldToggle("linkedin", "LinkedIn", Color(0xFF0A66C2), SocialIcons.LinkedIn),
+                    FieldToggle("instagram", "Instagram", Color(0xFFD62976), SocialIcons.Instagram),
+                    FieldToggle("twitter", "Twitter / X", Color(0xFFEFEFEF), SocialIcons.X),
+                    FieldToggle("github", "GitHub", Color(0xFFEFEFEF), SocialIcons.GitHub),
+                    FieldToggle("facebook", "Facebook", Color(0xFF1877F2), SocialIcons.Facebook),
+                    FieldToggle("youtube", "YouTube", Color(0xFFFF0000), SocialIcons.YouTube),
+                    FieldToggle("tiktok", "TikTok", Color(0xFFEE1D52), SocialIcons.TikTok),
+                    FieldToggle("discord", "Discord", Color(0xFF5865F2), SocialIcons.Discord),
+                    FieldToggle("twitch", "Twitch", Color(0xFF9146FF), SocialIcons.Twitch),
+                    FieldToggle("whatsapp", "WhatsApp", Color(0xFF25D366), SocialIcons.WhatsApp)
+                )
+
+                Text(
+                    text = "Fields to include",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    fieldOptions.forEach { field ->
+                        val isOn = field.key in enabledFields
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (isOn) field.brandColor.copy(alpha = 0.15f)
+                                    else Color(0xFF1A1A1A)
+                                )
+                                .then(
+                                    if (isOn) Modifier.border(
+                                        1.dp,
+                                        field.brandColor.copy(alpha = 0.4f),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    else Modifier
+                                )
+                                .clickable {
+                                    enabledFields = if (isOn) {
+                                        enabledFields - field.key
+                                    } else {
+                                        enabledFields + field.key
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = field.icon,
+                                contentDescription = field.label,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (isOn) field.brandColor else Color(0xFF444444)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Business card fields (name always shown)
+                IconTextField(value = bcName, onValueChange = { bcName = it }, label = "Full Name *", icon = Icons.Default.Person)
+                if ("jobTitle" in enabledFields) {
+                    IconTextField(value = bcJobTitle, onValueChange = { bcJobTitle = it }, label = "Job Title", icon = Icons.Default.Work)
+                }
+                if ("company" in enabledFields) {
+                    IconTextField(value = bcCompany, onValueChange = { bcCompany = it }, label = "Company", icon = Icons.Default.Business)
+                }
+                if ("phone" in enabledFields) {
+                    IconTextField(value = bcPhone, onValueChange = { bcPhone = it }, label = "Phone", icon = Icons.Default.Phone, keyboardType = KeyboardType.Phone)
+                }
+                if ("email" in enabledFields) {
+                    IconTextField(value = bcEmail, onValueChange = { bcEmail = it }, label = "Email", icon = Icons.Default.Email, keyboardType = KeyboardType.Email)
+                }
+                if ("website" in enabledFields) {
+                    IconTextField(value = bcWebsite, onValueChange = { bcWebsite = it }, label = "Website", icon = Icons.Default.Language, keyboardType = KeyboardType.Uri)
+                }
+                if ("linkedin" in enabledFields) {
+                    IconTextField(value = bcLinkedin, onValueChange = { bcLinkedin = it }, label = "LinkedIn", icon = SocialIcons.LinkedIn)
+                }
+                if ("instagram" in enabledFields) {
+                    IconTextField(value = bcInstagram, onValueChange = { bcInstagram = it }, label = "Instagram", icon = SocialIcons.Instagram)
+                }
+                if ("twitter" in enabledFields) {
+                    IconTextField(value = bcTwitter, onValueChange = { bcTwitter = it }, label = "Twitter / X", icon = SocialIcons.X)
+                }
+                if ("github" in enabledFields) {
+                    IconTextField(value = bcGithub, onValueChange = { bcGithub = it }, label = "GitHub", icon = SocialIcons.GitHub)
+                }
+                if ("facebook" in enabledFields) {
+                    IconTextField(value = bcFacebook, onValueChange = { bcFacebook = it }, label = "Facebook", icon = SocialIcons.Facebook)
+                }
+                if ("youtube" in enabledFields) {
+                    IconTextField(value = bcYoutube, onValueChange = { bcYoutube = it }, label = "YouTube", icon = SocialIcons.YouTube)
+                }
+                if ("tiktok" in enabledFields) {
+                    IconTextField(value = bcTiktok, onValueChange = { bcTiktok = it }, label = "TikTok", icon = SocialIcons.TikTok)
+                }
+                if ("discord" in enabledFields) {
+                    IconTextField(value = bcDiscord, onValueChange = { bcDiscord = it }, label = "Discord", icon = SocialIcons.Discord)
+                }
+                if ("twitch" in enabledFields) {
+                    IconTextField(value = bcTwitch, onValueChange = { bcTwitch = it }, label = "Twitch", icon = SocialIcons.Twitch)
+                }
+                if ("whatsapp" in enabledFields) {
+                    IconTextField(value = bcWhatsapp, onValueChange = { bcWhatsapp = it }, label = "WhatsApp", icon = SocialIcons.WhatsApp, keyboardType = KeyboardType.Phone)
+                }
             } else {
                 OutlinedTextField(
                     value = title,
@@ -159,105 +302,20 @@ fun EditCardScreen(
                 imageUri = card.imageUrl
             )
 
-            // Card shape selector
-            Text(
-                text = "Card Shape",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Card appearance selector
+            CardAppearanceSelector(
+                cardShape = cardShape,
+                onCardShapeChange = { cardShape = it },
+                isDarkMode = isDarkMode,
+                onDarkModeChange = { isDarkMode = it },
+                selectedColorHex = selectedColorHex,
+                onColorSelected = { selectedColorHex = it }
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(if (cardShape == "card") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
-                        .clickable { cardShape = "card" }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) { Text("Card", color = MaterialTheme.colorScheme.onSurface) }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(if (cardShape == "coin") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
-                        .clickable { cardShape = "coin" }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) { Text("Coin", color = MaterialTheme.colorScheme.onSurface) }
-            }
-
-            // Light / Dark mode toggle
-            Text(
-                text = "Card Mode",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(if (!isDarkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
-                        .clickable { isDarkMode = false }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) { Text("Light", color = MaterialTheme.colorScheme.onSurface) }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(if (isDarkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
-                        .clickable { isDarkMode = true }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) { Text("Dark", color = MaterialTheme.colorScheme.onSurface) }
-            }
-
-            // Color palette
-            Text(
-                text = "Card Color",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                NexusCardColors.palette.forEach { entry ->
-                    val isSelected = selectedColorHex == entry.brightHex
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .then(
-                                if (isSelected) Modifier.neonGlow(entry.bright, cornerRadius = 10.dp, elevation = 8.dp)
-                                else Modifier
-                            )
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Brush.linearGradient(listOf(entry.bright, entry.dark)))
-                            .then(
-                                if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(10.dp))
-                                else Modifier
-                            )
-                            .clickable { selectedColorHex = entry.brightHex }
-                    )
-                }
-            }
-            val selectedEntry = NexusCardColors.findByHex(selectedColorHex)
-            if (selectedEntry != null) {
-                Text(
-                    text = selectedEntry.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = {
-                    // Validate URLs for link/social types
                     val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
                     if ((card.cardType == CardType.LINK || card.cardType == CardType.SOCIAL_MEDIA) && content.isNotBlank()) {
                         content = content.trim()
@@ -270,16 +328,48 @@ fun EditCardScreen(
                         }
                     }
                     if (card.cardType == CardType.BUSINESS_CARD) {
-                        val urlFields = listOf(bcWebsite, bcLinkedin, bcInstagram, bcTwitter, bcGithub)
+                        fun toUrl(value: String, base: String, stripAt: Boolean = true): String {
+                            val v = value.trim()
+                            if (v.isBlank()) return v
+                            if (v.startsWith("http://") || v.startsWith("https://")) return v
+                            val clean = if (stripAt) v.removePrefix("@") else v
+                            return "$base$clean"
+                        }
+
+                        val urlFields = listOfNotNull(
+                            if ("website" in enabledFields) bcWebsite else null,
+                            if ("linkedin" in enabledFields) bcLinkedin else null,
+                            if ("instagram" in enabledFields) bcInstagram else null,
+                            if ("twitter" in enabledFields) bcTwitter else null,
+                            if ("github" in enabledFields) bcGithub else null,
+                            if ("facebook" in enabledFields) bcFacebook else null,
+                            if ("youtube" in enabledFields) bcYoutube else null,
+                            if ("tiktok" in enabledFields) bcTiktok else null,
+                            if ("twitch" in enabledFields) bcTwitch else null
+                        )
                         if (urlFields.any { it.isNotBlank() && blockedSchemes.any { scheme -> it.trim().lowercase().startsWith(scheme) } }) {
                             viewModel.setError("Invalid URL scheme in one of the link fields")
                             return@Button
                         }
                         val bcData = BusinessCardData(
-                            name = bcName, jobTitle = bcJobTitle, company = bcCompany,
-                            phone = bcPhone, email = bcEmail, website = bcWebsite,
-                            linkedin = bcLinkedin, instagram = bcInstagram,
-                            twitter = bcTwitter, github = bcGithub
+                            name = bcName,
+                            jobTitle = if ("jobTitle" in enabledFields) bcJobTitle else "",
+                            company = if ("company" in enabledFields) bcCompany else "",
+                            phone = if ("phone" in enabledFields) bcPhone else "",
+                            email = if ("email" in enabledFields) bcEmail else "",
+                            website = if ("website" in enabledFields) bcWebsite.trim().let {
+                                if (it.isNotBlank() && !it.startsWith("http")) "https://$it" else it
+                            } else "",
+                            linkedin = if ("linkedin" in enabledFields) toUrl(bcLinkedin, "https://linkedin.com/in/") else "",
+                            instagram = if ("instagram" in enabledFields) toUrl(bcInstagram, "https://instagram.com/") else "",
+                            twitter = if ("twitter" in enabledFields) toUrl(bcTwitter, "https://x.com/") else "",
+                            github = if ("github" in enabledFields) toUrl(bcGithub, "https://github.com/") else "",
+                            facebook = if ("facebook" in enabledFields) toUrl(bcFacebook, "https://facebook.com/") else "",
+                            youtube = if ("youtube" in enabledFields) toUrl(bcYoutube, "https://youtube.com/@", stripAt = false) else "",
+                            tiktok = if ("tiktok" in enabledFields) toUrl(bcTiktok, "https://tiktok.com/@", stripAt = false) else "",
+                            discord = if ("discord" in enabledFields) bcDiscord else "",
+                            twitch = if ("twitch" in enabledFields) toUrl(bcTwitch, "https://twitch.tv/") else "",
+                            whatsapp = if ("whatsapp" in enabledFields) bcWhatsapp else ""
                         )
                         viewModel.updateCard(
                             cardId = card.id,
@@ -326,4 +416,23 @@ fun EditCardScreen(
             }
         }
     }
+}
+
+@Composable
+private fun IconTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        leadingIcon = { Icon(icon, contentDescription = label) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+    )
 }

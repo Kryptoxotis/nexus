@@ -32,7 +32,9 @@ import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.platform.QrGenerator
 import com.kryptoxotis.nexus.platform.openUrl
 import com.kryptoxotis.nexus.presentation.theme.*
+import com.kryptoxotis.nexus.presentation.theme.SocialIcons
 import com.kryptoxotis.nexus.util.QrContentResolver
+import androidx.compose.ui.graphics.toArgb
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -389,37 +391,37 @@ fun ContactsScreen(
                                 NexusLink("website", "Website", data.website, Color(0xFF037A68), Icons.Default.Language)
                             )
                             if (data.instagram.isNotBlank()) add(
-                                NexusLink("instagram", "Instagram", data.instagram, Color(0xFFD62976), Icons.Default.CameraAlt)
+                                NexusLink("instagram", "Instagram", data.instagram, Color(0xFFD62976), SocialIcons.Instagram)
                             )
                             if (data.twitter.isNotBlank()) add(
-                                NexusLink("twitter", "X", data.twitter, Color(0xFFEFEFEF), Icons.Default.Tag)
+                                NexusLink("twitter", "X", data.twitter, Color(0xFFEFEFEF), SocialIcons.X)
                             )
                             if (data.github.isNotBlank()) add(
-                                NexusLink("github", "GitHub", data.github, Color(0xFFEFEFEF), Icons.Default.Code)
+                                NexusLink("github", "GitHub", data.github, Color(0xFFEFEFEF), SocialIcons.GitHub)
                             )
                             if (data.linkedin.isNotBlank()) add(
-                                NexusLink("linkedin", "LinkedIn", data.linkedin, Color(0xFF0A66C2), Icons.Default.Person)
+                                NexusLink("linkedin", "LinkedIn", data.linkedin, Color(0xFF0A66C2), SocialIcons.LinkedIn)
                             )
                             if (data.facebook.isNotBlank()) add(
-                                NexusLink("facebook", "Facebook", data.facebook, Color(0xFF1877F2), Icons.Default.ThumbUp)
+                                NexusLink("facebook", "Facebook", data.facebook, Color(0xFF1877F2), SocialIcons.Facebook)
                             )
                             if (data.youtube.isNotBlank()) add(
-                                NexusLink("youtube", "YouTube", data.youtube, Color(0xFFFF0000), Icons.Default.PlayCircle)
+                                NexusLink("youtube", "YouTube", data.youtube, Color(0xFFFF0000), SocialIcons.YouTube)
                             )
                             if (data.tiktok.isNotBlank()) add(
-                                NexusLink("tiktok", "TikTok", data.tiktok, Color(0xFFEE1D52), Icons.Default.MusicNote)
+                                NexusLink("tiktok", "TikTok", data.tiktok, Color(0xFFEE1D52), SocialIcons.TikTok)
                             )
                             if (data.discord.isNotBlank()) add(
-                                NexusLink("discord", "Discord", data.discord, Color(0xFF5865F2), Icons.Default.Headset)
+                                NexusLink("discord", "Discord", data.discord, Color(0xFF5865F2), SocialIcons.Discord)
                             )
                             if (data.twitch.isNotBlank()) add(
-                                NexusLink("twitch", "Twitch", data.twitch, Color(0xFF9146FF), Icons.Default.Videocam)
+                                NexusLink("twitch", "Twitch", data.twitch, Color(0xFF9146FF), SocialIcons.Twitch)
                             )
                             if (data.whatsapp.isNotBlank()) add(
                                 NexusLink(
                                     "whatsapp", "WhatsApp",
                                     "https://wa.me/${data.whatsapp.replace(Regex("[^0-9+]"), "")}",
-                                    Color(0xFF25D366), Icons.Default.Chat
+                                    Color(0xFF25D366), SocialIcons.WhatsApp
                                 )
                             )
                         }
@@ -476,7 +478,8 @@ fun ContactsScreen(
                         ) {
                             NexusQrSheet(
                                 content = qrContent,
-                                label = qrLabel
+                                label = qrLabel,
+                                brandColor = qrBrandColor
                             )
                         }
                     }
@@ -691,13 +694,16 @@ private fun NexusSubCard(
 @Composable
 private fun NexusQrSheet(
     content: String,
-    label: String
+    label: String,
+    brandColor: Color = Color(0xFF037A68)
 ) {
-    var qrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    val qrFg = brandColor.toArgb()
+    val qrBg = 0xFF0A0A0A.toInt()
+    var qrBitmap by remember(content) { mutableStateOf<ImageBitmap?>(null) }
 
-    LaunchedEffect(content) {
+    LaunchedEffect(content, qrFg) {
         qrBitmap = try {
-            QrGenerator.generate(content, 400)
+            QrGenerator.generate(content, 400, qrFg, qrBg)
         } catch (_: Exception) {
             null
         }
@@ -715,13 +721,24 @@ private fun NexusQrSheet(
         )
         val bmp = qrBitmap
         if (bmp != null) {
-            Image(
-                bitmap = bmp,
-                contentDescription = "QR Code",
-                modifier = Modifier
-                    .size(240.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            )
+            Card(
+                modifier = Modifier.size(240.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(qrBg))
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        bitmap = bmp,
+                        contentDescription = "QR Code",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
     }

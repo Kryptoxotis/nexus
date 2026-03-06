@@ -82,6 +82,9 @@ kotlin {
                 // Multiplatform Settings
                 implementation("com.russhwolf:multiplatform-settings:1.2.0")
                 implementation("com.russhwolf:multiplatform-settings-no-arg:1.2.0")
+
+                // Reorderable (drag-and-drop)
+                implementation("sh.calvin.reorderable:reorderable:2.4.3")
             }
         }
 

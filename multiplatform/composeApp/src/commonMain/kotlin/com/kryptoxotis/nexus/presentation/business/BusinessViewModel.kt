@@ -35,6 +35,9 @@ class BusinessViewModel(
     private val _organizations = MutableStateFlow<List<Organization>>(emptyList())
     val organizations: StateFlow<List<Organization>> = _organizations.asStateFlow()
 
+    private val _orgMembers = MutableStateFlow<List<BusinessPass>>(emptyList())
+    val orgMembers: StateFlow<List<BusinessPass>> = _orgMembers.asStateFlow()
+
     private val _userPasses = MutableStateFlow<List<BusinessPass>>(emptyList())
     val userPasses: StateFlow<List<BusinessPass>> = _userPasses.asStateFlow()
 
@@ -53,8 +56,19 @@ class BusinessViewModel(
     fun loadMyOrganization() {
         viewModelScope.launch {
             when (val result = orgRepository.getMyOrganization()) {
-                is Result.Success -> _myOrganization.value = result.data
+                is Result.Success -> {
+                    _myOrganization.value = result.data
+                    result.data?.let { loadOrgMembers(it.id) }
+                }
                 is Result.Error -> _uiState.value = BusinessUiState.Error(result.message)
+            }
+        }
+    }
+
+    fun loadOrgMembers(orgId: String) {
+        viewModelScope.launch {
+            passRepository.observeOrganizationPasses(orgId).collect { passes ->
+                _orgMembers.value = passes
             }
         }
     }

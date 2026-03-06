@@ -13,6 +13,9 @@ CREATE TABLE businessPass (
 selectAll:
 SELECT * FROM businessPass WHERE userId = ?;
 
+selectByOrganization:
+SELECT * FROM businessPass WHERE organizationId = ?;
+
 selectById:
 SELECT * FROM businessPass WHERE id = ?;
 

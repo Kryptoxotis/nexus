@@ -6,20 +6,26 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 
 actual object QrGenerator {
-    actual suspend fun generate(content: String, size: Int): ImageBitmap {
-        // Simple placeholder QR-like pattern on iOS
-        // Real QR generation would use CIFilter with proper interop
+    actual suspend fun generate(
+        content: String,
+        size: Int,
+        foregroundColor: Int,
+        backgroundColor: Int
+    ): ImageBitmap {
+        val fgColor = Color(foregroundColor)
+        val bgColor = Color(backgroundColor)
+
         val bitmap = ImageBitmap(size, size)
         val canvas = Canvas(bitmap)
         val paint = Paint()
 
-        // White background
-        paint.color = Color.White
+        // Background
+        paint.color = bgColor
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
 
         // Draw a simple pattern to indicate QR placeholder
-        paint.color = Color.Black
-        val moduleSize = size / 21f // Standard QR has 21x21 modules minimum
+        paint.color = fgColor
+        val moduleSize = size / 21f
 
         // Draw finder patterns (top-left, top-right, bottom-left corners)
         drawFinderPattern(canvas, paint, 0f, 0f, moduleSize)

@@ -14,10 +14,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-
 /**
- * Neumorphic raised surface with proper 3D pop effect.
- * Dark shadow bottom-right + light highlight top-left + gradient overlay.
+ * Raised neumorphic surface.
+ *
+ * Creates a soft 3D "pop" effect with dual shadows on a dark background.
+ * Light source: top-left. Dark shadow: bottom-right, Light highlight: top-left.
+ * Shadows are drawn BEHIND the surface fill so they don't affect layout.
  */
 fun Modifier.neuRaised(
     cornerRadius: Dp = 22.dp,
@@ -29,45 +31,48 @@ fun Modifier.neuRaised(
     .drawWithCache {
         val cr = cornerRadius.toPx()
         val e = elevation.toPx()
-        val darkColor = Color(0xFF050505)
-        val lightColor = Color(0xFF383838)
 
         onDrawWithContent {
-            // Dark shadow (bottom-right) — multiple layers for soft blur
-            for (i in 6 downTo 1) {
-                val offset = e * i / 4f
-                val alpha = 0.22f / i
-                val expand = e * 0.3f * i / 6f
+            // --- Dark shadow (bottom-right) ---
+            // Soft diffuse: many layers, small alpha, offset down-right
+            val darkLayers = 10
+            for (i in darkLayers downTo 1) {
+                val frac = i.toFloat() / darkLayers
+                val ox = e * 0.5f * frac
+                val oy = e * 0.6f * frac
+                val blur = e * 1.2f * frac
                 drawRoundRect(
-                    color = darkColor.copy(alpha = alpha),
-                    topLeft = Offset(offset - expand, offset - expand),
-                    size = Size(size.width + expand * 2, size.height + expand * 2),
-                    cornerRadius = CornerRadius(cr + expand)
+                    color = Color.Black.copy(alpha = 0.03f),
+                    topLeft = Offset(ox, oy),
+                    size = Size(size.width + blur * 0.3f, size.height + blur * 0.3f),
+                    cornerRadius = CornerRadius(cr)
                 )
             }
 
-            // Light highlight (top-left) — visible highlight for depth
-            for (i in 5 downTo 1) {
-                val offset = e * 0.5f * i / 4f
-                val alpha = 0.12f / i
-                val expand = e * 0.2f * i / 5f
+            // --- Light highlight (top-left) ---
+            // Subtle brightening above and left of the element
+            val lightLayers = 8
+            for (i in lightLayers downTo 1) {
+                val frac = i.toFloat() / lightLayers
+                val ox = e * 0.35f * frac
+                val oy = e * 0.4f * frac
                 drawRoundRect(
-                    color = lightColor.copy(alpha = alpha),
-                    topLeft = Offset(-offset - expand, -offset - expand),
-                    size = Size(size.width + expand * 2, size.height + expand * 2),
-                    cornerRadius = CornerRadius(cr + expand)
+                    color = Color(0xFF2A2A2A).copy(alpha = 0.04f),
+                    topLeft = Offset(-ox, -oy),
+                    size = Size(size.width + ox * 0.5f, size.height + oy * 0.5f),
+                    cornerRadius = CornerRadius(cr)
                 )
             }
 
-            // Neon glow
+            // Neon glow (optional)
             if (neonColor != null) {
                 for (i in 5 downTo 1) {
-                    val spread = e * 0.6f * i / 3f
+                    val spread = e * 1.2f * i / 5f
                     drawRoundRect(
-                        color = neonColor.copy(alpha = 0.10f / i),
-                        topLeft = Offset(-spread, -spread),
-                        size = Size(size.width + spread * 2, size.height + spread * 2),
-                        cornerRadius = CornerRadius(cr + spread)
+                        color = neonColor.copy(alpha = 0.04f * i / 5f),
+                        topLeft = Offset(-spread * 0.5f, -spread * 0.5f),
+                        size = Size(size.width + spread, size.height + spread),
+                        cornerRadius = CornerRadius(cr + spread * 0.3f)
                     )
                 }
             }
@@ -75,29 +80,17 @@ fun Modifier.neuRaised(
             // Surface fill
             drawRoundRect(surfaceColor, cornerRadius = CornerRadius(cr))
 
-            // Gradient highlight overlay — light hitting top edge
-            drawRoundRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.06f),
-                        Color.Transparent,
-                        Color.Black.copy(alpha = 0.04f)
-                    ),
-                    startY = 0f,
-                    endY = size.height
-                ),
-                cornerRadius = CornerRadius(cr)
-            )
-
-            // Top-left edge highlight for 3D pop
+            // Subtle rim light — top edge catches light
             drawRoundRect(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.05f),
+                        Color.White.copy(alpha = 0.055f),
+                        Color.White.copy(alpha = 0.01f),
+                        Color.Transparent,
                         Color.Transparent
                     ),
                     start = Offset.Zero,
-                    end = Offset(size.width * 0.4f, size.height * 0.4f)
+                    end = Offset(size.width, size.height)
                 ),
                 cornerRadius = CornerRadius(cr)
             )
@@ -108,7 +101,7 @@ fun Modifier.neuRaised(
     .clip(RoundedCornerShape(cornerRadius))
 
 /**
- * Inset / recessed well — inner shadow effect.
+ * Inset / recessed well.
  */
 fun Modifier.neuInset(
     cornerRadius: Dp = 20.dp,
@@ -116,41 +109,43 @@ fun Modifier.neuInset(
     .graphicsLayer(clip = false)
     .drawWithCache {
         val cr = cornerRadius.toPx()
+        val d = density
+
         onDrawBehind {
-            // Deep background
+            // Recessed surface
             drawRoundRect(NexusDeep, cornerRadius = CornerRadius(cr))
 
-            // Dark inner shadow (top-left) — multiple layers
+            // Dark inner shadow (top-left inside)
             for (i in 1..5) {
-                val offset = 2.5f * density * i / 4f
-                val alpha = 0.18f / i
+                val t = i / 5f
+                val offset = 2.5f * d * t
                 drawRoundRect(
-                    color = Color(0xFF050505).copy(alpha = alpha),
+                    color = Color.Black.copy(alpha = 0.06f * (1f - t)),
                     topLeft = Offset(offset, offset),
-                    size = Size(size.width - offset, size.height - offset),
+                    size = Size(size.width - offset * 0.5f, size.height - offset * 0.5f),
                     cornerRadius = CornerRadius(cr)
                 )
             }
 
-            // Light inner highlight (bottom-right)
+            // Light inner highlight (bottom-right inside)
             for (i in 1..3) {
-                val offset = 2f * density * i / 3f
-                val alpha = 0.08f / i
+                val t = i / 3f
+                val offset = 1.5f * d * t
                 drawRoundRect(
-                    color = Color(0xFF383838).copy(alpha = alpha),
+                    color = Color(0xFF2A2A2A).copy(alpha = 0.03f * (1f - t)),
                     topLeft = Offset(-offset, -offset),
-                    size = Size(size.width + offset, size.height + offset),
+                    size = Size(size.width + offset * 0.3f, size.height + offset * 0.3f),
                     cornerRadius = CornerRadius(cr)
                 )
             }
 
-            // Subtle inset gradient
+            // Inner gradient for depth
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.08f),
+                        Color.Black.copy(alpha = 0.06f),
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.02f)
+                        Color.White.copy(alpha = 0.01f)
                     )
                 ),
                 cornerRadius = CornerRadius(cr)
@@ -160,7 +155,7 @@ fun Modifier.neuInset(
     .clip(RoundedCornerShape(cornerRadius))
 
 /**
- * Neon glow — colored shadow halo.
+ * Neon glow — colored halo.
  */
 fun Modifier.neonGlow(
     color: Color,
@@ -173,19 +168,19 @@ fun Modifier.neonGlow(
         val e = elevation.toPx()
         onDrawBehind {
             for (i in 6 downTo 1) {
-                val spread = e * i / 4f
+                val spread = e * 1.2f * i / 6f
                 drawRoundRect(
-                    color = color.copy(alpha = 0.14f / i),
-                    topLeft = Offset(-spread, -spread),
-                    size = Size(size.width + spread * 2, size.height + spread * 2),
-                    cornerRadius = CornerRadius(cr + spread)
+                    color = color.copy(alpha = 0.06f * i / 6f),
+                    topLeft = Offset(-spread * 0.5f, -spread * 0.5f),
+                    size = Size(size.width + spread, size.height + spread),
+                    cornerRadius = CornerRadius(cr + spread * 0.5f)
                 )
             }
         }
     }
 
 /**
- * Raised circle for icon buttons with neumorphic depth.
+ * Raised circle for icon buttons.
  */
 fun Modifier.neuCircle(
     elevation: Dp = 6.dp,
@@ -200,47 +195,50 @@ fun Modifier.neuCircle(
 
         onDrawWithContent {
             // Dark shadow (bottom-right)
-            for (i in 5 downTo 1) {
-                val offset = e * i / 3f
-                val alpha = 0.20f / i
+            for (i in 8 downTo 1) {
+                val t = i / 8f
+                val off = e * 0.5f * t
                 drawCircle(
-                    color = Color(0xFF050505).copy(alpha = alpha),
-                    radius = r + e * 0.15f * i,
-                    center = center + Offset(offset, offset)
+                    color = Color.Black.copy(alpha = 0.03f),
+                    radius = r + e * 0.15f * t,
+                    center = center + Offset(off, off)
                 )
             }
+
             // Light highlight (top-left)
-            for (i in 4 downTo 1) {
-                val offset = e * 0.4f * i / 3f
-                val alpha = 0.10f / i
+            for (i in 6 downTo 1) {
+                val t = i / 6f
+                val off = e * 0.35f * t
                 drawCircle(
-                    color = Color(0xFF383838).copy(alpha = alpha),
-                    radius = r + e * 0.1f * i,
-                    center = center + Offset(-offset, -offset)
+                    color = Color(0xFF2A2A2A).copy(alpha = 0.04f),
+                    radius = r + e * 0.1f * t,
+                    center = center + Offset(-off, -off)
                 )
             }
-            // Neon
+
+            // Neon glow
             if (neonColor != null) {
-                for (i in 3 downTo 1) {
+                for (i in 4 downTo 1) {
                     drawCircle(
-                        color = neonColor.copy(alpha = 0.08f / i),
-                        radius = r + e * 0.5f * i,
+                        color = neonColor.copy(alpha = 0.035f * i / 4f),
+                        radius = r + e * 0.8f * i / 4f,
                         center = center
                     )
                 }
             }
-            // Surface fill
+
+            // Surface
             drawCircle(surfaceColor, r, center)
 
-            // Gradient highlight for 3D pop
+            // Rim highlight
             drawCircle(
-                brush = Brush.radialGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.05f),
+                        Color.White.copy(alpha = 0.045f),
                         Color.Transparent
                     ),
-                    center = center + Offset(-r * 0.3f, -r * 0.3f),
-                    radius = r * 1.2f
+                    start = center + Offset(-r, -r),
+                    end = center + Offset(r * 0.3f, r * 0.3f)
                 ),
                 radius = r,
                 center = center

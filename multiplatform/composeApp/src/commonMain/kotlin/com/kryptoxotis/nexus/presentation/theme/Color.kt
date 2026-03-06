@@ -13,7 +13,8 @@ val NexusOrange = Color(0xFFFA5700)
 val NexusOrangeLight = Color(0xFFFF8C4A)
 val NexusOrangeDark = Color(0xFFC44500)
 
-// Backgrounds & surfaces (black / dark gray)
+// Backgrounds & surfaces — near-black, monochromatic.
+// Depth comes from neumorphic shadows, not color variation.
 val NexusBackground = Color(0xFF0A0A0A)
 val NexusDeep = Color(0xFF111111)
 val NexusSurface = Color(0xFF1A1A1A)

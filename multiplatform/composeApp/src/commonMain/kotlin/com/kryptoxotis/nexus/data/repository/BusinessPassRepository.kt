@@ -39,6 +39,9 @@ class BusinessPassRepository(
         return localDataSource.observePassesByUser(userId)
     }
 
+    fun observeOrganizationPasses(orgId: String): Flow<List<BusinessPass>> =
+        localDataSource.observePassesByOrganization(orgId)
+
     suspend fun enrollInOrganization(
         organizationId: String,
         organizationName: String? = null

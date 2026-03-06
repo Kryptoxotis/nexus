@@ -2,6 +2,7 @@ package com.kryptoxotis.nexus.platform
 
 import android.content.Context
 import android.nfc.NfcAdapter
+import com.kryptoxotis.nexus.service.NdefCache
 
 actual class NfcManager(private val context: Context) {
     actual fun isSupported(): Boolean =
@@ -13,6 +14,10 @@ actual class NfcManager(private val context: Context) {
     }
 
     actual fun writeNdefCache(content: String, isUri: Boolean) {
-        // Delegated to NdefCache in service/
+        if (isUri) {
+            NdefCache.writeUri(context, content)
+        } else {
+            NdefCache.writeVCard(context, content)
+        }
     }
 }

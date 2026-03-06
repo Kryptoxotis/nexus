@@ -40,6 +40,8 @@ class PersonalCardViewModel(
     init {
         viewModelScope.launch { cardRepository.observeUserCards().collect { _cards.value = it } }
         viewModelScope.launch { cardRepository.observeActiveCard().collect { _activeCard.value = it } }
+        // Deactivate all cards on app start — no card should be emulating until user taps one
+        viewModelScope.launch { cardRepository.deactivateAllCards() }
         viewModelScope.launch {
             _uiState.collect { state ->
                 if (state is CardUiState.Success || state is CardUiState.Error) {

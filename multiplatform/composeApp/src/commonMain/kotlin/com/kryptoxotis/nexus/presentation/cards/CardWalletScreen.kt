@@ -36,6 +36,14 @@ import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
 import com.kryptoxotis.nexus.presentation.theme.*
 import com.kryptoxotis.nexus.util.QrContentResolver
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -74,8 +82,29 @@ fun CardWalletScreen(
         }
     }
 
+    // Drag-and-drop reorder state
+    val hapticFeedback = LocalHapticFeedback.current
+    val lazyListState = rememberLazyListState()
+    var dragDidMove by remember { mutableStateOf(false) }
+    var reorderableCards by remember { mutableStateOf(filteredCards) }
+    LaunchedEffect(filteredCards) { reorderableCards = filteredCards }
+
+    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        val fromIndex = reorderableCards.indexOfFirst { it.id == from.key }
+        val toIndex = reorderableCards.indexOfFirst { it.id == to.key }
+        if (fromIndex != -1 && toIndex != -1) {
+            reorderableCards = reorderableCards.toMutableList().apply {
+                add(toIndex, removeAt(fromIndex))
+            }
+            dragDidMove = true
+        }
+    }
+
+    val dragEnabled = searchQuery.isBlank()
+
     Scaffold { paddingValues ->
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -181,9 +210,9 @@ fun CardWalletScreen(
                 }
             }
 
-            // Active card banner OR search + create
-            item(key = "status_area") {
-                if (activeCard != null) {
+            // Active card banner (when a card is activated)
+            if (activeCard != null) {
+                item(key = "active_banner") {
                     val appearance = resolveCardAppearance(
                         activeCard!!.color,
                         hasImage = activeCard!!.imageUrl != null
@@ -243,86 +272,89 @@ fun CardWalletScreen(
                             )
                         }
                     }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Search bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .neuInset(cornerRadius = 16.dp)
-                        ) {
-                            BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier.fillMaxWidth().padding(14.dp),
-                                textStyle = TextStyle(
-                                    color = Color(0xFFD4D4D4),
-                                    fontSize = 14.sp
-                                ),
-                                singleLine = true,
-                                cursorBrush = SolidColor(NexusTeal),
-                                decorationBox = { innerTextField ->
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Search,
-                                            contentDescription = null,
-                                            tint = Color(0xFF444444),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Box(modifier = Modifier.weight(1f)) {
-                                            if (searchQuery.isEmpty()) {
-                                                Text(
-                                                    "Search cards...",
-                                                    color = Color(0xFF555555),
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                        // Create button
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .neuRaised(cornerRadius = 16.dp)
-                                .clickable { onNavigateToAddCard() }
-                                .padding(horizontal = 20.dp, vertical = 16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .neuInset(cornerRadius = 22.dp),
-                                    contentAlignment = Alignment.Center
+                }
+            }
+
+            // Search + create (always visible)
+            item(key = "status_area") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Search bar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .neuInset(cornerRadius = 16.dp)
+                    ) {
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            textStyle = TextStyle(
+                                color = Color(0xFFD4D4D4),
+                                fontSize = 14.sp
+                            ),
+                            singleLine = true,
+                            cursorBrush = SolidColor(NexusTeal),
+                            decorationBox = { innerTextField ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Icon(
-                                        Icons.Default.Add,
+                                        Icons.Default.Search,
                                         contentDescription = null,
-                                        tint = NexusTeal,
+                                        tint = Color(0xFF444444),
                                         modifier = Modifier.size(20.dp)
                                     )
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        if (searchQuery.isEmpty()) {
+                                            Text(
+                                                "Search cards...",
+                                                color = Color(0xFF555555),
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
                                 }
-                                Column {
-                                    Text(
-                                        "Create a Card",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        "Add a new pass to use with NFC",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                            }
+                        )
+                    }
+                    // Create button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .neuRaised(cornerRadius = 16.dp)
+                            .clickable { onNavigateToAddCard() }
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .neuInset(cornerRadius = 22.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = NexusTeal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    "Create a Card",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    "Add a new pass to use with NFC",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -367,23 +399,55 @@ fun CardWalletScreen(
                     )
                 }
 
-                items(filteredCards, key = { it.id }) { card ->
-                    CardItem(
-                        card = card,
-                        isActive = card.isActive,
-                        onClick = {
-                            viewModel.activateCard(card.id)
-                            onNavigateToCardDetail(card.id)
-                        },
-                        onLongPressEdit = {
-                            selectedCard = card
-                            showEditSheet = true
-                        },
-                        onQrClick = {
-                            selectedCard = card
-                            showQrSheet = true
+                items(reorderableCards, key = { it.id }) { card ->
+                    ReorderableItem(reorderableLazyListState, key = card.id) { isDragging ->
+                        val dragHandle = if (dragEnabled) {
+                            Modifier.longPressDraggableHandle(
+                                onDragStarted = {
+                                    dragDidMove = false
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                },
+                                onDragStopped = {
+                                    if (dragDidMove) {
+                                        viewModel.reorderCards(reorderableCards.map { it.id })
+                                    } else {
+                                        selectedCard = card
+                                        showEditSheet = true
+                                    }
+                                    dragDidMove = false
+                                }
+                            )
+                        } else Modifier
+
+                        val dragScale by animateFloatAsState(if (isDragging) 1.05f else 1f, label = "ds")
+                        val dragAlpha by animateFloatAsState(if (isDragging) 0.85f else 1f, label = "da")
+
+                        Box(modifier = Modifier
+                            .graphicsLayer {
+                                scaleX = dragScale
+                                scaleY = dragScale
+                                alpha = dragAlpha
+                            }
+                            .then(dragHandle)
+                        ) {
+                            CardItem(
+                                card = card,
+                                isActive = activeCard?.id == card.id,
+                                onClick = {
+                                    viewModel.activateCard(card.id)
+                                    onNavigateToCardDetail(card.id)
+                                },
+                                onLongPressEdit = {
+                                    selectedCard = card
+                                    showEditSheet = true
+                                },
+                                onQrClick = {
+                                    selectedCard = card
+                                    showQrSheet = true
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -471,11 +535,19 @@ fun CardWalletScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+
                 val qrContent = QrContentResolver.resolve(selectedCard!!)
-                var qrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                LaunchedEffect(qrContent) {
+                val (_, isDarkCard) = NexusCardColors.parse(selectedCard!!.color)
+                val qrAppearance = resolveCardAppearance(selectedCard!!.color)
+                val cardColor = qrAppearance.neonColor.copy(alpha = 1f)
+                val qrFg = if (isDarkCard) cardColor.toArgb() else 0xFF000000.toInt()
+                val qrBg = if (isDarkCard) 0xFF0A0A0A.toInt() else cardColor.toArgb()
+                val boxBg = if (isDarkCard) Color(0xFF0A0A0A) else cardColor
+
+                var qrBitmap by remember(selectedCard?.id) { mutableStateOf<ImageBitmap?>(null) }
+                LaunchedEffect(qrContent, qrFg, qrBg) {
                     qrBitmap = try {
-                        QrGenerator.generate(qrContent, 400)
+                        QrGenerator.generate(qrContent, 400, qrFg, qrBg)
                     } catch (_: Exception) {
                         null
                     }
@@ -489,7 +561,7 @@ fun CardWalletScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.White)
+                                .background(boxBg)
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {

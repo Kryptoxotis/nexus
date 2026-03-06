@@ -17,6 +17,11 @@ class BusinessPassLocalDataSource(private val db: NexusDatabase) {
             list.map { it.toDomain() }
         }
 
+    fun observePassesByOrganization(orgId: String): Flow<List<BusinessPass>> =
+        queries.selectByOrganization(orgId).asFlow().mapToList(Dispatchers.Default).map { list ->
+            list.map { it.toDomain() }
+        }
+
     fun getPassesByUser(userId: String): List<BusinessPass> =
         queries.selectAll(userId).executeAsList().map { it.toDomain() }
 

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.*
+import com.kryptoxotis.nexus.presentation.theme.SocialIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -244,16 +245,16 @@ fun AddCardScreen(
                         FieldToggle("phone", "Phone", Color(0xFF037A68), Icons.Default.Phone),
                         FieldToggle("email", "Email", Color(0xFFFA5700), Icons.Default.Email),
                         FieldToggle("website", "Website", Color(0xFF037A68), Icons.Default.Language),
-                        FieldToggle("linkedin", "LinkedIn", Color(0xFF0A66C2), Icons.Default.Person),
-                        FieldToggle("instagram", "Instagram", Color(0xFFD62976), Icons.Default.CameraAlt),
-                        FieldToggle("twitter", "Twitter / X", Color(0xFFEFEFEF), Icons.Default.Tag),
-                        FieldToggle("github", "GitHub", Color(0xFFEFEFEF), Icons.Default.Code),
-                        FieldToggle("facebook", "Facebook", Color(0xFF1877F2), Icons.Default.ThumbUp),
-                        FieldToggle("youtube", "YouTube", Color(0xFFFF0000), Icons.Default.PlayCircle),
-                        FieldToggle("tiktok", "TikTok", Color(0xFFEE1D52), Icons.Default.MusicNote),
-                        FieldToggle("discord", "Discord", Color(0xFF5865F2), Icons.Default.Headset),
-                        FieldToggle("twitch", "Twitch", Color(0xFF9146FF), Icons.Default.Videocam),
-                        FieldToggle("whatsapp", "WhatsApp", Color(0xFF25D366), Icons.Default.Chat)
+                        FieldToggle("linkedin", "LinkedIn", Color(0xFF0A66C2), SocialIcons.LinkedIn),
+                        FieldToggle("instagram", "Instagram", Color(0xFFD62976), SocialIcons.Instagram),
+                        FieldToggle("twitter", "Twitter / X", Color(0xFFEFEFEF), SocialIcons.X),
+                        FieldToggle("github", "GitHub", Color(0xFFEFEFEF), SocialIcons.GitHub),
+                        FieldToggle("facebook", "Facebook", Color(0xFF1877F2), SocialIcons.Facebook),
+                        FieldToggle("youtube", "YouTube", Color(0xFFFF0000), SocialIcons.YouTube),
+                        FieldToggle("tiktok", "TikTok", Color(0xFFEE1D52), SocialIcons.TikTok),
+                        FieldToggle("discord", "Discord", Color(0xFF5865F2), SocialIcons.Discord),
+                        FieldToggle("twitch", "Twitch", Color(0xFF9146FF), SocialIcons.Twitch),
+                        FieldToggle("whatsapp", "WhatsApp", Color(0xFF25D366), SocialIcons.WhatsApp)
                     )
 
                     Text(

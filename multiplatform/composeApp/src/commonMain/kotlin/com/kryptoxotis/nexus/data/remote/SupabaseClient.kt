@@ -29,7 +29,10 @@ object SupabaseClientProvider {
             supabaseUrl = supabaseUrl,
             supabaseKey = supabaseAnonKey
         ) {
-            install(Auth)
+            install(Auth) {
+                scheme = "com.kryptoxotis.nexus"
+                host = "login-callback"
+            }
             install(Postgrest)
             install(Realtime)
             install(Storage)

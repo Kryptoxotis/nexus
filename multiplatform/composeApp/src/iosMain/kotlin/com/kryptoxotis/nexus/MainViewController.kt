@@ -4,6 +4,11 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.kryptoxotis.nexus.data.remote.SupabaseClientProvider
 import com.kryptoxotis.nexus.di.AppModule
 import com.kryptoxotis.nexus.platform.DatabaseDriverFactory
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeepLinks
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import platform.Foundation.NSURL
 
 fun MainViewController() = ComposeUIViewController {
     App()
@@ -13,4 +18,13 @@ fun initApp() {
     SupabaseClientProvider.supabaseUrl = IosConfig.SUPABASE_URL
     SupabaseClientProvider.supabaseAnonKey = IosConfig.SUPABASE_ANON_KEY
     AppModule.init(DatabaseDriverFactory())
+}
+
+fun handleDeepLink(url: String) {
+    val nsUrl = NSURL(string = url) ?: return
+    GlobalScope.launch {
+        try {
+            SupabaseClientProvider.getClient().auth.handleDeepLinks(nsUrl)
+        } catch (_: Exception) {}
+    }
 }
