@@ -15,10 +15,7 @@ private val platformAuth = PlatformAuthManager()
 fun MainViewController() = ComposeUIViewController {
     App(onSignInClick = {
         GlobalScope.launch {
-            val result = platformAuth.signInWithGoogle()
-            if (result is com.kryptoxotis.nexus.domain.model.Result.Success) {
-                AppModule.authViewModel.checkSession()
-            }
+            platformAuth.signInWithGoogle()
         }
     })
 }
@@ -31,5 +28,11 @@ fun initApp() {
 
 fun handleDeepLink(url: String) {
     val nsUrl = NSURL(string = url) ?: return
-    SupabaseClientProvider.getClient().handleDeeplinks(nsUrl)
+    SupabaseClientProvider.getClient().handleDeeplinks(
+        url = nsUrl,
+        onSessionSuccess = {
+            // Session imported — refresh auth state
+            AppModule.authViewModel.checkSession()
+        }
+    )
 }
