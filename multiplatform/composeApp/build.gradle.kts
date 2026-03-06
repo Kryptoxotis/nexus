@@ -60,7 +60,7 @@ kotlin {
                 implementation("io.github.jan-tennert.supabase:storage-kt")
 
                 // Ktor
-                implementation("io.ktor:ktor-client-core:3.0.3")
+                implementation("io.ktor:ktor-client-core:3.1.1")
 
                 // Coroutines
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
@@ -91,7 +91,7 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 // Ktor engine
-                implementation("io.ktor:ktor-client-okhttp:3.0.3")
+                implementation("io.ktor:ktor-client-okhttp:3.1.1")
 
                 // SQLDelight driver
                 implementation("app.cash.sqldelight:android-driver:2.0.2")
@@ -124,7 +124,7 @@ kotlin {
             iosSimulatorArm64Main.dependsOn(this)
             dependencies {
                 // Ktor engine
-                implementation("io.ktor:ktor-client-darwin:3.0.3")
+                implementation("io.ktor:ktor-client-darwin:3.1.1")
 
                 // SQLDelight driver
                 implementation("app.cash.sqldelight:native-driver:2.0.2")
