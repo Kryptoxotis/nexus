@@ -59,8 +59,9 @@ kotlin {
                 implementation("io.github.jan-tennert.supabase:realtime-kt")
                 implementation("io.github.jan-tennert.supabase:storage-kt")
 
-                // Ktor
-                implementation("io.ktor:ktor-client-core:3.2.2")
+                // Ktor (BOM forces all Ktor modules to same version)
+                api(project.dependencies.platform("io.ktor:ktor-bom:3.2.2"))
+                implementation("io.ktor:ktor-client-core")
 
                 // Coroutines
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
@@ -76,8 +77,8 @@ kotlin {
                 implementation("app.cash.sqldelight:coroutines-extensions:2.0.2")
 
                 // Image loading
-                implementation("io.coil-kt.coil3:coil-compose:3.0.4")
-                implementation("io.coil-kt.coil3:coil-network-ktor3:3.0.4")
+                implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+                implementation("io.coil-kt.coil3:coil-network-ktor3:3.3.0")
 
                 // Multiplatform Settings
                 implementation("com.russhwolf:multiplatform-settings:1.2.0")
@@ -91,7 +92,7 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 // Ktor engine
-                implementation("io.ktor:ktor-client-okhttp:3.2.2")
+                implementation("io.ktor:ktor-client-okhttp")
 
                 // SQLDelight driver
                 implementation("app.cash.sqldelight:android-driver:2.0.2")
@@ -124,7 +125,7 @@ kotlin {
             iosSimulatorArm64Main.dependsOn(this)
             dependencies {
                 // Ktor engine
-                implementation("io.ktor:ktor-client-darwin:3.2.2")
+                implementation("io.ktor:ktor-client-darwin")
 
                 // SQLDelight driver
                 implementation("app.cash.sqldelight:native-driver:2.0.2")
@@ -194,6 +195,15 @@ val generateIosConfig by tasks.registering {
 
 kotlin.sourceSets.getByName("iosMain") {
     kotlin.srcDir(generateIosConfig.map { layout.buildDirectory.dir("generated/iosConfig") })
+}
+
+// Force all Ktor modules to the same version (prevents IrLinkageError from mixed klibs)
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "io.ktor") {
+            useVersion("3.2.2")
+        }
+    }
 }
 
 sqldelight {

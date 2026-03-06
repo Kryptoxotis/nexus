@@ -21,14 +21,11 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Cache Gradle dependencies
+    - name: Cache Gradle wrapper only
       uses: actions/cache@v4
       with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: gradle-ios-${{ hashFiles('multiplatform/**/*.gradle*', 'multiplatform/gradle/wrapper/gradle-wrapper.properties') }}
-        restore-keys: gradle-ios-
+        path: ~/.gradle/wrapper
+        key: gradle-wrapper-${{ hashFiles('multiplatform/gradle/wrapper/gradle-wrapper.properties') }}
 
     - name: Create secrets.properties
       run: |
@@ -39,8 +36,11 @@ jobs:
     - name: Grant execute permission
       run: chmod +x multiplatform/gradlew
 
-    - name: Clean Gradle build cache
-      run: cd multiplatform && ./gradlew clean --no-daemon
+    - name: Clean all Gradle and Kotlin/Native caches
+      run: |
+        rm -rf ~/.gradle/caches
+        rm -rf ~/.konan
+        cd multiplatform && ./gradlew clean --no-daemon --no-build-cache
 
     - name: Build iOS App (Device)
       run: |
