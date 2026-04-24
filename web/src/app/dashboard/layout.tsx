@@ -1,39 +1,28 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import AuthButton from '@/components/AuthButton'
+import { createClient, nexus } from '@/lib/supabase/server'
 import type { Profile } from '@/lib/types'
+import DashboardNav from '@/components/DashboardNav'
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/')
 
-  if (!user) {
-    redirect('/')
-  }
-
-  const { data: profile } = await supabase
+  const db = nexus(supabase)
+  const { data: profile } = await db
     .from('profiles')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('id', user.id)
     .single<Profile>()
 
+  if (!profile) redirect('/')
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar profile={profile} />
-      <div className="flex-1">
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end">
-          <AuthButton email={user.email} />
-        </header>
-        <main className="p-6">
-          {children}
-        </main>
-      </div>
+    <div className="min-h-screen bg-[#0A0A0A] text-white">
+      <DashboardNav profile={profile} />
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {children}
+      </main>
     </div>
   )
 }

@@ -1,214 +1,86 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { createClient, nexus } from '@/lib/supabase/server'
+import type { Profile, Organization, BusinessPass } from '@/lib/types'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { Business } from '@/lib/types'
-
-export default function BusinessPage() {
+export default async function BusinessPage() {
   const supabase = createClient()
-  const [business, setBusiness] = useState<Business | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: '',
-  })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/')
 
-  useEffect(() => {
-    fetchBusiness()
-  }, [])
+  const db = nexus(supabase)
 
-  const fetchBusiness = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  const { data: profile } = await db
+    .from('profiles')
+    .select('account_type')
+    .eq('id', user.id)
+    .single<Pick<Profile, 'account_type'>>()
 
-    const { data } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('owner_id', user.id)
-      .single()
+  if (!profile || profile.account_type === 'individual') redirect('/dashboard')
 
-    if (data) {
-      setBusiness(data)
-      setFormData({
-        name: data.name,
-        description: data.description || '',
-        category: data.category || '',
-      })
-    }
-    setLoading(false)
-  }
-
-  const handleCreateBusiness = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data, error } = await supabase.from('businesses').insert({
-      owner_id: user.id,
-      name: formData.name,
-      description: formData.description || null,
-      category: formData.category || null,
-    }).select().single()
-
-    if (!error && data) {
-      // Also add owner as business member
-      await supabase.from('business_members').insert({
-        business_id: data.id,
-        user_id: user.id,
-        role: 'owner',
-        status: 'active',
-      })
-      setBusiness(data)
-    }
-  }
-
-  const handleUpdateBusiness = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!business) return
-
-    const { error } = await supabase.from('businesses')
-      .update({
-        name: formData.name,
-        description: formData.description || null,
-        category: formData.category || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', business.id)
-
-    if (!error) {
-      setBusiness({ ...business, ...formData } as Business)
-      setEditing(false)
-    }
-  }
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-  }
-
-  if (!business) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Create Your Business</h1>
-        <form onSubmit={handleCreateBusiness} className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-                placeholder="e.g., Gold's Gym Downtown"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                placeholder="Tell people about your business"
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input
-                type="text"
-                value={formData.category}
-                onChange={e => setFormData({...formData, category: e.target.value})}
-                placeholder="e.g., Fitness, Office, Coworking"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            Create Business
-          </button>
-        </form>
-      </div>
-    )
-  }
+  const [{ data: ownedOrgs }, { data: passes }] = await Promise.all([
+    db.from('organizations').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+    db.from('business_passes').select('*, organization:organizations(name)').eq('user_id', user.id),
+  ])
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Business</h1>
-        <button
-          onClick={() => setEditing(!editing)}
-          className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          {editing ? 'Cancel' : 'Edit'}
-        </button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-white">Business</h1>
+        <p className="text-[#037A68] text-sm mt-0.5">Organizations & passes</p>
       </div>
 
-      {editing ? (
-        <form onSubmit={handleUpdateBusiness} className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input
-                type="text"
-                value={formData.category}
-                onChange={e => setFormData({...formData, category: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+      {/* Owned organizations */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[#666666] text-xs font-medium uppercase tracking-wider">My Organizations</h2>
+        </div>
+        {(ownedOrgs?.length ?? 0) === 0 ? (
+          <div className="bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-6 text-center">
+            <p className="text-[#444444] text-sm">No organizations yet</p>
+            <p className="text-[#333333] text-xs mt-1">Contact an admin to set up your organization</p>
           </div>
-          <button
-            type="submit"
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            Save Changes
-          </button>
-        </form>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold text-blue-600">
-                {business.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">{business.name}</h2>
-              {business.description && (
-                <p className="text-gray-600 mt-1">{business.description}</p>
-              )}
-              {business.category && (
-                <span className="inline-block mt-2 px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-600">
-                  {business.category}
+        ) : (
+          <div className="space-y-2">
+            {(ownedOrgs as Organization[]).map(org => (
+              <div key={org.id} className="bg-[#1A1A1A] rounded-2xl border border-[#383838] p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium text-sm">{org.name}</p>
+                    {org.type && <p className="text-[#666666] text-xs mt-0.5">{org.type}</p>}
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    org.is_active ? 'bg-[#037A68]/15 text-[#037A68]' : 'bg-[#383838] text-[#666666]'
+                  }`}>
+                    {org.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-[#444444]">
+                  Enrollment: <span className="text-[#666666] capitalize">{org.enrollment_mode}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Passes held */}
+      {(passes?.length ?? 0) > 0 && (
+        <div>
+          <h2 className="text-[#666666] text-xs font-medium uppercase tracking-wider mb-3">My Passes</h2>
+          <div className="space-y-2">
+            {(passes as (BusinessPass & { organization: { name: string } | null })[]).map(pass => (
+              <div key={pass.id} className="bg-[#1A1A1A] rounded-2xl border border-[#383838] px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-white text-sm font-medium">{pass.organization?.name ?? 'Unknown'}</p>
+                  <p className="text-[#444444] text-xs mt-0.5">Used {pass.use_count} times</p>
+                </div>
+                <span className={`text-xs font-medium capitalize px-2 py-0.5 rounded-full ${
+                  pass.status === 'active' ? 'bg-[#037A68]/15 text-[#037A68]' : 'bg-[#383838] text-[#666666]'
+                }`}>
+                  {pass.status}
                 </span>
-              )}
-              <p className="text-xs text-gray-400 mt-3">
-                Created: {new Date(business.created_at).toLocaleDateString()}
-              </p>
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
