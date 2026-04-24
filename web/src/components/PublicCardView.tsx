@@ -25,14 +25,7 @@ export default function PublicCardView({ profile, cards }: Props) {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#037A68] flex items-center justify-center flex-shrink-0">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
-              <rect x="13" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-              <rect x="3" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-              <circle cx="17" cy="17" r="3" fill="#FA5700"/>
-            </svg>
-          </div>
+          <img src="/icon-512.png" alt="Nexus" className="w-12 h-12 rounded-2xl object-cover flex-shrink-0" />
           <div>
             <h1 className="text-white font-bold text-lg leading-tight">
               {profile.full_name ?? 'Nexus User'}

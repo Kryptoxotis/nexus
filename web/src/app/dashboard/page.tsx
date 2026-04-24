@@ -25,6 +25,9 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('order_index', { ascending: true })
 
+  const cardList = (cards as PersonalCard[]) ?? []
+  const hasActiveCards = cardList.some(c => c.is_active)
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,9 +35,9 @@ export default async function DashboardPage() {
         <p className="text-[#037A68] text-sm font-medium capitalize">{profile.account_type}</p>
       </div>
 
-      <SharePanel userId={user.id} />
+      {hasActiveCards && <SharePanel userId={user.id} />}
 
-      <CardsList cards={(cards as PersonalCard[]) ?? []} />
+      <CardsList cards={cardList} />
     </div>
   )
 }

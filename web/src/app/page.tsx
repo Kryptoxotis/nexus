@@ -39,14 +39,7 @@ export default function Home() {
       <div className="w-full max-w-sm px-6">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#037A68] flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
-                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-                <circle cx="17" cy="17" r="3" fill="#FA5700"/>
-              </svg>
-            </div>
+            <img src="/icon-512.png" alt="Nexus" className="w-16 h-16 rounded-2xl object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Nexus</h1>
           <p className="text-[#666666] mt-1.5 text-sm">Your digital pass wallet</p>

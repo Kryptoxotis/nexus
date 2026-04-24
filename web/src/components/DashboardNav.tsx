@@ -28,14 +28,7 @@ export default function DashboardNav({ profile }: Props) {
       <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-5">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#037A68] flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
-                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-                <circle cx="17" cy="17" r="3" fill="#FA5700"/>
-              </svg>
-            </div>
+            <img src="/icon-512.png" alt="Nexus" className="w-7 h-7 rounded-lg object-cover" />
             <span className="text-white font-semibold text-sm">Nexus</span>
           </Link>
 
