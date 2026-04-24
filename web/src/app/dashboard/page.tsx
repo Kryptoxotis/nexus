@@ -4,6 +4,8 @@ import type { Profile, PersonalCard } from '@/lib/types'
 import CardsList from '@/components/CardsList'
 import SharePanel from '@/components/SharePanel'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()

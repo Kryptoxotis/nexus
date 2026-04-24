@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { redirect } from 'next/navigation'
 import { createClient, nexus } from '@/lib/supabase/server'
 import type { Profile } from '@/lib/types'
