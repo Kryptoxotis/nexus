@@ -31,7 +31,9 @@ object SupabaseClientProvider {
             supabaseKey = supabaseAnonKey
         ) {
             install(Auth)
-            install(Postgrest)
+            install(Postgrest) {
+                defaultSchema = "nexus"
+            }
             install(Realtime)
             install(Storage)
         }

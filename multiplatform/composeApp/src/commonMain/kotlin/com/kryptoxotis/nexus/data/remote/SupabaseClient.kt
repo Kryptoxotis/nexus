@@ -33,7 +33,9 @@ object SupabaseClientProvider {
                 scheme = "com.kryptoxotis.nexus"
                 host = "login-callback"
             }
-            install(Postgrest)
+            install(Postgrest) {
+                defaultSchema = "nexus"
+            }
             install(Realtime)
             install(Storage)
         }
