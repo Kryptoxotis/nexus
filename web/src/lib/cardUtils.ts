@@ -34,21 +34,22 @@ export const SOCIAL_FIELDS: {
   label: string
   placeholder: string
   color: string
+  icon: string | null  // path to /icons/*.svg, null = use emoji fallback
   emoji: string
 }[] = [
-  { key: 'jobTitle',  label: 'Job Title',        placeholder: 'Software Engineer',        color: '#B0BEC5', emoji: '💼' },
-  { key: 'company',   label: 'Company',           placeholder: 'Kryptoxotis',              color: '#90A4AE', emoji: '🏢' },
-  { key: 'phone',     label: 'Phone',             placeholder: '+1 555 000 0000',          color: '#037A68', emoji: '📞' },
-  { key: 'email',     label: 'Email',             placeholder: 'you@company.com',          color: '#FA5700', emoji: '✉️' },
-  { key: 'website',   label: 'Website',           placeholder: 'yourwebsite.com',          color: '#037A68', emoji: '🌐' },
-  { key: 'linkedin',  label: 'LinkedIn',          placeholder: 'username',                 color: '#0A66C2', emoji: 'in' },
-  { key: 'instagram', label: 'Instagram',         placeholder: '@username',                color: '#D62976', emoji: '📸' },
-  { key: 'twitter',   label: 'X / Twitter',       placeholder: '@username',                color: '#EFEFEF', emoji: '𝕏'  },
-  { key: 'github',    label: 'GitHub',            placeholder: 'username',                 color: '#EFEFEF', emoji: '⌨️' },
-  { key: 'facebook',  label: 'Facebook',          placeholder: 'username',                 color: '#1877F2', emoji: '👥' },
-  { key: 'youtube',   label: 'YouTube',           placeholder: '@channel',                 color: '#FF0000', emoji: '▶️' },
-  { key: 'tiktok',    label: 'TikTok',            placeholder: '@username',                color: '#EE1D52', emoji: '🎵' },
-  { key: 'discord',   label: 'Discord',           placeholder: 'username or invite',       color: '#5865F2', emoji: '💬' },
-  { key: 'twitch',    label: 'Twitch',            placeholder: 'username',                 color: '#9146FF', emoji: '🎮' },
-  { key: 'whatsapp',  label: 'WhatsApp',          placeholder: '+1 555 000 0000',          color: '#25D366', emoji: '💚' },
+  { key: 'jobTitle',  label: 'Job Title',   placeholder: 'Software Engineer',   color: '#B0BEC5', icon: null,                   emoji: '💼' },
+  { key: 'company',   label: 'Company',     placeholder: 'Kryptoxotis',         color: '#90A4AE', icon: null,                   emoji: '🏢' },
+  { key: 'phone',     label: 'Phone',       placeholder: '+1 555 000 0000',     color: '#037A68', icon: null,                   emoji: '📞' },
+  { key: 'email',     label: 'Email',       placeholder: 'you@company.com',     color: '#FA5700', icon: null,                   emoji: '✉️' },
+  { key: 'website',   label: 'Website',     placeholder: 'yourwebsite.com',     color: '#037A68', icon: null,                   emoji: '🌐' },
+  { key: 'linkedin',  label: 'LinkedIn',    placeholder: 'username',            color: '#0A66C2', icon: '/icons/linkedin.svg',  emoji: 'in' },
+  { key: 'instagram', label: 'Instagram',   placeholder: '@username',           color: '#D62976', icon: '/icons/instagram.svg', emoji: '📸' },
+  { key: 'twitter',   label: 'X / Twitter', placeholder: '@username',           color: '#EFEFEF', icon: '/icons/x.svg',         emoji: '𝕏'  },
+  { key: 'github',    label: 'GitHub',      placeholder: 'username',            color: '#EFEFEF', icon: '/icons/github.svg',    emoji: '⌨️' },
+  { key: 'facebook',  label: 'Facebook',    placeholder: 'username',            color: '#1877F2', icon: '/icons/facebook.svg',  emoji: 'fb' },
+  { key: 'youtube',   label: 'YouTube',     placeholder: '@channel',            color: '#FF0000', icon: '/icons/youtube.svg',   emoji: '▶️' },
+  { key: 'tiktok',    label: 'TikTok',      placeholder: '@username',           color: '#EE1D52', icon: '/icons/tiktok.svg',    emoji: '🎵' },
+  { key: 'discord',   label: 'Discord',     placeholder: 'username or invite',  color: '#5865F2', icon: '/icons/discord.svg',   emoji: '💬' },
+  { key: 'twitch',    label: 'Twitch',      placeholder: 'username',            color: '#9146FF', icon: '/icons/twitch.svg',    emoji: '🎮' },
+  { key: 'whatsapp',  label: 'WhatsApp',    placeholder: '+1 555 000 0000',     color: '#25D366', icon: '/icons/whatsapp.svg',  emoji: '💚' },
 ]

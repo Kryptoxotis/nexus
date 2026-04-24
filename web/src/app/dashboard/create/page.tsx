@@ -232,14 +232,18 @@ export default function CreateCardPage() {
                     key={f.key}
                     onClick={() => toggleField(f.key as string)}
                     title={f.label}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all border"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all border overflow-hidden"
                     style={{
                       background: on ? `${f.color}22` : '#1A1A1A',
                       borderColor: on ? `${f.color}66` : '#383838',
                       color: on ? f.color : '#444444',
+                      opacity: on ? 1 : 0.4,
                     }}
                   >
-                    {f.emoji}
+                    {f.icon
+                      ? <img src={f.icon} alt={f.label} className="w-5 h-5 object-contain" />
+                      : <span>{f.emoji}</span>
+                    }
                   </button>
                 )
               })}

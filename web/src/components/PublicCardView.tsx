@@ -105,10 +105,13 @@ export default function PublicCardView({ profile, cards }: Props) {
                         target="_blank"
                         rel="noopener noreferrer"
                         title={f.label}
-                        className="w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center text-sm hover:bg-black/30 transition-colors"
+                        className="w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center hover:bg-black/30 transition-colors overflow-hidden"
                         style={{ color: style.textColor }}
                       >
-                        {f.emoji}
+                        {f.icon
+                          ? <img src={f.icon} alt={f.label} className="w-5 h-5 object-contain" />
+                          : <span className="text-sm">{f.emoji}</span>
+                        }
                       </a>
                     ) : null
                   })}
