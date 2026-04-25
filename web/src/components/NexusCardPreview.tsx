@@ -25,43 +25,52 @@ export default function NexusCardPreview({ card, userId, showQr = true }: Props)
 
   return (
     <div>
+      {/* Card */}
       <div
-        className="rounded-2xl p-5 relative overflow-hidden border cursor-pointer"
-        style={{ background: bg, borderColor: hex + '44' }}
+        className="rounded-2xl relative overflow-hidden border cursor-pointer"
+        style={{ background: bg, borderColor: hex + '44', minHeight: '180px' }}
         onClick={() => showQr && setQrExpanded(p => !p)}
       >
-        <div className="pr-20">
-          <p className="text-xs font-medium opacity-50 mb-1" style={{ color: textColor }}>Nexus</p>
-          <p className="font-bold text-lg leading-tight" style={{ color: textColor }}>
+        {/* Centered content */}
+        <div className="flex flex-col items-center justify-center py-8 px-6 text-center">
+          <p className="font-bold text-2xl leading-tight" style={{ color: textColor }}>
             {bcData.name || card.title}
           </p>
           {(bcData.jobTitle || bcData.company) && (
-            <p className="text-sm opacity-70 mt-0.5" style={{ color: textColor }}>
+            <p className="text-sm opacity-70 mt-1" style={{ color: textColor }}>
               {[bcData.jobTitle, bcData.company].filter(Boolean).join(' at ')}
             </p>
           )}
-          {bcData.email && (
-            <p className="text-xs opacity-50 mt-1" style={{ color: textColor }}>{bcData.email}</p>
-          )}
         </div>
 
-        {showQr && (
-          <div className="absolute bottom-3 right-3 bg-white rounded-lg p-1.5">
-            <QRCode value={profileUrl} size={48} />
+        {/* Bottom row: QR left, NFC right */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+          {showQr && (
+            <div className="opacity-70">
+              <QRCode value={profileUrl} size={32} fgColor={textColor} bgColor="transparent" />
+            </div>
+          )}
+          {/* NFC icon bottom right */}
+          <div className="opacity-60 ml-auto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={textColor} strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <path d="M8.5 15.5a5 5 0 0 1 0-7"/>
+              <path d="M11 13a2 2 0 0 1 0-2.8"/>
+              <path d="M6 17.5a8 8 0 0 1 0-11"/>
+            </svg>
           </div>
-        )}
+        </div>
       </div>
 
+      {/* Expanded QR */}
       {qrExpanded && (
         <div className="mt-3 bg-[#1A1A1A] rounded-2xl border border-[#383838] p-5 flex flex-col items-center gap-3">
           <div className="bg-white p-3 rounded-xl">
             <QRCode value={profileUrl} size={160} />
           </div>
-          <p className="text-[#666666] text-xs text-center">Scan to view your Nexus</p>
+          <p className="text-[#666666] text-xs">Scan to view your Nexus</p>
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(profileUrl)
-            }}
+            onClick={() => navigator.clipboard.writeText(profileUrl)}
             className="text-xs text-[#037A68] font-medium"
           >
             Copy link

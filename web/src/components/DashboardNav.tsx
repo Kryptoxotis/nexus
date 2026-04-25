@@ -24,8 +24,8 @@ export default function DashboardNav({ profile }: Props) {
   const NavIcon = ({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) => (
     <Link
       href={href}
-      className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-      style={{ background: active ? '#1A1A1A' : '#111111' }}
+      className="w-11 h-11 rounded-full flex items-center justify-center transition-colors"
+      style={{ background: active ? '#2A2A2A' : '#1A1A1A' }}
     >
       {children}
     </Link>

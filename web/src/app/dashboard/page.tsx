@@ -66,14 +66,14 @@ export default async function DashboardPage() {
       {/* My Nexus section */}
       {nexusCard && (
         <div>
-          <p className="text-[#666666] text-xs font-medium uppercase tracking-wider mb-2">My Nexus</p>
+          <p className="text-[#888888] text-xs font-semibold mb-2 tracking-wide">MY NEXUS</p>
           <NexusCardPreview card={nexusCard} userId={user.id} />
         </div>
       )}
 
       {!nexusCard && (
         <div>
-          <p className="text-[#666666] text-xs font-medium uppercase tracking-wider mb-2">My Nexus</p>
+          <p className="text-[#888888] text-xs font-semibold mb-2 tracking-wide">MY NEXUS</p>
           <Link
             href="/dashboard/nexus"
             className="flex flex-col items-center justify-center bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-8 hover:border-[#037A68] transition-colors"

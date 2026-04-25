@@ -4,12 +4,11 @@ import { createClient, nexus } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { CardType, BusinessCardData } from '@/lib/types'
-import { CARD_COLORS, encodeCardColor, emptyBusinessCard } from '@/lib/types'
+import { CARD_COLORS, encodeCardColor, emptyBusinessCard, parseCardColor } from '@/lib/types'
 import { SOCIAL_FIELDS } from '@/lib/cardUtils'
 import { Link2, Share2, Paperclip, CreditCard, BadgeCheck } from 'lucide-react'
 
 const CardTypeIcon = ({ type, size = 22 }: { type: CardType; size?: number }) => {
-  const cls = `w-[${size}px] h-[${size}px]`
   switch (type) {
     case 'business_card': return <BadgeCheck size={size} strokeWidth={1.8} />
     case 'link':          return <Link2 size={size} strokeWidth={1.8} />
@@ -21,47 +20,75 @@ const CardTypeIcon = ({ type, size = 22 }: { type: CardType; size?: number }) =>
 }
 
 const CARD_TYPES: { type: CardType; label: string; desc: string }[] = [
-  { type: 'business_card', label: 'Nexus',        desc: 'Your digital identity card'   },
-  { type: 'link',          label: 'Link',          desc: 'Opens a URL when tapped'      },
-  { type: 'social_media',  label: 'Social Media',  desc: 'Link to your social profile'  },
-  { type: 'file',          label: 'File',          desc: 'Share a file via QR or tap'   },
-  { type: 'custom',        label: 'Custom',        desc: 'Custom text or data'          },
+  { type: 'business_card', label: 'Nexus',       desc: 'Your digital identity card'  },
+  { type: 'link',          label: 'Link',         desc: 'Opens a URL when tapped'     },
+  { type: 'social_media',  label: 'Social Media', desc: 'Link to your social profile' },
+  { type: 'file',          label: 'File',         desc: 'Upload a file to share'      },
+  { type: 'custom',        label: 'Custom',       desc: 'Custom text or data'         },
 ]
 
 const DEFAULT_FIELDS = new Set(['name', 'jobTitle', 'company', 'phone', 'email'])
 
-function ColorPicker({ selected, isDark, onChange, onDarkToggle }: {
-  selected: string
-  isDark: boolean
-  onChange: (hex: string) => void
-  onDarkToggle: () => void
+function ToggleRow({ label, left, right, value, onChange }: {
+  label: string; left: string; right: string; value: string; onChange: (v: string) => void
 }) {
   return (
     <div>
-      <label className="block text-xs text-[#666666] mb-2">Color</label>
-      <div className="flex flex-wrap gap-2 mb-2">
+      <p className="text-[#666666] text-xs mb-2">{label}</p>
+      <div className="grid grid-cols-2 gap-2">
+        {[left, right].map(opt => (
+          <button
+            key={opt}
+            onClick={() => onChange(opt.toLowerCase())}
+            className="py-3 rounded-2xl text-sm font-semibold transition-colors"
+            style={{
+              background: value === opt.toLowerCase() ? '#1A1A1A' : '#111111',
+              color: value === opt.toLowerCase() ? '#EEEEEE' : '#666666',
+              border: `1px solid ${value === opt.toLowerCase() ? '#383838' : '#222222'}`,
+            }}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ColorSwatches({ selected, onChange }: { selected: string; onChange: (hex: string) => void }) {
+  const current = CARD_COLORS.find(c => c.hex === selected)
+  return (
+    <div>
+      <p className="text-[#666666] text-xs mb-2">Card Color</p>
+      <div className="flex gap-2 flex-wrap mb-1">
         {CARD_COLORS.map(c => (
           <button
             key={c.hex}
             onClick={() => onChange(c.hex)}
-            className="w-7 h-7 rounded-full border-2 transition-all"
+            className="w-12 h-12 rounded-2xl transition-all"
             style={{
               background: `linear-gradient(135deg, ${c.hex}, ${c.dark})`,
-              borderColor: selected === c.hex ? 'white' : 'transparent',
+              outline: selected === c.hex ? `2px solid white` : 'none',
+              outlineOffset: '2px',
             }}
           />
         ))}
       </div>
-      <button
-        onClick={onDarkToggle}
-        className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-          isDark
-            ? 'border-[#037A68] text-[#037A68] bg-[#037A68]/10'
-            : 'border-[#383838] text-[#666666]'
-        }`}
-      >
-        {isDark ? '🌙 Dark mode' : '☀️ Light mode'}
-      </button>
+      {current && <p className="text-[#555555] text-xs">{current.name}</p>}
+    </div>
+  )
+}
+
+function CardPreview({ type, title, subtitle, colorHex, isDark }: {
+  type: CardType; title: string; subtitle?: string; colorHex: string; isDark: boolean
+}) {
+  const colorEntry = CARD_COLORS.find(c => c.hex === colorHex)
+  const bg = isDark ? '#111111' : `linear-gradient(135deg, ${colorHex}, ${colorEntry?.dark ?? colorHex})`
+  const textColor = isDark ? colorHex : 'white'
+  return (
+    <div className="rounded-2xl p-5 aspect-video flex flex-col justify-end border" style={{ background: bg, borderColor: colorHex + '44' }}>
+      <p className="font-bold text-lg leading-tight" style={{ color: textColor }}>{title || 'Card Title'}</p>
+      {subtitle && <p className="text-sm opacity-70 mt-0.5" style={{ color: textColor }}>{subtitle}</p>}
     </div>
   )
 }
@@ -74,15 +101,17 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [colorHex, setColorHex] = useState(CARD_COLORS[0].hex)
-  const [isDark, setIsDark] = useState(false)
+  const [cardMode, setCardMode] = useState('light')
+  const [cardShape, setCardShape] = useState('card')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // Business card state
   const [bcData, setBcData] = useState<BusinessCardData>(emptyBusinessCard())
   const [enabledFields, setEnabledFields] = useState<Set<string>>(new Set(DEFAULT_FIELDS))
   const [autoUser, setAutoUser] = useState('')
   const [autoEmail, setAutoEmail] = useState('')
+
+  const isDark = cardMode === 'dark'
 
   const toggleField = (key: string) => {
     setEnabledFields(prev => {
@@ -93,9 +122,7 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
     })
   }
 
-  const deriveUsername = (company: string) =>
-    company.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-
+  const deriveUsername = (company: string) => company.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
   const deriveEmail = (name: string, company: string) => {
     const first = name.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g, '') ?? ''
     const domain = company.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -105,19 +132,17 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
   const updateBc = (field: keyof BusinessCardData, value: string) => {
     setBcData(prev => {
       const next = { ...prev, [field]: value }
-
       if (field === 'name') {
         const newAutoEmail = deriveEmail(value, prev.company)
         if (!prev.email || prev.email === autoEmail) next.email = newAutoEmail
         setAutoEmail(newAutoEmail)
       }
-
       if (field === 'company') {
         const newUser = deriveUsername(value)
         const socialKeys = ['instagram','twitter','github','linkedin','facebook','youtube','tiktok','twitch'] as const
         socialKeys.forEach(k => {
-          if (enabledFields.has(k) && (!prev[k] || prev[k] === autoUser)) {
-            (next as Record<string, string>)[k] = newUser
+          if (enabledFields.has(k) && (!(prev as unknown as Record<string,string>)[k] || (prev as unknown as Record<string,string>)[k] === autoUser)) {
+            (next as unknown as Record<string, string>)[k] = newUser
           }
         })
         setAutoUser(newUser)
@@ -127,11 +152,9 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
         if (!prev.email || prev.email === autoEmail) next.email = newAutoEmail
         setAutoEmail(newAutoEmail)
       }
-
       if (field === 'phone') {
         if (!prev.whatsapp || prev.whatsapp === prev.phone) next.whatsapp = value
       }
-
       return next
     })
   }
@@ -169,7 +192,7 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
       color: encodeCardColor(colorHex, isDark),
       is_active: true,
       order_index: 0,
-      card_shape: 'card',
+      card_shape: cardShape,
     })
 
     if (err) {
@@ -183,48 +206,60 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
 
   if (step === 'type') {
     return (
-      <div>
-        <div className="mb-6">
+      <div className="space-y-4 pb-8">
+        <div>
           <h1 className="text-xl font-bold text-white">Create Card</h1>
-          <p className="text-[#037A68] text-sm mt-0.5">Choose a type</p>
+          <p className="text-[#037A68] text-sm">Choose a type</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {CARD_TYPES.map(ct => (
-            <button
-              key={ct.type}
-              onClick={() => { setSelectedType(ct.type); setStep('details') }}
-              className={`bg-[#1A1A1A] rounded-2xl border p-4 text-left hover:border-[#037A68] active:scale-[0.98] transition-all ${
-                ct.type === 'business_card' ? 'border-[#037A68]/40 col-span-2' : 'border-[#383838]'
-              }`}
-            >
-              <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center mb-3 text-[#EEEEEE]">
-                <CardTypeIcon type={ct.type} />
-              </div>
-              <p className="text-white font-semibold text-sm">{ct.label}</p>
-              <p className="text-[#666666] text-xs mt-0.5 leading-snug">{ct.desc}</p>
-            </button>
-          ))}
+        <div className="space-y-3">
+          {/* Nexus full width */}
+          <button
+            onClick={() => { setSelectedType('business_card'); setStep('details') }}
+            className="w-full bg-[#1A1A1A] rounded-2xl border border-[#037A68]/40 p-4 text-left hover:border-[#037A68] active:scale-[0.99] transition-all flex items-center gap-4"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-[#111111] flex items-center justify-center text-[#037A68] flex-shrink-0">
+              <BadgeCheck size={24} strokeWidth={1.8} />
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm">Nexus</p>
+              <p className="text-[#666666] text-xs mt-0.5">Your digital identity card</p>
+            </div>
+          </button>
+          {/* Other types 2x2 */}
+          <div className="grid grid-cols-2 gap-3">
+            {CARD_TYPES.filter(c => c.type !== 'business_card').map(ct => (
+              <button
+                key={ct.type}
+                onClick={() => { setSelectedType(ct.type); setStep('details') }}
+                className="bg-[#1A1A1A] rounded-2xl border border-[#383838] p-4 text-left hover:border-[#555555] active:scale-[0.98] transition-all"
+              >
+                <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-[#037A68] mb-3">
+                  <CardTypeIcon type={ct.type} size={20} />
+                </div>
+                <p className="text-white font-semibold text-sm">{ct.label}</p>
+                <p className="text-[#666666] text-xs mt-0.5 leading-snug">{ct.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     )
   }
 
   const selected = CARD_TYPES.find(c => c.type === selectedType)!
+  const bcPreviewSubtitle = selectedType === 'business_card'
+    ? [bcData.jobTitle, bcData.company].filter(Boolean).join(' at ') || undefined
+    : undefined
 
   return (
-    <div className="space-y-5">
-      <button
-        onClick={() => setStep('type')}
-        className="flex items-center gap-1 text-[#666666] text-sm hover:text-white transition-colors"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+    <div className="space-y-5 pb-8">
+      <button onClick={() => setStep('type')} className="flex items-center gap-1 text-[#666666] text-sm hover:text-white transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
         Back
       </button>
 
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-[#EEEEEE]">
+        <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-[#037A68]">
           <CardTypeIcon type={selected.type} />
         </div>
         <div>
@@ -233,11 +268,20 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
         </div>
       </div>
 
-      {/* Business card form */}
+      {/* Preview at top */}
+      <CardPreview
+        type={selectedType!}
+        title={selectedType === 'business_card' ? (bcData.name || 'Full Name') : (title || 'Card Title')}
+        subtitle={bcPreviewSubtitle}
+        colorHex={colorHex}
+        isDark={isDark}
+      />
+
+      {/* Business card fields */}
       {selectedType === 'business_card' && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <label className="block text-xs text-[#666666] mb-2">Fields to include</label>
+            <p className="text-[#666666] text-xs mb-2">Fields to include</p>
             <div className="flex flex-wrap gap-2">
               {SOCIAL_FIELDS.map(f => {
                 const on = enabledFields.has(f.key as string)
@@ -246,17 +290,16 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
                     key={f.key}
                     onClick={() => toggleField(f.key as string)}
                     title={f.label}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all border overflow-hidden"
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden transition-all border"
                     style={{
                       background: on ? `${f.color}22` : '#1A1A1A',
                       borderColor: on ? `${f.color}66` : '#383838',
-                      color: on ? f.color : '#444444',
-                      opacity: on ? 1 : 0.4,
+                      opacity: on ? 1 : 0.45,
                     }}
                   >
                     {f.icon
                       ? <img src={f.icon} alt={f.label} className="w-5 h-5 object-contain" />
-                      : <span>{f.emoji}</span>
+                      : <span className="text-sm" style={{ color: on ? f.color : '#555555' }}>{f.emoji}</span>
                     }
                   </button>
                 )
@@ -264,93 +307,58 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
             </div>
           </div>
 
-          <input
-            type="text"
-            value={bcData.name}
-            onChange={e => updateBc('name', e.target.value)}
+          <input type="text" value={bcData.name} onChange={e => updateBc('name', e.target.value)}
             placeholder="Full Name *"
-            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-xl px-4 py-3 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors"
-          />
+            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
 
           {SOCIAL_FIELDS.filter(f => enabledFields.has(f.key as string)).map(f => (
-            <input
-              key={f.key}
+            <input key={f.key}
               type={f.key === 'email' ? 'email' : f.key === 'phone' || f.key === 'whatsapp' ? 'tel' : 'text'}
               value={(bcData as unknown as Record<string, string>)[f.key as string] || ''}
               onChange={e => updateBc(f.key, e.target.value)}
               placeholder={f.label}
-              className="w-full bg-[#1A1A1A] border border-[#383838] rounded-xl px-4 py-3 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors"
-            />
+              className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
           ))}
         </div>
       )}
 
       {/* Other card types */}
       {selectedType !== 'business_card' && (
-        <div className="space-y-4">
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder={selectedType === 'social_media' ? 'Instagram' : 'Title *'}
-            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-xl px-4 py-3 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors"
-          />
+        <div className="space-y-3">
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+            placeholder={`Title *`}
+            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
           {selectedType !== 'file' && (
             <input
               type={selectedType === 'link' || selectedType === 'social_media' ? 'url' : 'text'}
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              placeholder={
-                selectedType === 'link' ? 'https://yourwebsite.com' :
-                selectedType === 'social_media' ? 'https://instagram.com/yourhandle' :
-                'Content'
-              }
-              className="w-full bg-[#1A1A1A] border border-[#383838] rounded-xl px-4 py-3 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors"
-            />
+              value={content} onChange={e => setContent(e.target.value)}
+              placeholder={selectedType === 'link' ? 'URL *' : selectedType === 'social_media' ? 'Profile URL *' : 'Content'}
+              className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
           )}
           {selectedType === 'file' && (
-            <p className="text-[#444444] text-xs">File upload coming soon. Use a link card to share a file URL for now.</p>
+            <p className="text-[#444444] text-xs px-1">File upload coming soon. Use a Link card with a file URL for now.</p>
           )}
         </div>
       )}
 
-      {/* Color picker */}
-      <ColorPicker
-        selected={colorHex}
-        isDark={isDark}
-        onChange={setColorHex}
-        onDarkToggle={() => setIsDark(p => !p)}
-      />
+      {/* Card Shape */}
+      <ToggleRow label="Card Shape" left="Card" right="Coin" value={cardShape} onChange={setCardShape} />
 
-      {/* Preview */}
-      <div
-        className="rounded-2xl p-4 border"
-        style={{
-          background: isDark ? '#111111' : `linear-gradient(135deg, ${colorHex}, ${CARD_COLORS.find(c => c.hex === colorHex)?.dark ?? colorHex})`,
-          borderColor: colorHex + '44',
-        }}
-      >
-        <p className="text-xs font-medium opacity-60 mb-1" style={{ color: isDark ? colorHex : 'white' }}>
-          {selected.label}
-        </p>
-        <p className="font-semibold" style={{ color: isDark ? colorHex : 'white' }}>
-          {selectedType === 'business_card' ? (bcData.name || 'Full Name') : (title || 'Card title')}
-        </p>
-        {selectedType === 'business_card' && bcData.jobTitle && (
-          <p className="text-xs mt-0.5 opacity-70" style={{ color: isDark ? colorHex : 'white' }}>
-            {[bcData.jobTitle, bcData.company].filter(Boolean).join(' at ')}
-          </p>
-        )}
-      </div>
+      {/* Card Mode */}
+      <ToggleRow label="Card Mode" left="Light" right="Dark" value={cardMode} onChange={setCardMode} />
+
+      {/* Card Color */}
+      <ColorSwatches selected={colorHex} onChange={setColorHex} />
 
       {error && <p className="text-red-400 text-xs">{error}</p>}
 
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full py-3 rounded-xl bg-[#037A68] hover:bg-[#025E50] text-white font-semibold text-sm transition-colors disabled:opacity-50"
+        className="w-full py-4 rounded-2xl text-white font-bold text-sm transition-all disabled:opacity-40"
+        style={{ background: saving ? '#025E50' : '#037A68' }}
       >
-        {saving ? 'Saving...' : 'Save Card'}
+        {saving ? 'Saving...' : 'Add Card'}
       </button>
     </div>
   )

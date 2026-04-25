@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <DashboardNav profile={profile} />
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-lg mx-auto px-4 py-4">
         {children}
       </main>
     </div>
