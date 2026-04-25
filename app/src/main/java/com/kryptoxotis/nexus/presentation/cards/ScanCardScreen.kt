@@ -43,24 +43,28 @@ fun ScanCardScreen(
     // Enable reader mode — this forces this phone to be the reader,
     // which is required for reliably reading HCE from another Android phone.
     DisposableEffect(Unit) {
-        val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-        if (activity != null && nfcAdapter != null) {
-            nfcAdapter.enableReaderMode(
-                activity,
-                { tag ->
-                    // Tag discovered — try to read NDEF from it
-                    val result = readNdefFromTag(tag)
-                    if (result != null) {
-                        scanResult = result
-                        isScanning = false
-                    }
-                },
-                NfcAdapter.FLAG_READER_NFC_A or
-                    NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
-                    NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
-                null
-            )
-        }
+        try {
+            val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+            if (activity != null && nfcAdapter != null && nfcAdapter.isEnabled) {
+                nfcAdapter.enableReaderMode(
+                    activity,
+                    { tag ->
+                        try {
+                            val result = readNdefFromTag(tag)
+                            if (result != null) {
+                                scanResult = result
+                                isScanning = false
+                            }
+                        } catch (_: Exception) {}
+                    },
+                    NfcAdapter.FLAG_READER_NFC_A or
+                        NfcAdapter.FLAG_READER_NFC_B or
+                        NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
+                        NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
+                    null
+                )
+            }
+        } catch (_: Exception) {}
         onDispose {
             if (activity != null) {
                 try {

@@ -274,7 +274,7 @@ fun AddCardScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    // Row 3: File + Custom
+                    // Row 3: File only
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -284,13 +284,6 @@ fun AddCardScreen(
                             title = "File",
                             description = "Upload a file to share",
                             onClick = { selectedType = CardType.FILE },
-                            modifier = Modifier.weight(1f)
-                        )
-                        CardTypeOption(
-                            icon = Icons.Default.CreditCard,
-                            title = "Custom",
-                            description = "Custom text or data",
-                            onClick = { selectedType = CardType.CUSTOM },
                             modifier = Modifier.weight(1f)
                         )
                     }
