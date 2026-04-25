@@ -1,12 +1,18 @@
 'use client'
 
 import type { PersonalCard, CardType } from '@/lib/types'
-import { cardLabel, businessCardSubtitle } from '@/lib/cardUtils'
+import { cardLabel, businessCardSubtitle, SOCIAL_FIELDS } from '@/lib/cardUtils'
 import { parseCardColor, parseBusinessCard, CARD_COLORS } from '@/lib/types'
 import Link from 'next/link'
 import { Link2, Share2, Paperclip, CreditCard, BadgeCheck, File } from 'lucide-react'
 
-const CardIcon = ({ type }: { type: CardType }) => {
+const CardIcon = ({ type, title }: { type: CardType; title?: string }) => {
+  if (type === 'social_media' && title) {
+    const platform = SOCIAL_FIELDS.find(f =>
+      f.label.toLowerCase() === title.toLowerCase() && f.icon
+    )
+    if (platform?.icon) return <img src={platform.icon} alt={platform.label} className="w-5 h-5 object-contain" />
+  }
   switch (type) {
     case 'business_card': return <BadgeCheck size={18} strokeWidth={1.8} />
     case 'link':          return <Link2 size={18} strokeWidth={1.8} />
@@ -87,7 +93,7 @@ export default function CardsList({ cards: initial }: Props) {
                   style={{ background: style.background }}
                 >
                   <div className="w-10 h-10 rounded-2xl bg-black/20 flex items-center justify-center flex-shrink-0" style={{ color: style.textColor }}>
-                    <CardIcon type={card.card_type} />
+                    <CardIcon type={card.card_type} title={card.title} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate" style={{ color: style.textColor }}>

@@ -4,9 +4,29 @@ import { createClient, nexus } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { CardType, BusinessCardData } from '@/lib/types'
-import { CARD_COLORS, encodeCardColor, emptyBusinessCard, parseCardColor } from '@/lib/types'
+import { CARD_COLORS, encodeCardColor, emptyBusinessCard } from '@/lib/types'
 import { SOCIAL_FIELDS } from '@/lib/cardUtils'
 import { Link2, Share2, Paperclip, CreditCard, BadgeCheck } from 'lucide-react'
+
+// Social platforms (exclude basic contact fields)
+const SOCIAL_PLATFORMS = SOCIAL_FIELDS.filter(f => f.icon !== null)
+
+function buildSocialUrl(key: string, handle: string): string {
+  const h = handle.replace(/^@/, '')
+  const urls: Record<string, string> = {
+    instagram: `https://instagram.com/${h}`,
+    twitter:   `https://x.com/${h}`,
+    linkedin:  `https://linkedin.com/in/${h}`,
+    github:    `https://github.com/${h}`,
+    facebook:  `https://facebook.com/${h}`,
+    youtube:   `https://youtube.com/@${h}`,
+    tiktok:    `https://tiktok.com/@${h}`,
+    twitch:    `https://twitch.tv/${h}`,
+    discord:   handle,
+    whatsapp:  `https://wa.me/${h.replace(/[^0-9+]/g, '')}`,
+  }
+  return urls[key] ?? handle
+}
 
 const CardTypeIcon = ({ type, size = 22 }: { type: CardType; size?: number }) => {
   switch (type) {
@@ -110,6 +130,8 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
   const [enabledFields, setEnabledFields] = useState<Set<string>>(new Set(DEFAULT_FIELDS))
   const [autoUser, setAutoUser] = useState('')
   const [autoEmail, setAutoEmail] = useState('')
+  const [socialPlatform, setSocialPlatform] = useState<string | null>(null)
+  const [socialHandle, setSocialHandle] = useState('')
 
   const isDark = cardMode === 'dark'
 
@@ -176,6 +198,16 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
         if (val) (filtered as unknown as Record<string, string>)[k] = val
       })
       finalContent = JSON.stringify(filtered)
+    } else if (selectedType === 'social_media') {
+      if (!socialPlatform) { setError('Choose a platform'); return }
+      if (!socialHandle.trim()) { setError('Enter your handle'); return }
+      const platform = SOCIAL_PLATFORMS.find(p => p.key === socialPlatform)
+      finalTitle = platform?.label ?? socialPlatform
+      finalContent = buildSocialUrl(socialPlatform, socialHandle.trim())
+    } else if (selectedType === 'file') {
+      if (!finalTitle.trim()) { setError('Title is required'); return }
+      // File upload via storage - use content as URL for now
+      if (!content.trim()) { setError('Enter a file URL or link'); return }
     } else {
       if (!finalTitle.trim()) { setError('Title is required'); return }
     }
@@ -271,8 +303,15 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
       {/* Preview at top */}
       <CardPreview
         type={selectedType!}
-        title={selectedType === 'business_card' ? (bcData.name || 'Full Name') : (title || 'Card Title')}
-        subtitle={bcPreviewSubtitle}
+        title={
+          selectedType === 'business_card' ? (bcData.name || 'Full Name') :
+          selectedType === 'social_media' ? (SOCIAL_PLATFORMS.find(p => p.key === socialPlatform)?.label ?? 'Social Media') :
+          (title || 'Card Title')
+        }
+        subtitle={
+          selectedType === 'social_media' && socialHandle ? socialHandle :
+          bcPreviewSubtitle
+        }
         colorHex={colorHex}
         isDark={isDark}
       />
@@ -322,22 +361,64 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
         </div>
       )}
 
-      {/* Other card types */}
-      {selectedType !== 'business_card' && (
+      {/* Link / Custom */}
+      {(selectedType === 'link' || selectedType === 'custom') && (
         <div className="space-y-3">
           <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-            placeholder={`Title *`}
+            placeholder="Title *"
             className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
-          {selectedType !== 'file' && (
-            <input
-              type={selectedType === 'link' || selectedType === 'social_media' ? 'url' : 'text'}
-              value={content} onChange={e => setContent(e.target.value)}
-              placeholder={selectedType === 'link' ? 'URL *' : selectedType === 'social_media' ? 'Profile URL *' : 'Content'}
-              className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
-          )}
-          {selectedType === 'file' && (
-            <p className="text-[#444444] text-xs px-1">File upload coming soon. Use a Link card with a file URL for now.</p>
-          )}
+          <input type={selectedType === 'link' ? 'url' : 'text'}
+            value={content} onChange={e => setContent(e.target.value)}
+            placeholder={selectedType === 'link' ? 'URL *' : 'Content'}
+            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
+        </div>
+      )}
+
+      {/* Social Media - platform picker */}
+      {selectedType === 'social_media' && (
+        <div className="space-y-3">
+          <div>
+            <p className="text-[#666666] text-xs mb-2">Choose platform</p>
+            <div className="flex flex-wrap gap-2">
+              {SOCIAL_PLATFORMS.map(p => {
+                const on = socialPlatform === p.key
+                return (
+                  <button key={p.key} onClick={() => setSocialPlatform(p.key)} title={p.label}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden border transition-all"
+                    style={{
+                      background: on ? `${p.color}22` : '#1A1A1A',
+                      borderColor: on ? `${p.color}88` : '#383838',
+                      opacity: on ? 1 : 0.5,
+                      transform: on ? 'scale(1.1)' : 'scale(1)',
+                    }}
+                  >
+                    <img src={p.icon!} alt={p.label} className="w-5 h-5 object-contain" />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          {socialPlatform && (() => {
+            const p = SOCIAL_PLATFORMS.find(x => x.key === socialPlatform)!
+            return (
+              <input type="text" value={socialHandle} onChange={e => setSocialHandle(e.target.value)}
+                placeholder={p.placeholder}
+                className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
+            )
+          })()}
+        </div>
+      )}
+
+      {/* File - paste URL for now */}
+      {selectedType === 'file' && (
+        <div className="space-y-3">
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="Title *"
+            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
+          <input type="url" value={content} onChange={e => setContent(e.target.value)}
+            placeholder="File URL *"
+            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
+          <p className="text-[#444444] text-xs px-1">Direct file upload coming soon. Paste a file URL for now.</p>
         </div>
       )}
 
