@@ -6,13 +6,26 @@ import { useState } from 'react'
 import type { CardType, BusinessCardData } from '@/lib/types'
 import { CARD_COLORS, encodeCardColor, emptyBusinessCard } from '@/lib/types'
 import { SOCIAL_FIELDS } from '@/lib/cardUtils'
+import { Link2, Share2, Paperclip, CreditCard, BadgeCheck } from 'lucide-react'
 
-const CARD_TYPES: { type: CardType; label: string; desc: string; emoji: string }[] = [
-  { type: 'business_card', label: 'Nexus',        desc: 'Your digital identity card',    emoji: '🪪' },
-  { type: 'link',          label: 'Link',          desc: 'Opens a URL when tapped',       emoji: '🔗' },
-  { type: 'social_media',  label: 'Social Media',  desc: 'Link to your social profile',   emoji: '📱' },
-  { type: 'file',          label: 'File',          desc: 'Share a file via QR or tap',    emoji: '📎' },
-  { type: 'custom',        label: 'Custom',        desc: 'Custom text or data',           emoji: '✨' },
+const CardTypeIcon = ({ type, size = 22 }: { type: CardType; size?: number }) => {
+  const cls = `w-[${size}px] h-[${size}px]`
+  switch (type) {
+    case 'business_card': return <BadgeCheck size={size} strokeWidth={1.8} />
+    case 'link':          return <Link2 size={size} strokeWidth={1.8} />
+    case 'social_media':  return <Share2 size={size} strokeWidth={1.8} />
+    case 'file':          return <Paperclip size={size} strokeWidth={1.8} />
+    case 'custom':        return <CreditCard size={size} strokeWidth={1.8} />
+    default:              return <Link2 size={size} strokeWidth={1.8} />
+  }
+}
+
+const CARD_TYPES: { type: CardType; label: string; desc: string }[] = [
+  { type: 'business_card', label: 'Nexus',        desc: 'Your digital identity card'   },
+  { type: 'link',          label: 'Link',          desc: 'Opens a URL when tapped'      },
+  { type: 'social_media',  label: 'Social Media',  desc: 'Link to your social profile'  },
+  { type: 'file',          label: 'File',          desc: 'Share a file via QR or tap'   },
+  { type: 'custom',        label: 'Custom',        desc: 'Custom text or data'          },
 ]
 
 const DEFAULT_FIELDS = new Set(['name', 'jobTitle', 'company', 'phone', 'email'])
@@ -53,10 +66,11 @@ function ColorPicker({ selected, isDark, onChange, onDarkToggle }: {
   )
 }
 
-export default function CreateCardPage() {
+export default function CreateCardPage({ searchParams }: { searchParams: { type?: string } }) {
   const router = useRouter()
-  const [step, setStep] = useState<'type' | 'details'>('type')
-  const [selectedType, setSelectedType] = useState<CardType | null>(null)
+  const preselected = (searchParams.type as CardType) || null
+  const [step, setStep] = useState<'type' | 'details'>(preselected ? 'details' : 'type')
+  const [selectedType, setSelectedType] = useState<CardType | null>(preselected)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [colorHex, setColorHex] = useState(CARD_COLORS[0].hex)
@@ -183,8 +197,8 @@ export default function CreateCardPage() {
                 ct.type === 'business_card' ? 'border-[#037A68]/40 col-span-2' : 'border-[#383838]'
               }`}
             >
-              <div className="w-10 h-10 rounded-xl bg-[#111111] flex items-center justify-center text-xl mb-3">
-                {ct.emoji}
+              <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center mb-3 text-[#EEEEEE]">
+                <CardTypeIcon type={ct.type} />
               </div>
               <p className="text-white font-semibold text-sm">{ct.label}</p>
               <p className="text-[#666666] text-xs mt-0.5 leading-snug">{ct.desc}</p>
@@ -210,8 +224,8 @@ export default function CreateCardPage() {
       </button>
 
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#111111] flex items-center justify-center text-xl">
-          {selected.emoji}
+        <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-[#EEEEEE]">
+          <CardTypeIcon type={selected.type} />
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">{selected.label}</h1>
