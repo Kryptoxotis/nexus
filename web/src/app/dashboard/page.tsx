@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient, nexus } from '@/lib/supabase/server'
 import type { Profile, PersonalCard } from '@/lib/types'
 import CardsList from '@/components/CardsList'
+import NexusCardPreview from '@/components/NexusCardPreview'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
     .order('order_index', { ascending: true })
 
   const cards = (allCards as PersonalCard[]) ?? []
+  const nexusCard = cards.find(c => c.card_type === 'business_card' && c.is_active)
   const linkCards = cards.filter(c => c.card_type !== 'business_card')
 
   return (
@@ -61,7 +63,23 @@ export default async function DashboardPage() {
         </div>
       </Link>
 
-      {/* My Cards */}
+      {/* My Nexus section */}
+      <div>
+        <p className="text-[#888888] text-sm font-semibold mb-2">My Nexus</p>
+        {nexusCard ? (
+          <NexusCardPreview card={nexusCard} userId={user.id} />
+        ) : (
+          <Link
+            href="/dashboard/nexus/create"
+            className="flex flex-col items-center justify-center bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-8 hover:border-[#037A68] transition-colors"
+          >
+            <p className="text-[#444444] text-sm">No Nexus card yet</p>
+            <p className="text-[#037A68] text-xs font-medium mt-1">+ Create your Nexus</p>
+          </Link>
+        )}
+      </div>
+
+      {/* My Cards section */}
       <CardsList cards={linkCards} />
     </div>
   )

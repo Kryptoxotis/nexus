@@ -9,9 +9,6 @@ export default function ProfilePage() {
   const supabase = createClient()
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [name, setName] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,24 +17,11 @@ export default function ProfilePage() {
       if (!user) { router.push('/'); return }
       const db = nexus(supabase)
       const { data } = await db.from('profiles').select('*').eq('id', user.id).single<Profile>()
-      if (data) { setProfile(data); setName(data.full_name ?? '') }
+      if (data) setProfile(data)
       setLoading(false)
     }
     load()
   }, [])
-
-  const saveName = async () => {
-    if (!profile || !name.trim()) return
-    setSaving(true)
-    const db = nexus(supabase)
-    const { error } = await db.from('profiles').update({ full_name: name.trim() }).eq('id', profile.id)
-    if (!error) {
-      setProfile({ ...profile, full_name: name.trim() })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    }
-    setSaving(false)
-  }
 
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -54,6 +38,7 @@ export default function ProfilePage() {
     <div className="space-y-4 pb-8">
       <h2 className="text-xl font-bold text-white">Accounts</h2>
 
+      {/* Account card */}
       <div className="bg-[#037A68] rounded-2xl px-4 py-4 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -70,32 +55,7 @@ export default function ProfilePage() {
         </svg>
       </div>
 
-      <div className="bg-[#1A1A1A] rounded-2xl border border-[#383838] p-4 space-y-3">
-        <p className="text-white font-semibold text-sm">Profile</p>
-        <div>
-          <p className="text-[#666666] text-xs mb-1.5">Display Name</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="flex-1 bg-[#111111] border border-[#383838] rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#037A68] transition-colors"
-            />
-            <button
-              onClick={saveName}
-              disabled={saving || name === profile?.full_name}
-              className="px-4 py-2 rounded-xl bg-[#037A68] hover:bg-[#025E50] text-white text-sm font-semibold transition-colors disabled:opacity-40"
-            >
-              {saved ? '✓' : saving ? '...' : 'Save'}
-            </button>
-          </div>
-        </div>
-        <div>
-          <p className="text-[#666666] text-xs mb-0.5">Account Type</p>
-          <p className="text-[#037A68] text-sm font-medium capitalize">{profile?.account_type}</p>
-        </div>
-      </div>
-
+      {/* Sign Out */}
       <button
         onClick={signOut}
         className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-[#FA5700] text-sm font-semibold border border-[#FA5700]/20 hover:bg-[#FA5700]/10 transition-colors"

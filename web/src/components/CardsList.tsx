@@ -55,7 +55,7 @@ export default function CardsList({ cards: initial }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[#666666] text-xs font-medium uppercase tracking-wider">My Cards</h2>
+        <h2 className="text-[#888888] text-sm font-semibold">My Cards</h2>
         <Link
           href="/dashboard/create"
           className="flex items-center gap-1 text-xs font-medium text-[#037A68] hover:text-[#0AD7A5] transition-colors"

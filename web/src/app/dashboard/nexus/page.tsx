@@ -35,7 +35,7 @@ export default async function NexusPage() {
       <div className="space-y-5">
         {/* My Nexus section */}
         <div>
-          <p className="text-[#888888] text-xs font-semibold mb-2 tracking-wide">MY NEXUS</p>
+          <p className="text-[#888888] text-sm font-semibold mb-2">My Nexus</p>
           {nexusCards.length > 0 ? (
             <div className="space-y-3">
               {nexusCards.map(card => (
@@ -71,7 +71,7 @@ export default async function NexusPage() {
 
         {/* Contacts section */}
         <div>
-          <p className="text-[#888888] text-xs font-semibold mb-3 tracking-wide">CONTACTS</p>
+          <p className="text-[#888888] text-sm font-semibold mb-3">Contacts</p>
           <p className="text-[#333333] text-sm px-1">No contacts yet. Scan a card to add one.</p>
         </div>
       </div>
