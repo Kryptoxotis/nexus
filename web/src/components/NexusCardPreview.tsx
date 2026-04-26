@@ -22,45 +22,65 @@ export default function NexusCardPreview({ card, userId, showQr = true }: Props)
 
   const bg = isDark ? '#111111' : `linear-gradient(135deg, ${hex}, ${colorEntry?.dark ?? hex})`
   const textColor = isDark ? hex : 'white'
+  const isCoin = card.card_shape === 'coin'
 
   return (
     <div>
-      {/* Card */}
-      <div
-        className="rounded-2xl relative overflow-hidden border cursor-pointer"
-        style={{ background: bg, borderColor: hex + '44', minHeight: '180px' }}
-        onClick={() => showQr && setQrExpanded(p => !p)}
-      >
-        {/* Centered content */}
-        <div className="flex flex-col items-center justify-center py-8 px-6 text-center">
-          <p className="font-bold text-2xl leading-tight" style={{ color: textColor }}>
-            {bcData.name || card.title}
-          </p>
-          {(bcData.jobTitle || bcData.company) && (
-            <p className="text-sm opacity-70 mt-1" style={{ color: textColor }}>
-              {[bcData.jobTitle, bcData.company].filter(Boolean).join(' at ')}
+      {isCoin ? (
+        /* Coin / circle shape */
+        <div className="flex justify-center">
+          <div
+            className="relative rounded-full border-2 cursor-pointer flex flex-col items-center justify-center overflow-hidden"
+            style={{
+              width: '200px',
+              height: '200px',
+              background: bg,
+              borderColor: hex + '88',
+            }}
+            onClick={() => showQr && setQrExpanded(p => !p)}
+          >
+            <p className="font-bold text-xl text-center px-4 leading-tight" style={{ color: textColor }}>
+              {bcData.name || card.title}
             </p>
-          )}
+            {(bcData.jobTitle || bcData.company) && (
+              <p className="text-xs opacity-60 mt-1 text-center px-6" style={{ color: textColor }}>
+                {[bcData.jobTitle, bcData.company].filter(Boolean).join(' at ')}
+              </p>
+            )}
+            {showQr && (
+              <div className="absolute bottom-4 opacity-60">
+                <QRCode value={profileUrl} size={24} fgColor={textColor} bgColor="transparent" />
+              </div>
+            )}
+          </div>
         </div>
+      ) : (
+        /* Card / rectangle shape */
+        <div
+          className="rounded-2xl relative overflow-hidden border-2 cursor-pointer"
+          style={{ background: bg, borderColor: hex + '88', minHeight: '180px' }}
+          onClick={() => showQr && setQrExpanded(p => !p)}
+        >
+          {/* Centered name */}
+          <div className="flex flex-col items-center justify-center py-8 px-6 text-center min-h-[180px]">
+            <p className="font-bold text-2xl leading-tight" style={{ color: textColor }}>
+              {bcData.name || card.title}
+            </p>
+            {(bcData.jobTitle || bcData.company) && (
+              <p className="text-sm opacity-70 mt-1" style={{ color: textColor }}>
+                {[bcData.jobTitle, bcData.company].filter(Boolean).join(' at ')}
+              </p>
+            )}
+          </div>
 
-        {/* Bottom row: QR left, NFC right */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+          {/* QR bottom-right */}
           {showQr && (
-            <div className="opacity-70">
+            <div className="absolute bottom-3 right-3 opacity-60">
               <QRCode value={profileUrl} size={32} fgColor={textColor} bgColor="transparent" />
             </div>
           )}
-          {/* NFC icon bottom right */}
-          <div className="opacity-60 ml-auto">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={textColor} strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="3"/>
-              <path d="M8.5 15.5a5 5 0 0 1 0-7"/>
-              <path d="M11 13a2 2 0 0 1 0-2.8"/>
-              <path d="M6 17.5a8 8 0 0 1 0-11"/>
-            </svg>
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Expanded QR */}
       {qrExpanded && (
