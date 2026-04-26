@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient, nexus } from '@/lib/supabase/server'
 import type { Profile, PersonalCard } from '@/lib/types'
-import CardsList from '@/components/CardsList'
 import NexusCardPreview from '@/components/NexusCardPreview'
 import Link from 'next/link'
 
@@ -26,11 +25,10 @@ export default async function DashboardPage() {
     .from('personal_cards')
     .select('*')
     .eq('user_id', user.id)
+    .eq('is_active', true)
     .order('order_index', { ascending: true })
 
   const cards = (allCards as PersonalCard[]) ?? []
-  const nexusCard = cards.find(c => c.card_type === 'business_card' && c.is_active)
-  const linkCards = cards.filter(c => c.card_type !== 'business_card')
 
   return (
     <div className="space-y-5 pb-8">
@@ -64,24 +62,25 @@ export default async function DashboardPage() {
         </div>
       </Link>
 
-      {/* My Nexus section */}
+      {/* Nexus Cards — all active cards as large previews */}
       <div>
-        <p className="text-[#888888] text-sm font-semibold mb-2">Nexus Cards</p>
-        {nexusCard ? (
-          <NexusCardPreview card={nexusCard} userId={user.id} />
-        ) : (
+        <p className="text-[#888888] text-sm font-semibold mb-3">Nexus Cards</p>
+        {cards.length === 0 ? (
           <Link
             href="/dashboard/nexus/create"
-            className="flex flex-col items-center justify-center bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-8 hover:border-[#037A68] transition-colors"
+            className="flex flex-col items-center justify-center bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-10 hover:border-[#037A68] transition-colors"
           >
-            <p className="text-[#444444] text-sm">No Nexus card yet</p>
-            <p className="text-[#037A68] text-xs font-medium mt-1">+ Create your Nexus</p>
+            <p className="text-[#444444] text-sm">No cards yet</p>
+            <p className="text-[#037A68] text-xs font-medium mt-1">+ Create your first card</p>
           </Link>
+        ) : (
+          <div className="space-y-3">
+            {cards.map(card => (
+              <NexusCardPreview key={card.id} card={card} userId={user.id} showQr />
+            ))}
+          </div>
         )}
       </div>
-
-      {/* My Cards section */}
-      <CardsList cards={linkCards} />
     </div>
   )
 }
