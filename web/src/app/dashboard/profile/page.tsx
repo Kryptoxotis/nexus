@@ -27,14 +27,16 @@ export default function ProfilePage() {
   }, [])
 
   const saveName = async () => {
-    if (!profile) return
+    if (!profile || !name.trim()) return
     setSaving(true)
     const db = nexus(supabase)
-    await db.from('profiles').update({ full_name: name.trim() }).eq('id', profile.id)
-    setProfile({ ...profile, full_name: name.trim() })
+    const { error } = await db.from('profiles').update({ full_name: name.trim() }).eq('id', profile.id)
+    if (!error) {
+      setProfile({ ...profile, full_name: name.trim() })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
   }
 
   const signOut = async () => {

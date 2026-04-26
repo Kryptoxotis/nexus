@@ -2,11 +2,73 @@
 
 import { createClient, nexus } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import type { CardType, BusinessCardData } from '@/lib/types'
-import { CARD_COLORS, encodeCardColor, emptyBusinessCard } from '@/lib/types'
+import { useState, useRef } from 'react'
+import type { CardType } from '@/lib/types'
+import { CARD_COLORS, encodeCardColor } from '@/lib/types'
 import { SOCIAL_FIELDS } from '@/lib/cardUtils'
-import { Link2, Share2, Paperclip, CreditCard, BadgeCheck } from 'lucide-react'
+import { Link2, Share2, Paperclip, CreditCard } from 'lucide-react'
+
+function FileUploadField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadedName, setUploadedName] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = async (file: File) => {
+    setUploading(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setUploading(false); return }
+
+    const path = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const { data, error } = await supabase.storage.from('nexus-files').upload(path, file)
+
+    if (error) {
+      alert(`Upload failed: ${error.message}`)
+      setUploading(false)
+      return
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('nexus-files').getPublicUrl(data.path)
+    onChange(publicUrl)
+    setUploadedName(file.name)
+    setUploading(false)
+  }
+
+  return (
+    <div className="space-y-2">
+      <input type="file" ref={inputRef} className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]) }} />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="w-full bg-[#1A1A1A] border border-dashed border-[#383838] rounded-2xl px-4 py-5 flex flex-col items-center gap-2 hover:border-[#037A68] transition-colors disabled:opacity-50"
+      >
+        {uploading ? (
+          <div className="w-5 h-5 border-2 border-[#037A68] border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#037A68" strokeWidth="1.8">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        )}
+        <p className="text-sm text-[#666666]">
+          {uploading ? 'Uploading...' : uploadedName || 'Tap to choose a file'}
+        </p>
+      </button>
+      {value && !uploadedName && (
+        <input type="url" value={value} onChange={e => onChange(e.target.value)}
+          placeholder="Or paste a file URL"
+          className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
+      )}
+      {!value && !uploading && (
+        <input type="url" value={value} onChange={e => onChange(e.target.value)}
+          placeholder="Or paste a file URL"
+          className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
+      )}
+    </div>
+  )
+}
 
 // Social platforms (exclude basic contact fields)
 const SOCIAL_PLATFORMS = SOCIAL_FIELDS.filter(f => f.icon !== null)
@@ -30,23 +92,18 @@ function buildSocialUrl(key: string, handle: string): string {
 
 const CardTypeIcon = ({ type, size = 22 }: { type: CardType; size?: number }) => {
   switch (type) {
-    case 'business_card': return <BadgeCheck size={size} strokeWidth={1.8} />
-    case 'link':          return <Link2 size={size} strokeWidth={1.8} />
-    case 'social_media':  return <Share2 size={size} strokeWidth={1.8} />
-    case 'file':          return <Paperclip size={size} strokeWidth={1.8} />
-    case 'custom':        return <CreditCard size={size} strokeWidth={1.8} />
-    default:              return <Link2 size={size} strokeWidth={1.8} />
+    case 'link':         return <Link2 size={size} strokeWidth={1.8} />
+    case 'social_media': return <Share2 size={size} strokeWidth={1.8} />
+    case 'file':         return <Paperclip size={size} strokeWidth={1.8} />
+    default:             return <CreditCard size={size} strokeWidth={1.8} />
   }
 }
 
 const CARD_TYPES: { type: CardType; label: string; desc: string }[] = [
-  { type: 'business_card', label: 'Nexus',       desc: 'Your digital identity card'  },
-  { type: 'link',          label: 'Link',         desc: 'Opens a URL when tapped'     },
-  { type: 'social_media',  label: 'Social Media', desc: 'Link to your social profile' },
-  { type: 'file',          label: 'File',         desc: 'Share a file via QR or tap'  },
+  { type: 'link',         label: 'Link',         desc: 'Opens a URL when tapped'     },
+  { type: 'social_media', label: 'Social Media', desc: 'Link to your social profile' },
+  { type: 'file',         label: 'File',         desc: 'Share a file via QR or tap'  },
 ]
-
-const DEFAULT_FIELDS = new Set(['name', 'jobTitle', 'company', 'phone', 'email'])
 
 function ToggleRow({ label, left, right, value, onChange }: {
   label: string; left: string; right: string; value: string; onChange: (v: string) => void
@@ -125,60 +182,10 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const [bcData, setBcData] = useState<BusinessCardData>(emptyBusinessCard())
-  const [enabledFields, setEnabledFields] = useState<Set<string>>(new Set(DEFAULT_FIELDS))
-  const [autoUser, setAutoUser] = useState('')
-  const [autoEmail, setAutoEmail] = useState('')
   const [socialPlatform, setSocialPlatform] = useState<string | null>(null)
   const [socialHandle, setSocialHandle] = useState('')
 
   const isDark = cardMode === 'dark'
-
-  const toggleField = (key: string) => {
-    setEnabledFields(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
-  const deriveUsername = (company: string) => company.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-  const deriveEmail = (name: string, company: string) => {
-    const first = name.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g, '') ?? ''
-    const domain = company.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-    return first && domain ? `${first}@${domain}.com` : ''
-  }
-
-  const updateBc = (field: keyof BusinessCardData, value: string) => {
-    setBcData(prev => {
-      const next = { ...prev, [field]: value }
-      if (field === 'name') {
-        const newAutoEmail = deriveEmail(value, prev.company)
-        if (!prev.email || prev.email === autoEmail) next.email = newAutoEmail
-        setAutoEmail(newAutoEmail)
-      }
-      if (field === 'company') {
-        const newUser = deriveUsername(value)
-        const socialKeys = ['instagram','twitter','github','linkedin','facebook','youtube','tiktok','twitch'] as const
-        socialKeys.forEach(k => {
-          if (enabledFields.has(k) && (!(prev as unknown as Record<string,string>)[k] || (prev as unknown as Record<string,string>)[k] === autoUser)) {
-            (next as unknown as Record<string, string>)[k] = newUser
-          }
-        })
-        setAutoUser(newUser)
-        const domain = value.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-        if (!prev.website || prev.website === `${autoUser}.com`) next.website = domain ? `${domain}.com` : ''
-        const newAutoEmail = deriveEmail(prev.name, value)
-        if (!prev.email || prev.email === autoEmail) next.email = newAutoEmail
-        setAutoEmail(newAutoEmail)
-      }
-      if (field === 'phone') {
-        if (!prev.whatsapp || prev.whatsapp === prev.phone) next.whatsapp = value
-      }
-      return next
-    })
-  }
 
   const handleSave = async () => {
     const supabase = createClient()
@@ -188,16 +195,7 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
     let finalTitle = title
     let finalContent = content
 
-    if (selectedType === 'business_card') {
-      if (!bcData.name.trim()) { setError('Full Name is required'); return }
-      finalTitle = bcData.name.trim()
-      const filtered: Partial<BusinessCardData> = { name: bcData.name }
-      enabledFields.forEach(k => {
-        const val = (bcData as unknown as Record<string, string>)[k]
-        if (val) (filtered as unknown as Record<string, string>)[k] = val
-      })
-      finalContent = JSON.stringify(filtered)
-    } else if (selectedType === 'social_media') {
+    if (selectedType === 'social_media') {
       if (!socialPlatform) { setError('Choose a platform'); return }
       if (!socialHandle.trim()) { setError('Enter your handle'); return }
       const platform = SOCIAL_PLATFORMS.find(p => p.key === socialPlatform)
@@ -242,45 +240,26 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
           <h1 className="text-xl font-bold text-white">Create Card</h1>
           <p className="text-[#037A68] text-sm">Choose a type</p>
         </div>
-        <div className="space-y-3">
-          {/* Nexus full width */}
-          <button
-            onClick={() => { setSelectedType('business_card'); setStep('details') }}
-            className="w-full bg-[#1A1A1A] rounded-2xl border border-[#037A68]/40 p-4 text-left hover:border-[#037A68] active:scale-[0.99] transition-all flex items-center gap-4"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-[#111111] flex items-center justify-center text-[#037A68] flex-shrink-0">
-              <BadgeCheck size={24} strokeWidth={1.8} />
-            </div>
-            <div>
-              <p className="text-white font-bold text-sm">Nexus</p>
-              <p className="text-[#666666] text-xs mt-0.5">Your digital identity card</p>
-            </div>
-          </button>
-          {/* Other types 2x2 */}
-          <div className="grid grid-cols-2 gap-3">
-            {CARD_TYPES.filter(c => c.type !== 'business_card').map(ct => (
-              <button
-                key={ct.type}
-                onClick={() => { setSelectedType(ct.type); setStep('details') }}
-                className="bg-[#1A1A1A] rounded-2xl border border-[#383838] p-4 text-left hover:border-[#555555] active:scale-[0.98] transition-all"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-[#037A68] mb-3">
-                  <CardTypeIcon type={ct.type} size={20} />
-                </div>
-                <p className="text-white font-semibold text-sm">{ct.label}</p>
-                <p className="text-[#666666] text-xs mt-0.5 leading-snug">{ct.desc}</p>
-              </button>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          {CARD_TYPES.map(ct => (
+            <button
+              key={ct.type}
+              onClick={() => { setSelectedType(ct.type); setStep('details') }}
+              className="bg-[#1A1A1A] rounded-2xl border border-[#383838] p-4 text-left hover:border-[#555555] active:scale-[0.98] transition-all"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-[#037A68] mb-3">
+                <CardTypeIcon type={ct.type} size={20} />
+              </div>
+              <p className="text-white font-semibold text-sm">{ct.label}</p>
+              <p className="text-[#666666] text-xs mt-0.5 leading-snug">{ct.desc}</p>
+            </button>
+          ))}
         </div>
       </div>
     )
   }
 
   const selected = CARD_TYPES.find(c => c.type === selectedType)!
-  const bcPreviewSubtitle = selectedType === 'business_card'
-    ? [bcData.jobTitle, bcData.company].filter(Boolean).join(' at ') || undefined
-    : undefined
 
   return (
     <div className="space-y-5 pb-8">
@@ -303,62 +282,15 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
       <CardPreview
         type={selectedType!}
         title={
-          selectedType === 'business_card' ? (bcData.name || 'Full Name') :
           selectedType === 'social_media' ? (SOCIAL_PLATFORMS.find(p => p.key === socialPlatform)?.label ?? 'Social Media') :
           (title || 'Card Title')
         }
         subtitle={
-          selectedType === 'social_media' && socialHandle ? socialHandle :
-          bcPreviewSubtitle
+          selectedType === 'social_media' && socialHandle ? socialHandle : undefined
         }
         colorHex={colorHex}
         isDark={isDark}
       />
-
-      {/* Business card fields */}
-      {selectedType === 'business_card' && (
-        <div className="space-y-3">
-          <div>
-            <p className="text-[#666666] text-xs mb-2">Fields to include</p>
-            <div className="flex flex-wrap gap-2">
-              {SOCIAL_FIELDS.map(f => {
-                const on = enabledFields.has(f.key as string)
-                return (
-                  <button
-                    key={f.key}
-                    onClick={() => toggleField(f.key as string)}
-                    title={f.label}
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden transition-all border"
-                    style={{
-                      background: on ? `${f.color}22` : '#1A1A1A',
-                      borderColor: on ? `${f.color}66` : '#383838',
-                      opacity: on ? 1 : 0.45,
-                    }}
-                  >
-                    {f.icon
-                      ? <img src={f.icon} alt={f.label} className="w-5 h-5 object-contain" />
-                      : <span className="text-sm" style={{ color: on ? f.color : '#555555' }}>{f.emoji}</span>
-                    }
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <input type="text" value={bcData.name} onChange={e => updateBc('name', e.target.value)}
-            placeholder="Full Name *"
-            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
-
-          {SOCIAL_FIELDS.filter(f => enabledFields.has(f.key as string)).map(f => (
-            <input key={f.key}
-              type={f.key === 'email' ? 'email' : f.key === 'phone' || f.key === 'whatsapp' ? 'tel' : 'text'}
-              value={(bcData as unknown as Record<string, string>)[f.key as string] || ''}
-              onChange={e => updateBc(f.key, e.target.value)}
-              placeholder={f.label}
-              className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
-          ))}
-        </div>
-      )}
 
       {/* Link / Custom */}
       {(selectedType === 'link' || selectedType === 'custom') && (
@@ -408,16 +340,13 @@ export default function CreateCardPage({ searchParams }: { searchParams: { type?
         </div>
       )}
 
-      {/* File - paste URL for now */}
+      {/* File - real upload */}
       {selectedType === 'file' && (
         <div className="space-y-3">
           <input type="text" value={title} onChange={e => setTitle(e.target.value)}
             placeholder="Title *"
             className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
-          <input type="url" value={content} onChange={e => setContent(e.target.value)}
-            placeholder="File URL *"
-            className="w-full bg-[#1A1A1A] border border-[#383838] rounded-2xl px-4 py-3.5 text-white text-sm placeholder-[#444444] focus:outline-none focus:border-[#037A68] transition-colors" />
-          <p className="text-[#444444] text-xs px-1">Direct file upload coming soon. Paste a file URL for now.</p>
+          <FileUploadField value={content} onChange={setContent} />
         </div>
       )}
 

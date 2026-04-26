@@ -44,7 +44,7 @@ export default async function NexusPage() {
             </div>
           ) : (
             <Link
-              href="/dashboard/create?type=business_card"
+              href="/dashboard/nexus/create"
               className="flex flex-col items-center justify-center bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-8 hover:border-[#037A68] transition-colors"
             >
               <p className="text-[#444444] text-sm">No Nexus card yet</p>
@@ -55,7 +55,7 @@ export default async function NexusPage() {
 
         {/* Create Nexus CTA */}
         <Link
-          href="/dashboard/create?type=business_card"
+          href="/dashboard/nexus/create"
           className="flex items-center gap-4 bg-[#1A1A1A] rounded-2xl border border-[#037A68]/30 px-4 py-4 hover:border-[#037A68]/60 active:scale-[0.99] transition-all"
         >
           <div className="w-11 h-11 rounded-full border-2 border-[#037A68] flex items-center justify-center flex-shrink-0">
