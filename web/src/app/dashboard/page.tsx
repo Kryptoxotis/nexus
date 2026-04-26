@@ -52,8 +52,8 @@ export default async function DashboardPage() {
         href="/dashboard/create"
         className="flex items-center gap-4 bg-[#1A1A1A] rounded-2xl border border-[#383838] px-4 py-4 hover:border-[#555555] active:scale-[0.99] transition-all"
       >
-        <div className="w-11 h-11 rounded-full border-2 border-[#037A68] flex items-center justify-center flex-shrink-0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#037A68" strokeWidth="2.5">
+        <div className="w-11 h-11 rounded-full bg-[#037A68] flex items-center justify-center flex-shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <path d="M12 5v14M5 12h14"/>
           </svg>
         </div>
