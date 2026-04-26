@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? origin
   const code = searchParams.get('code')
 
   if (code) {
@@ -28,9 +29,9 @@ export async function GET(request: Request) {
         })
       }
 
-      return NextResponse.redirect(`${origin}/dashboard`)
+      return NextResponse.redirect(`${appUrl}/dashboard`)
     }
   }
 
-  return NextResponse.redirect(`${origin}/?error=auth`)
+  return NextResponse.redirect(`${appUrl}/?error=auth`)
 }
