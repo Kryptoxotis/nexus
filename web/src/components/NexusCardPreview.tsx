@@ -35,7 +35,7 @@ export default function NexusCardPreview({ card, userId, showQr = true }: Props)
               width: '200px',
               height: '200px',
               background: bg,
-              borderColor: hex + '88',
+              borderColor: hex,
             }}
             onClick={() => showQr && setQrExpanded(p => !p)}
           >
@@ -58,7 +58,7 @@ export default function NexusCardPreview({ card, userId, showQr = true }: Props)
         /* Card / rectangle shape */
         <div
           className="rounded-2xl relative overflow-hidden border-2 cursor-pointer"
-          style={{ background: bg, borderColor: hex + '88', minHeight: '180px' }}
+          style={{ background: bg, borderColor: hex, minHeight: '180px' }}
           onClick={() => showQr && setQrExpanded(p => !p)}
         >
           {/* Centered name */}

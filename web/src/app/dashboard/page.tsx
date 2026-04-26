@@ -50,7 +50,8 @@ export default async function DashboardPage() {
       {/* Create a Card CTA */}
       <Link
         href="/dashboard/create"
-        className="flex items-center gap-4 bg-[#1A1A1A] rounded-2xl border border-[#383838] px-4 py-4 hover:border-[#555555] active:scale-[0.99] transition-all"
+        className="flex items-center gap-4 bg-[#1A1A1A] rounded-2xl px-4 py-4 active:scale-[0.99] transition-all"
+        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)' }}
       >
         <div className="w-11 h-11 rounded-full bg-[#111111] border-2 border-[#037A68] flex items-center justify-center flex-shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#037A68" strokeWidth="2.5">
@@ -59,13 +60,13 @@ export default async function DashboardPage() {
         </div>
         <div>
           <p className="text-white font-bold text-sm">Create a Card</p>
-          <p className="text-[#666666] text-xs mt-0.5">Add a new pass to share via QR or NFC</p>
+          <p className="text-[#666666] text-xs mt-0.5">Add a new pass to use with NFC</p>
         </div>
       </Link>
 
       {/* My Nexus section */}
       <div>
-        <p className="text-[#888888] text-sm font-semibold mb-2">My Nexus</p>
+        <p className="text-[#888888] text-sm font-semibold mb-2">Nexus Cards</p>
         {nexusCard ? (
           <NexusCardPreview card={nexusCard} userId={user.id} />
         ) : (
