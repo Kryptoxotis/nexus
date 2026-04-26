@@ -18,17 +18,21 @@ export default function AdminUserList({ profiles: initial, currentUserId }: Prop
   const deleteUser = async (id: string) => {
     if (!confirm('Delete this user and all their data?')) return
     setDeleting(id)
-    const supabase = createClient()
-    const db = nexus(supabase)
 
-    // Delete all user's cards, then profile (auth user is cascade deleted by DB trigger)
-    await db.from('personal_cards').delete().eq('user_id', id)
-    await db.from('business_requests').delete().eq('user_id', id)
-    await db.from('profiles').delete().eq('id', id)
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: id }),
+    })
 
-    setProfiles(prev => prev.filter(p => p.id !== id))
+    if (res.ok) {
+      setProfiles(prev => prev.filter(p => p.id !== id))
+      router.refresh()
+    } else {
+      const { error } = await res.json()
+      alert(`Failed to delete user: ${error}`)
+    }
     setDeleting(null)
-    router.refresh()
   }
 
   const updateAccountType = async (id: string, type: Profile['account_type']) => {

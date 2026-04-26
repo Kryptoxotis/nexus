@@ -43,8 +43,7 @@ const CARD_TYPES: { type: CardType; label: string; desc: string }[] = [
   { type: 'business_card', label: 'Nexus',       desc: 'Your digital identity card'  },
   { type: 'link',          label: 'Link',         desc: 'Opens a URL when tapped'     },
   { type: 'social_media',  label: 'Social Media', desc: 'Link to your social profile' },
-  { type: 'file',          label: 'File',         desc: 'Upload a file to share'      },
-  { type: 'custom',        label: 'Custom',       desc: 'Custom text or data'         },
+  { type: 'file',          label: 'File',         desc: 'Share a file via QR or tap'  },
 ]
 
 const DEFAULT_FIELDS = new Set(['name', 'jobTitle', 'company', 'phone', 'email'])

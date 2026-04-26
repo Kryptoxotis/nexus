@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { createClient, nexus } from '@/lib/supabase/server'
 import type { Profile, PersonalCard } from '@/lib/types'
 import CardsList from '@/components/CardsList'
-import NexusCardPreview from '@/components/NexusCardPreview'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -29,7 +28,6 @@ export default async function DashboardPage() {
     .order('order_index', { ascending: true })
 
   const cards = (allCards as PersonalCard[]) ?? []
-  const nexusCard = cards.find(c => c.card_type === 'business_card' && c.is_active)
   const linkCards = cards.filter(c => c.card_type !== 'business_card')
 
   return (
@@ -50,7 +48,7 @@ export default async function DashboardPage() {
       {/* Create a Card CTA */}
       <Link
         href="/dashboard/create"
-        className="flex items-center gap-4 bg-[#1A1A1A] rounded-2xl border border-[#383838] px-4 py-4 hover:border-[#383838]/60 active:scale-[0.99] transition-all"
+        className="flex items-center gap-4 bg-[#1A1A1A] rounded-2xl border border-[#383838] px-4 py-4 hover:border-[#555555] active:scale-[0.99] transition-all"
       >
         <div className="w-11 h-11 rounded-full border-2 border-[#037A68] flex items-center justify-center flex-shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#037A68" strokeWidth="2.5">
@@ -63,28 +61,7 @@ export default async function DashboardPage() {
         </div>
       </Link>
 
-      {/* My Nexus section */}
-      {nexusCard && (
-        <div>
-          <p className="text-[#888888] text-xs font-semibold mb-2 tracking-wide">MY NEXUS</p>
-          <NexusCardPreview card={nexusCard} userId={user.id} />
-        </div>
-      )}
-
-      {!nexusCard && (
-        <div>
-          <p className="text-[#888888] text-xs font-semibold mb-2 tracking-wide">MY NEXUS</p>
-          <Link
-            href="/dashboard/nexus"
-            className="flex flex-col items-center justify-center bg-[#1A1A1A] rounded-2xl border border-[#383838] border-dashed p-8 hover:border-[#037A68] transition-colors"
-          >
-            <p className="text-[#444444] text-sm">No Nexus card yet</p>
-            <p className="text-[#037A68] text-xs font-medium mt-1">+ Create your Nexus</p>
-          </Link>
-        </div>
-      )}
-
-      {/* Regular cards */}
+      {/* My Cards */}
       <CardsList cards={linkCards} />
     </div>
   )
