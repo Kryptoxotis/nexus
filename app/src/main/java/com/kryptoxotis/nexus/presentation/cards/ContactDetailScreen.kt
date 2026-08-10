@@ -25,8 +25,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.R
+import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
-import com.kryptoxotis.nexus.presentation.theme.resolveCardAppearance
 
 private fun safeLaunchUrl(context: Context, rawUrl: String) {
     val blockedSchemes = listOf("javascript:", "data:", "file:", "content:", "intent:", "blob:", "vbscript:")
@@ -98,7 +99,7 @@ fun ContactDetailScreen(
             if (c.whatsapp.isNotBlank()) add(NexusField("WhatsApp", c.whatsapp, "https://wa.me/${c.whatsapp.replace(Regex("[^0-9+]"), "")}", Color(0xFF25D366), drawableRes = R.drawable.ic_social_whatsapp))
         }
 
-        val appearance = resolveCardAppearance(null)
+        val style = resolveCardStyle(null)
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -107,36 +108,37 @@ fun ContactDetailScreen(
         ) {
             // Main card with name
             item {
-                Card(
+                NexusCardShell(
+                    style = style,
+                    shape = RoundedCornerShape(Dimens.cardRadius),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .neuRaised(cornerRadius = 16.dp, elevation = 10.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(2.5.dp, Brush.linearGradient(listOf(appearance.borderColor.copy(alpha = 0.5f), appearance.borderColor.copy(alpha = 0.2f)))),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        .aspectRatio(1.586f)
+                        .neuRaised(cornerRadius = Dimens.cardRadius, elevation = 10.dp)
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().aspectRatio(1.586f).background(appearance.gradient),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = c.name.ifBlank { "Unknown" },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = appearance.textColor
-                            )
-                            val subtitle = listOfNotNull(
-                                c.jobTitle.ifBlank { null },
-                                c.company.ifBlank { null }
-                            ).joinToString(" at ")
-                            if (subtitle.isNotBlank()) {
-                                Text(
-                                    text = subtitle,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = appearance.textColor.copy(alpha = 0.7f)
-                                )
+                        val titleBrush = style.titleBrush
+                        Text(
+                            text = c.name.ifBlank { "Unknown" },
+                            style = if (titleBrush != null) {
+                                MaterialTheme.typography.titleLarge.copy(brush = titleBrush, fontWeight = FontWeight.Bold)
+                            } else {
+                                MaterialTheme.typography.titleLarge.copy(color = style.titleColor, fontWeight = FontWeight.Bold)
                             }
+                        )
+                        val subtitle = listOfNotNull(
+                            c.jobTitle.ifBlank { null },
+                            c.company.ifBlank { null }
+                        ).joinToString(" at ")
+                        if (subtitle.isNotBlank()) {
+                            Text(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = style.subtitleColor
+                            )
                         }
                     }
                 }
@@ -144,45 +146,42 @@ fun ContactDetailScreen(
 
             // Sub-cards for each field
             items(fields) { field ->
-                val cardGradient = Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
-                Card(
+                NexusCardShell(
+                    style = resolveCardStyle("${NexusCardColors.palette[0].brightHex}:dark"),
+                    shape = RoundedCornerShape(Dimens.cardRadius),
+                    borderBrush = Brush.linearGradient(
+                        listOf(field.brandColor.copy(alpha = 0.3f), field.brandColor.copy(alpha = 0.1f))
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .neuRaised(cornerRadius = 16.dp, elevation = 10.dp)
-                        .clickable { safeLaunchUrl(context, field.intentUri) },
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.5.dp, Brush.linearGradient(listOf(field.brandColor.copy(alpha = 0.3f), field.brandColor.copy(alpha = 0.1f)))),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        .aspectRatio(1.586f)
+                        .neuRaised(cornerRadius = Dimens.cardRadius, elevation = 10.dp)
+                        .clickable { safeLaunchUrl(context, field.intentUri) }
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().aspectRatio(1.586f).background(cardGradient),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Brand icon centered
-                        val tint = if (field.gradientIcon) Color.Unspecified else field.brandColor
-                        if (field.drawableRes != 0) {
-                            Icon(
-                                painter = painterResource(field.drawableRes),
-                                contentDescription = field.label,
-                                modifier = Modifier.size(48.dp),
-                                tint = tint
-                            )
-                        } else if (field.materialIcon != null) {
-                            Icon(
-                                imageVector = field.materialIcon,
-                                contentDescription = field.label,
-                                modifier = Modifier.size(48.dp),
-                                tint = tint
-                            )
-                        }
-                        // Open link bottom-right
+                    // Brand icon centered
+                    val tint = if (field.gradientIcon) Color.Unspecified else field.brandColor
+                    if (field.drawableRes != 0) {
                         Icon(
-                            Icons.Default.OpenInNew,
-                            contentDescription = "Open",
-                            tint = Color(0xFF555555),
-                            modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(20.dp)
+                            painter = painterResource(field.drawableRes),
+                            contentDescription = field.label,
+                            modifier = Modifier.size(48.dp).align(Alignment.Center),
+                            tint = tint
+                        )
+                    } else if (field.materialIcon != null) {
+                        Icon(
+                            imageVector = field.materialIcon,
+                            contentDescription = field.label,
+                            modifier = Modifier.size(48.dp).align(Alignment.Center),
+                            tint = tint
                         )
                     }
+                    // Open link bottom-right
+                    Icon(
+                        Icons.Default.OpenInNew,
+                        contentDescription = "Open",
+                        tint = Color(0xFF555555),
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(20.dp)
+                    )
                 }
             }
         }

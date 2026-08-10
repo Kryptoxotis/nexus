@@ -26,6 +26,7 @@ import com.kryptoxotis.nexus.R
 import com.kryptoxotis.nexus.data.local.ReceivedCardEntity
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
+import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
 import com.kryptoxotis.nexus.presentation.theme.resolveCardAppearance
@@ -103,57 +104,42 @@ fun ContactsScreen(
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (ec.isMainCard) {
-                    // Main card emulation — show full card with name
-                    val appearance = resolveCardAppearance(myCard?.color)
-                    Card(
+                    // Main card emulation - show full card with name
+                    CardPreview(
+                        title = ec.label,
+                        subtitle = "",
+                        cardShape = "card",
+                        storedColor = myCard?.color,
+                        glow = true,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .neonGlow(appearance.neonColor, cornerRadius = 16.dp, elevation = 14.dp)
+                            .padding(horizontal = Dimens.screenPadding)
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                 indication = null
-                            ) {},
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Brush.linearGradient(listOf(appearance.borderColor, appearance.borderColor.copy(alpha = 0.3f))))
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().aspectRatio(1.586f).background(appearance.gradient),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = ec.label,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = appearance.textColor
-                            )
-                        }
-                    }
+                            ) {}
+                    )
                 } else {
-                    // Sub-card emulation — show brand icon
-                    Card(
+                    // Sub-card emulation - show brand icon
+                    val style = resolveCardStyle("${NexusCardColors.palette[0].brightHex}:dark")
+                    NexusCardShell(
+                        style = style,
+                        shape = RoundedCornerShape(Dimens.cardRadius),
+                        borderBrush = Brush.linearGradient(listOf(ec.brandColor, ec.brandColor.copy(alpha = 0.3f))),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .neonGlow(ec.brandColor, cornerRadius = 16.dp, elevation = 14.dp)
+                            .padding(horizontal = Dimens.screenPadding)
+                            .aspectRatio(1.586f)
+                            .neonGlow(ec.brandColor, cornerRadius = Dimens.cardRadius, elevation = 14.dp)
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                 indication = null
-                            ) {},
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Brush.linearGradient(listOf(ec.brandColor, ec.brandColor.copy(alpha = 0.3f))))
+                            ) {}
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().aspectRatio(1.586f)
-                                .background(Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val tint = if (ec.gradientIcon) Color.Unspecified else ec.brandColor
-                            if (ec.drawableRes != 0) {
-                                Icon(painter = painterResource(ec.drawableRes), contentDescription = ec.label, modifier = Modifier.size(64.dp), tint = tint)
-                            } else if (ec.materialIcon != null) {
-                                Icon(imageVector = ec.materialIcon, contentDescription = ec.label, modifier = Modifier.size(64.dp), tint = tint)
-                            }
+                        val tint = if (ec.gradientIcon) Color.Unspecified else ec.brandColor
+                        if (ec.drawableRes != 0) {
+                            Icon(painter = painterResource(ec.drawableRes), contentDescription = ec.label, modifier = Modifier.size(64.dp).align(Alignment.Center), tint = tint)
+                        } else if (ec.materialIcon != null) {
+                            Icon(imageVector = ec.materialIcon, contentDescription = ec.label, modifier = Modifier.size(64.dp).align(Alignment.Center), tint = tint)
                         }
                     }
                 }
@@ -209,14 +195,17 @@ fun ContactsScreen(
                     var qrBrandColor by remember { mutableStateOf(Color(0xFF037A68)) }
                     val context = androidx.compose.ui.platform.LocalContext.current
 
-                    val appearance = resolveCardAppearance(myCard.color)
+                    val style = resolveCardStyle(myCard.color)
 
                     // ── Main card: full credit-card style, tap=expand, tap again=emulate, long-press=edit ──
                     @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-                    Card(
+                    NexusCardShell(
+                        style = style,
+                        shape = RoundedCornerShape(Dimens.cardRadius),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .neuRaised(cornerRadius = 16.dp, elevation = 10.dp)
+                            .aspectRatio(1.586f)
+                            .neuRaised(cornerRadius = Dimens.cardRadius, elevation = 10.dp)
                             .combinedClickable(
                                 onClick = {
                                     if (nexusExpanded) {
@@ -248,58 +237,46 @@ fun ContactsScreen(
                                     }
                                 },
                                 onLongClick = { onNavigateToEditCard(myCard.id) }
-                            ),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(
-                            width = 2.5.dp,
-                            brush = Brush.linearGradient(
-                                listOf(appearance.borderColor.copy(alpha = 0.5f), appearance.borderColor.copy(alpha = 0.2f))
                             )
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1.586f)
-                                .background(appearance.gradient)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                                // Name + subtitle centered
-                                Column(
-                                    modifier = Modifier.align(Alignment.Center),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = myCard.title,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = appearance.textColor
-                                    )
-                                    val subtitle = data?.subtitle()
-                                    if (subtitle != null) {
-                                        Text(
-                                            text = subtitle,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = appearance.textColor.copy(alpha = 0.7f)
-                                        )
+                        Box(modifier = Modifier.fillMaxSize().padding(Dimens.screenPadding)) {
+                            // Name + subtitle centered
+                            Column(
+                                modifier = Modifier.align(Alignment.Center),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                val titleBrush = style.titleBrush
+                                Text(
+                                    text = myCard.title,
+                                    style = if (titleBrush != null) {
+                                        MaterialTheme.typography.titleLarge.copy(brush = titleBrush, fontWeight = FontWeight.Bold)
+                                    } else {
+                                        MaterialTheme.typography.titleLarge.copy(color = style.titleColor, fontWeight = FontWeight.Bold)
                                     }
+                                )
+                                val subtitle = data?.subtitle()
+                                if (subtitle != null) {
+                                    Text(
+                                        text = subtitle,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = style.subtitleColor
+                                    )
                                 }
-                                // QR bottom-left
-                                IconButton(
-                                    onClick = {
-                                        qrContent = QrContentResolver.resolve(myCard)
-                                        qrLabel = myCard.title
-                                        qrBrandColor = appearance.neonColor
-                                        showQrSheet = true
-                                    },
-                                    modifier = Modifier.align(Alignment.BottomStart).size(32.dp)
-                                ) {
-                                    Icon(Icons.Default.QrCode2, contentDescription = "QR Code", tint = appearance.textColor.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
-                                }
-                                // NFC bottom-right
-                                Icon(Icons.Default.Nfc, contentDescription = null, tint = appearance.textColor.copy(alpha = 0.5f), modifier = Modifier.align(Alignment.BottomEnd).size(22.dp))
                             }
+                            // QR bottom-left
+                            IconButton(
+                                onClick = {
+                                    qrContent = QrContentResolver.resolve(myCard)
+                                    qrLabel = myCard.title
+                                    qrBrandColor = style.bright
+                                    showQrSheet = true
+                                },
+                                modifier = Modifier.align(Alignment.BottomStart).size(32.dp)
+                            ) {
+                                Icon(Icons.Default.QrCode2, contentDescription = "QR Code", tint = style.qrColor, modifier = Modifier.size(20.dp))
+                            }
+                            // NFC bottom-right
+                            Icon(Icons.Default.Nfc, contentDescription = null, tint = style.nfcColor, modifier = Modifier.align(Alignment.BottomEnd).size(22.dp))
                         }
                     }
 
@@ -379,7 +356,7 @@ fun ContactsScreen(
                             )
                         }
 
-                        // No cleanup needed — card content is never modified in DB
+                        // No cleanup needed - card content is never modified in DB
                     }
 
                     // QR Code bottom sheet
@@ -531,29 +508,19 @@ private fun NexusSubCard(
     onOpenLink: () -> Unit = {},
     onQrClick: () -> Unit
 ) {
-    val cardGradient = Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
-
-    Card(
+    NexusCardShell(
+        style = resolveCardStyle("${NexusCardColors.palette[0].brightHex}:dark"),
+        shape = RoundedCornerShape(Dimens.cardRadius),
+        borderBrush = Brush.linearGradient(
+            listOf(brandColor.copy(alpha = 0.3f), brandColor.copy(alpha = 0.1f))
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .neuRaised(cornerRadius = 16.dp, elevation = 10.dp)
-            .combinedClickable(onClick = onTap),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            width = 1.5.dp,
-            brush = Brush.linearGradient(
-                listOf(brandColor.copy(alpha = 0.3f), brandColor.copy(alpha = 0.1f))
-            )
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .aspectRatio(1.586f)
+            .neuRaised(cornerRadius = Dimens.cardRadius, elevation = 10.dp)
+            .combinedClickable(onClick = onTap)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1.586f)
-                .background(cardGradient)
-        ) {
             // Share toggle top-right
             IconButton(
                 onClick = onToggleShare,
@@ -600,7 +567,6 @@ private fun NexusSubCard(
             ) {
                 Icon(Icons.Default.OpenInNew, contentDescription = "Open", tint = Color(0xFF555555), modifier = Modifier.size(20.dp))
             }
-        }
     }
 }
 

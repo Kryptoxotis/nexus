@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.BusinessPass
 import com.kryptoxotis.nexus.domain.model.PassStatus
+import com.kryptoxotis.nexus.presentation.cards.CardPreview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,48 +85,22 @@ fun BusinessPassListScreen(
 
 @Composable
 private fun BusinessPassItem(pass: BusinessPass) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.Badge,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = when (pass.status) {
-                    PassStatus.ACTIVE -> MaterialTheme.colorScheme.primary
-                    PassStatus.EXPIRED -> MaterialTheme.colorScheme.outline
-                    PassStatus.REVOKED -> MaterialTheme.colorScheme.error
-                    PassStatus.SUSPENDED -> MaterialTheme.colorScheme.tertiary
-                }
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = pass.organizationName ?: "Organization",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = "Status: ${pass.status.name.lowercase().replaceFirstChar { it.uppercase() }}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = when (pass.status) {
-                        PassStatus.ACTIVE -> MaterialTheme.colorScheme.primary
-                        PassStatus.EXPIRED -> MaterialTheme.colorScheme.outline
-                        PassStatus.REVOKED -> MaterialTheme.colorScheme.error
-                        PassStatus.SUSPENDED -> MaterialTheme.colorScheme.tertiary
-                    }
-                )
-                if (pass.expiresAt != null) {
-                    Text(
-                        text = "Expires: ${pass.expiresAt}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
+    // Palette-mapped status colors; expired passes render in dark mode
+    val storedColor = when (pass.status) {
+        PassStatus.ACTIVE -> "#0A7968"
+        PassStatus.SUSPENDED -> "#F95B1A"
+        PassStatus.REVOKED -> "#FF1744"
+        PassStatus.EXPIRED -> "#0A7968:dark"
     }
+    val subtitle = buildString {
+        append(pass.status.name.lowercase().replaceFirstChar { it.uppercase() })
+        if (pass.expiresAt != null) append(" · expires ${pass.expiresAt}")
+    }
+    CardPreview(
+        title = pass.organizationName ?: "Organization",
+        subtitle = subtitle,
+        cardShape = "card",
+        storedColor = storedColor,
+        tag = "Business"
+    )
 }

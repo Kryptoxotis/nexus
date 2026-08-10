@@ -156,7 +156,8 @@ fun EditCardScreen(
                 subtitle = previewSubtitle,
                 cardShape = cardShape,
                 storedColor = NexusCardColors.encode(selectedColorHex, isDarkMode),
-                imageUri = card.imageUrl
+                imageUri = card.imageUrl,
+                placeholders = true
             )
 
             // Card shape selector

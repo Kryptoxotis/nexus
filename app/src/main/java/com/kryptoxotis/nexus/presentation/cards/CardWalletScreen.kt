@@ -676,20 +676,6 @@ private fun CardItem(
     onDragStopped: () -> Unit,
     extraModifier: Modifier = Modifier
 ) {
-    val isCoin = card.cardShape == "coin"
-    val hasImage = card.imageUrl != null
-    val appearance = resolveCardAppearance(card.color, hasImage = hasImage)
-    val cardBorder = BorderStroke(
-        width = if (isActive) 3.dp else 2.5.dp,
-        brush = Brush.linearGradient(
-            listOf(
-                appearance.borderColor.copy(alpha = if (isActive) 0.8f else 0.5f),
-                appearance.borderColor.copy(alpha = if (isActive) 0.4f else 0.2f)
-            )
-        )
-    )
-    val activeGlow = if (isActive) Modifier.neonGlow(appearance.neonColor, cornerRadius = 16.dp, elevation = 10.dp) else Modifier
-
     // Drag visual feedback
     val targetScale = when {
         isDragging -> 1.05f
@@ -717,119 +703,18 @@ private fun CardItem(
         )
     }
 
-    if (isCoin) {
-        // Coin (circle) layout
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(dragModifier)
-                .cardGestures(),
-            contentAlignment = Alignment.Center
-        ) {
-            Card(
-                modifier = Modifier.size(140.dp),
-                shape = CircleShape,
-                border = BorderStroke(2.5.dp, appearance.borderColor.copy(alpha = 0.5f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(appearance.gradient),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (hasImage) {
-                        AsyncImage(
-                            model = card.imageUrl,
-                            contentDescription = "Card image",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.4f))
-                        )
-                    }
-                    Text(
-                        text = card.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = appearance.textColor,
-                        maxLines = 2,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    IconButton(
-                        onClick = onQrClick,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.QrCode2,
-                            contentDescription = "QR Code",
-                            modifier = Modifier.size(18.dp),
-                            tint = appearance.textColor.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            }
-        }
-    } else {
-        // Card layout
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(dragModifier)
-                .then(activeGlow)
-                .neuRaised(cornerRadius = 16.dp, elevation = 10.dp, neonColor = if (isActive) appearance.neonColor else null)
-                .cardGestures(),
-            shape = RoundedCornerShape(16.dp),
-            border = cardBorder,
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1.586f)
-                    .background(appearance.gradient)
-            ) {
-                if (hasImage) {
-                    AsyncImage(
-                        model = card.imageUrl,
-                        contentDescription = "Card image",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.45f))
-                    )
-                }
-                // Title centered, QR bottom-right
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = card.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = appearance.textColor,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    IconButton(
-                        onClick = onQrClick,
-                        modifier = Modifier.align(Alignment.BottomEnd)
-                    ) {
-                        Icon(
-                            Icons.Default.QrCode2,
-                            contentDescription = "QR Code",
-                            tint = appearance.textColor.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            }
-        }
-    }
+    CardPreview(
+        title = card.title,
+        subtitle = "",
+        cardShape = card.cardShape,
+        storedColor = card.color,
+        imageUri = card.imageUrl,
+        tag = card.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
+        glow = isActive,
+        onQrClick = onQrClick,
+        modifier = Modifier
+            .then(dragModifier)
+            .cardGestures()
+    )
 }
 

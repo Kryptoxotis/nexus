@@ -627,7 +627,8 @@ fun AddCardScreen(
                     subtitle = previewSubtitle,
                     cardShape = cardShape,
                     storedColor = NexusCardColors.encode(selectedColorHex, isDarkMode),
-                    imageUri = selectedImageUri
+                    imageUri = selectedImageUri,
+                    placeholders = true
                 )
 
                 // Card shape selector

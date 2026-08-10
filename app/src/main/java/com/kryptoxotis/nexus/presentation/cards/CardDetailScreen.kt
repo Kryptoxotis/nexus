@@ -21,9 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
-import com.kryptoxotis.nexus.presentation.theme.neonGlow
-import com.kryptoxotis.nexus.presentation.theme.neuCircle
 import com.kryptoxotis.nexus.presentation.theme.resolveCardAppearance
 
 @Composable
@@ -67,104 +66,26 @@ fun CardDetailScreen(
             return@Box
         }
 
-        val isCoin = card.cardShape == "coin"
-
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (isCoin) {
-                // Coin shape — circle with glow
-                Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .neonGlow(appearance.neonColor, cornerRadius = 80.dp, elevation = 14.dp)
-                        .clip(CircleShape)
-                        .background(appearance.gradient)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { /* consume */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (card.imageUrl != null) {
-                        AsyncImage(
-                            model = card.imageUrl,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-                    }
-                    Text(
-                        text = card.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = appearance.textColor,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            } else {
-                // Card shape — rectangle with glow
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .neonGlow(appearance.neonColor, cornerRadius = 16.dp, elevation = 14.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { /* consume */ },
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        brush = Brush.linearGradient(
-                            listOf(appearance.borderColor, appearance.borderColor.copy(alpha = 0.3f))
-                        )
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1.586f)
-                            .background(appearance.gradient)
-                    ) {
-                        if (card.imageUrl != null) {
-                            AsyncImage(
-                                model = card.imageUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-                        }
-                        // NFC icon top-right
-                        Icon(
-                            Icons.Default.Nfc,
-                            contentDescription = null,
-                            tint = appearance.textColor.copy(alpha = 0.6f),
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(16.dp)
-                                .size(20.dp)
-                        )
-                        // Title bottom-left
-                        Text(
-                            text = card.title,
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = appearance.textColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(20.dp)
-                        )
-                    }
-                }
-            }
+            CardPreview(
+                title = card.title,
+                subtitle = "",
+                cardShape = card.cardShape,
+                storedColor = card.color,
+                imageUri = card.imageUrl,
+                tag = card.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
+                glow = true,
+                modifier = Modifier
+                    .padding(horizontal = Dimens.screenPadding)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { /* consume */ }
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
