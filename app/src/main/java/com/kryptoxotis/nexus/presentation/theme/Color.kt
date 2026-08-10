@@ -24,7 +24,8 @@ val NexusPrimary = NexusTeal
 
 // Text
 val NexusTextPrimary = Color(0xFFEEEEEE)
-val NexusTextSecondary = Color(0xFF666666)
+val NexusTextSecondary = Color(0xFF8A8A8A) // was 0xFF666666 — failed WCAG AA on #0A0A0A
+val NexusTextTertiary = Color(0xFF7D7D7D)
 
 // Border
 val NexusBorder = Color(0xFF383838)
