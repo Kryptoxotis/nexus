@@ -41,7 +41,7 @@ android {
         targetSdk = 35
         versionCode = (project.findProperty("buildNumber") as? String)?.toIntOrNull() ?: 1
         // 1.x = testing, 2.x = beta, 3.x = release; middle number moves with fix rounds
-        versionName = "1.5.${(project.findProperty("buildNumber") as? String) ?: "0"}"
+        versionName = "1.6.${(project.findProperty("buildNumber") as? String) ?: "0"}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
