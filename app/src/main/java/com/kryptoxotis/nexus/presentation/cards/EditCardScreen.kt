@@ -318,7 +318,7 @@ fun EditCardScreen(
                         .clickable { isDarkMode = false }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
-                ) { Text("Light", color = MaterialTheme.colorScheme.onSurface) }
+                ) { Text(if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) "Light" else "Colored", color = MaterialTheme.colorScheme.onSurface) }
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -326,7 +326,7 @@ fun EditCardScreen(
                         .clickable { isDarkMode = true }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
-                ) { Text("Dark", color = MaterialTheme.colorScheme.onSurface) }
+                ) { Text(if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) "Dark" else "Light", color = MaterialTheme.colorScheme.onSurface) }
             }
 
             // Color palette

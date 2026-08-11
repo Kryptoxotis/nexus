@@ -562,22 +562,40 @@ private fun CardDeck(
     val n = cards.size
     val front = frontState.coerceIn(0, n - 1)
     val stackStep = 26
+    // The front card rides the finger and slides off-screen before the swap
+    val dragX = remember { androidx.compose.animation.core.Animatable(0f) }
+    val deckScope = androidx.compose.runtime.rememberCoroutineScope()
 
     Column {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height((230 + (n - 1).coerceAtMost(4) * stackStep).dp)
-                // Swipe left/right to cycle through the deck
+                // Swipe left/right: the card visibly slides out of the way
                 .pointerInput(n) {
-                    var total = 0f
                     detectHorizontalDragGestures(
-                        onDragStart = { total = 0f },
                         onDragEnd = {
-                            if (total < -70f) frontState = (frontState + 1) % n
-                            else if (total > 70f) frontState = (frontState - 1 + n) % n
-                        }
-                    ) { _, dragAmount -> total += dragAmount }
+                            deckScope.launch {
+                                val v = dragX.value
+                                when {
+                                    v < -100f -> {
+                                        dragX.animateTo(-size.width * 1.2f, androidx.compose.animation.core.tween(160))
+                                        frontState = (frontState + 1) % n
+                                        dragX.snapTo(0f)
+                                    }
+                                    v > 100f -> {
+                                        dragX.animateTo(size.width * 1.2f, androidx.compose.animation.core.tween(160))
+                                        frontState = (frontState - 1 + n) % n
+                                        dragX.snapTo(0f)
+                                    }
+                                    else -> dragX.animateTo(0f)
+                                }
+                            }
+                        },
+                        onDragCancel = { deckScope.launch { dragX.animateTo(0f) } }
+                    ) { _, dragAmount ->
+                        deckScope.launch { dragX.snapTo(dragX.value + dragAmount) }
+                    }
                 }
         ) {
             // Draw back cards first, the front card last (on top)
@@ -609,6 +627,10 @@ private fun CardDeck(
                             scaleX = s
                             scaleY = s
                             alpha = 1f - depth * 0.12f
+                            if (isFront) {
+                                translationX = dragX.value
+                                rotationZ = dragX.value / 40f
+                            }
                         }
                         .combinedClickable(
                             onClick = { if (isFront) onTapFront(card) else frontState = cardIdx },

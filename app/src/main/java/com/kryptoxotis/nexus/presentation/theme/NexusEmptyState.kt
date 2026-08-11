@@ -84,7 +84,7 @@ fun NexusEmptyState(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(Dimens.controlRadius))
-                        .background(NexusCardColors.palette[0].gradient)
+                        .background(NexusPrimaryGradient)
                         .clickable(onClick = onAction)
                         .padding(horizontal = 24.dp, vertical = 12.dp)
                 ) {

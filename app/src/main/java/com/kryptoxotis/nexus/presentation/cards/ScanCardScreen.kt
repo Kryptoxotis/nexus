@@ -96,6 +96,7 @@ fun ScanCardScreen(
                         setPrompt("Point at a Nexus QR code")
                         setBeepEnabled(false)
                         setOrientationLocked(true)
+                        setCaptureActivity(PortraitCaptureActivity::class.java)
                     }
                 )
             }

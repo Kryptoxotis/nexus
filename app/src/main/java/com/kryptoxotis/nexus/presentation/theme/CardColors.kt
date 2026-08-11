@@ -23,6 +23,12 @@ data class NexusCardColor(
 val NexusCardColor.displayBright: Color get() = if (NexusAppearance.dark) bright else lerp(bright, Color.White, 0.30f)
 val NexusCardColor.displayDark: Color get() = if (NexusAppearance.dark) dark else lerp(dark, Color.White, 0.30f)
 
+/** The teal action gradient every primary button uses — pastel on light like the rest. */
+val NexusPrimaryGradient: Brush
+    get() = Brush.linearGradient(
+        listOf(NexusCardColors.palette[0].displayBright, NexusCardColors.palette[0].displayDark)
+    )
+
 object NexusCardColors {
 
     val palette = listOf(

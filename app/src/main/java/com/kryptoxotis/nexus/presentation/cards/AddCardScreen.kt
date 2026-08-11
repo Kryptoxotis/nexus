@@ -67,6 +67,9 @@ fun AddCardScreen(
     // whose content is the matching standard payload (WIFI:/tel:/mailto:/maps).
     var customMode by remember { mutableStateOf("text") }
     var networkPassword by remember { mutableStateOf("") }
+    var contactPhone by remember { mutableStateOf("") }
+    var contactEmail by remember { mutableStateOf("") }
+    var locationProvider by remember { mutableStateOf("google") }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var icon by remember { mutableStateOf("") }
@@ -252,7 +255,7 @@ fun AddCardScreen(
                     CardTypeOption(
                         icon = Icons.Default.Notes,
                         title = "Custom",
-                        description = "Wifi, phone, email, location or any text you want to send",
+                        description = "Wifi, contact, location or any text you want to send",
                         onClick = {
                             selectedType = CardType.CUSTOM
                             customMode = "text"
@@ -493,8 +496,7 @@ fun AddCardScreen(
                         val customOptions = listOf(
                             "text" to "Text",
                             "wifi" to "Wifi",
-                            "phone" to "Phone",
-                            "email" to "Email",
+                            "contact" to "Contact",
                             "location" to "Location"
                         )
                         @OptIn(ExperimentalLayoutApi::class)
@@ -525,23 +527,42 @@ fun AddCardScreen(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                             )
                         }
-                        selectedType == CardType.CUSTOM && customMode == "phone" -> {
-                            NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                        selectedType == CardType.CUSTOM && customMode == "contact" -> {
+                            // Extra contact info beyond My Nexus — sent as a vCard
+                            NeuInput(value = title, onValueChange = { title = it }, label = "Name or label *")
                             NeuInput(
-                                value = content, onValueChange = { content = it }, label = "Phone number *",
+                                value = contactPhone, onValueChange = { contactPhone = it }, label = "Phone",
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                             )
-                        }
-                        selectedType == CardType.CUSTOM && customMode == "email" -> {
-                            NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
                             NeuInput(
-                                value = content, onValueChange = { content = it }, label = "Email address *",
+                                value = contactEmail, onValueChange = { contactEmail = it }, label = "Email",
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                             )
                         }
                         selectedType == CardType.CUSTOM && customMode == "location" -> {
                             NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
                             NeuInput(value = content, onValueChange = { content = it }, label = "Address or place *")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .then(if (locationProvider == "google") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                                        .clickable { locationProvider = "google" }
+                                        .padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { Text("Google Maps", color = MaterialTheme.colorScheme.onSurface) }
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .then(if (locationProvider == "apple") Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                                        .clickable { locationProvider = "apple" }
+                                        .padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { Text("Apple Maps", color = MaterialTheme.colorScheme.onSurface) }
+                            }
                         }
                         else -> {
                             NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
@@ -597,8 +618,7 @@ fun AddCardScreen(
                         bcCompany.ifBlank { null }
                     ).joinToString(" at ")
                     selectedType == CardType.CUSTOM && customMode == "wifi" -> "Wifi network"
-                    selectedType == CardType.CUSTOM && customMode == "phone" -> "Phone"
-                    selectedType == CardType.CUSTOM && customMode == "email" -> "Email"
+                    selectedType == CardType.CUSTOM && customMode == "contact" -> "Contact"
                     selectedType == CardType.CUSTOM && customMode == "location" -> "Location"
                     selectedType == CardType.FILE -> selectedFileName ?: ""
                     else -> content
@@ -657,7 +677,7 @@ fun AddCardScreen(
                             .clickable { isDarkMode = false }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
-                    ) { Text("Light", color = MaterialTheme.colorScheme.onSurface) }
+                    ) { Text(if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) "Light" else "Colored", color = MaterialTheme.colorScheme.onSurface) }
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -665,7 +685,7 @@ fun AddCardScreen(
                             .clickable { isDarkMode = true }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
-                    ) { Text("Dark", color = MaterialTheme.colorScheme.onSurface) }
+                    ) { Text(if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) "Dark" else "Light", color = MaterialTheme.colorScheme.onSurface) }
                 }
 
                 // Color palette
@@ -846,9 +866,19 @@ fun AddCardScreen(
                             val cardContent = if (type == CardType.CUSTOM) {
                                 when (customMode) {
                                     "wifi" -> "WIFI:T:WPA;S:${title.trim()};P:${networkPassword};;"
-                                    "phone" -> "tel:${content.trim()}"
-                                    "email" -> "mailto:${content.trim()}"
-                                    "location" -> "https://maps.google.com/?q=" + java.net.URLEncoder.encode(content.trim(), "UTF-8")
+                                    "contact" -> buildString {
+                                        appendLine("BEGIN:VCARD")
+                                        appendLine("VERSION:3.0")
+                                        appendLine("FN:${title.trim()}")
+                                        if (contactPhone.isNotBlank()) appendLine("TEL:${contactPhone.trim()}")
+                                        if (contactEmail.isNotBlank()) appendLine("EMAIL:${contactEmail.trim()}")
+                                        append("END:VCARD")
+                                    }
+                                    "location" -> {
+                                        val q = java.net.URLEncoder.encode(content.trim(), "UTF-8")
+                                        if (locationProvider == "apple") "https://maps.apple.com/?q=$q"
+                                        else "https://maps.google.com/?q=$q"
+                                    }
                                     else -> content.ifBlank { null }
                                 }
                             } else {

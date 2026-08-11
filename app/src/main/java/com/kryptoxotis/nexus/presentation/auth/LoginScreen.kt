@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.NexusPrimaryGradient
 import com.kryptoxotis.nexus.presentation.theme.NexusLogo
 import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
 
@@ -106,7 +107,7 @@ private fun GradientButton(text: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(Dimens.cardRadius))
-            .background(NexusCardColors.palette[0].gradient)
+            .background(NexusPrimaryGradient)
             .clickable(onClick = onClick)
             .padding(vertical = 17.dp),
         contentAlignment = Alignment.Center

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.NexusPrimaryGradient
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.NexusTextPrimary
 import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
@@ -136,7 +137,7 @@ fun QuickEditSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(Dimens.cardRadius))
-                    .background(NexusCardColors.palette[0].gradient)
+                    .background(NexusPrimaryGradient)
                     .clickable(onClick = onShareAgain)
                     .padding(vertical = 16.dp),
                 contentAlignment = Alignment.Center
