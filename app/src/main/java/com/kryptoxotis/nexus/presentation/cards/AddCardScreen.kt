@@ -245,32 +245,17 @@ fun AddCardScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    // Row 2: Network + Custom
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        CardTypeOption(
-                            icon = Icons.Default.Wifi,
-                            title = "Network",
-                            description = "Wifi password or Bluetooth pairing",
-                            onClick = {
-                                selectedType = CardType.CUSTOM
-                                networkMode = true
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        CardTypeOption(
-                            icon = Icons.Default.Notes,
-                            title = "Custom",
-                            description = "Custom text or data",
-                            onClick = {
-                                selectedType = CardType.CUSTOM
-                                networkMode = false
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    // Row 2: Custom (wifi, Bluetooth and free text live inside it)
+                    CardTypeOption(
+                        icon = Icons.Default.Notes,
+                        title = "Custom",
+                        description = "Wifi, Bluetooth or any text or data you want to send",
+                        onClick = {
+                            selectedType = CardType.CUSTOM
+                            networkMode = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 } else {
                     CardTypeOption(
                         icon = Icons.Default.Badge,
@@ -493,16 +478,48 @@ fun AddCardScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
                     }
-                } else if (networkMode) {
-                    NeuInput(value = title, onValueChange = { title = it }, label = "Network name (SSID) *")
-                    NeuInput(
-                        value = networkPassword,
-                        onValueChange = { networkPassword = it },
-                        label = "Password",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                    )
                 } else {
-                    NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                    // Custom hosts wifi/Bluetooth/free-text — the point of Custom is you
+                    // choose what it carries
+                    if (selectedType == CardType.CUSTOM) {
+                        Text(
+                            text = "What it carries",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .then(if (!networkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                                    .clickable { networkMode = false }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) { Text("Text", color = MaterialTheme.colorScheme.onSurface) }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .then(if (networkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                                    .clickable { networkMode = true }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) { Text("Wifi network", color = MaterialTheme.colorScheme.onSurface) }
+                        }
+                    }
+                    if (networkMode) {
+                        NeuInput(value = title, onValueChange = { title = it }, label = "Network name (SSID) *")
+                        NeuInput(
+                            value = networkPassword,
+                            onValueChange = { networkPassword = it },
+                            label = "Password",
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                        )
+                    } else {
+                        NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                    }
                 }
 
                 if (selectedType == CardType.FILE) {
@@ -1007,12 +1024,13 @@ private fun CardTypeOption(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = com.kryptoxotis.nexus.presentation.theme.NexusTextPrimary
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
             )
         }
     }

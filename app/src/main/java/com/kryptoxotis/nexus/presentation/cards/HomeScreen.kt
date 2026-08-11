@@ -48,8 +48,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -115,7 +115,11 @@ fun HomeScreen(
     val accountType = (authState as? AuthState.Authenticated)?.accountType
     val context = LocalContext.current
 
-    var tab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
+    val tabs = remember { listOf(HomeTab.CARDS, HomeTab.NEXUS, HomeTab.PASSES) }
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(
+        initialPage = tabs.indexOf(initialTab).coerceAtLeast(0)
+    ) { tabs.size }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     var searchQuery by remember { mutableStateOf("") }
 
     val myCard = cards.firstOrNull { it.cardType == CardType.BUSINESS_CARD }
@@ -192,35 +196,45 @@ fun HomeScreen(
                 ),
                 bottomBar = true
             ) {
-                HomeTabSwitcher(tab = tab, onTab = { tab = it })
+                HomeTabSwitcher(
+                    tab = tabs[pagerState.currentPage],
+                    onTab = { t ->
+                        scope.launch { pagerState.animateScrollToPage(tabs.indexOf(t)) }
+                    }
+                )
 
-                when (tab) {
-                    HomeTab.NEXUS -> NexusTabContent(
-                        myCard = myCard,
-                        myCardData = myCardData,
-                        contacts = contacts,
-                        onEmulateMyNexus = { myCard?.let { startEmulating(it, true) } },
-                        onEditMyNexus = { myCard?.let { onNavigateToEditCard(it.id) } },
-                        onMyNexusQr = { qrCard = myCard },
-                        onCreateMyNexus = onNavigateToCreateMyCard,
-                        onOpenContact = onNavigateToContactDetail,
-                        onHoldContact = { removeContactId = it }
-                    )
-                    HomeTab.PASSES -> PassesTabContent(
-                        passes = passes,
-                        isBusinessAccount = accountType == AccountType.BUSINESS,
-                        onEnroll = onNavigateToEnrollment,
-                        onBusinessTools = onNavigateToBusinessDashboard
-                    )
-                    else -> CardsTabContent(
-                        walletCards = walletCards,
-                        searchQuery = searchQuery,
-                        onSearchChange = { searchQuery = it },
-                        onCreate = onNavigateToAddCard,
-                        onTapCard = { startEmulating(it, false) },
-                        onHoldCard = { editSheetCard = it },
-                        onQrCard = { qrCard = it }
-                    )
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f)
+                ) { page ->
+                    when (tabs[page]) {
+                        HomeTab.NEXUS -> NexusTabContent(
+                            myCard = myCard,
+                            myCardData = myCardData,
+                            contacts = contacts,
+                            onEmulateMyNexus = { myCard?.let { startEmulating(it, true) } },
+                            onEditMyNexus = { myCard?.let { onNavigateToEditCard(it.id) } },
+                            onMyNexusQr = { qrCard = myCard },
+                            onCreateMyNexus = onNavigateToCreateMyCard,
+                            onOpenContact = onNavigateToContactDetail,
+                            onHoldContact = { removeContactId = it }
+                        )
+                        HomeTab.PASSES -> PassesTabContent(
+                            passes = passes,
+                            isBusinessAccount = accountType == AccountType.BUSINESS,
+                            onEnroll = onNavigateToEnrollment,
+                            onBusinessTools = onNavigateToBusinessDashboard
+                        )
+                        else -> CardsTabContent(
+                            walletCards = walletCards,
+                            searchQuery = searchQuery,
+                            onSearchChange = { searchQuery = it },
+                            onCreate = onNavigateToAddCard,
+                            onTapCard = { startEmulating(it, false) },
+                            onHoldCard = { editSheetCard = it },
+                            onQrCard = { qrCard = it }
+                        )
+                    }
                 }
             }
         }
@@ -433,7 +447,7 @@ private fun CardsTabContent(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = Dimens.screenPadding),
+        contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = 92.dp),
         verticalArrangement = Arrangement.spacedBy(Dimens.gap)
     ) {
         item(key = "search") {
@@ -574,7 +588,7 @@ private fun NexusTabContent(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = Dimens.screenPadding),
+        contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = 92.dp),
         verticalArrangement = Arrangement.spacedBy(Dimens.gap)
     ) {
         item(key = "my_nexus") {
@@ -670,7 +684,7 @@ private fun PassesTabContent(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = Dimens.screenPadding),
+        contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = 92.dp),
         verticalArrangement = Arrangement.spacedBy(Dimens.gap)
     ) {
         if (passes.isEmpty()) {

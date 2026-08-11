@@ -105,15 +105,22 @@ fun NexusScaffold(
                 }
             }
         }
-        Column(
+        Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-            content = content
-        )
-        val nav = LocalNexusNav.current
-        if (bottomBar && nav != null) {
-            NexusBottomBar(nav)
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                content = content
+            )
+            // Floats over the content — no bar, no banner
+            val nav = LocalNexusNav.current
+            if (bottomBar && nav != null) {
+                Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                    NexusBottomBar(nav)
+                }
+            }
         }
     }
 }

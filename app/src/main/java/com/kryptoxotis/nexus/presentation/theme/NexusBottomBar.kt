@@ -3,26 +3,18 @@ package com.kryptoxotis.nexus.presentation.theme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /** Routes the shell needs to know about. */
 object NexusTabs {
@@ -41,45 +33,28 @@ data class NexusNavActions(
 
 val LocalNexusNav = staticCompositionLocalOf<NexusNavActions?> { null }
 
-private val PillSurface = Color(0xFF141414)
-
 /**
- * Home's only bottom control: a single floating pill that opens the QR scanner.
- * It floats over the page background like every other raised surface —
- * no bar strip, no seam.
+ * Home's only bottom control: a floating scan glyph. No bar, no pill, no
+ * label — it hovers over the content so nothing underneath gets walled off.
  */
 @Composable
 fun NexusBottomBar(nav: NexusNavActions) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 18.dp, top = 6.dp),
+            .padding(bottom = 18.dp)
+            .size(56.dp)
+            .neuCircle(elevation = 8.dp, surfaceColor = Color(0xFF141414), neonColor = NexusTeal)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { nav.navigate(NexusTabs.SCAN) },
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier
-                .height(52.dp)
-                .neuRaised(cornerRadius = 26.dp, surfaceColor = PillSurface)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { nav.navigate(NexusTabs.SCAN) }
-                .padding(horizontal = 26.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.QrCodeScanner,
-                contentDescription = null,
-                tint = NexusTeal,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "Scan a card",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFFD0D0D0)
-            )
-        }
+        Icon(
+            Icons.Filled.QrCodeScanner,
+            contentDescription = "Scan a card",
+            tint = NexusTeal,
+            modifier = Modifier.size(26.dp)
+        )
     }
 }

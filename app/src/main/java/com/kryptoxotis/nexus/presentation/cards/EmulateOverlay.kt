@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Nfc
@@ -91,63 +93,44 @@ fun EmulateOverlay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
-            CardPreview(
-                title = title,
-                subtitle = subtitle,
-                cardShape = "card",
-                storedColor = storedColor,
-                tag = "Sharing now",
-                glow = true,
-                onQrClick = onShowQr,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { /* consume — only outside taps dismiss */ }
-            )
-
-            EmulateRings(color = bright)
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Hold near their phone",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFE6E6E6)
+            Box {
+                CardPreview(
+                    title = title,
+                    subtitle = subtitle,
+                    cardShape = "card",
+                    storedColor = storedColor,
+                    tag = "Sharing now",
+                    glow = true,
+                    onQrClick = onShowQr,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { /* consume — only outside taps dismiss */ }
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Tap the QR icon if they don't have NFC · tap outside to close",
-                    fontSize = 12.sp,
-                    color = Color(0xFF7D7D7D),
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            if (isNexus) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(15.dp))
-                        .background(Color.White.copy(alpha = 0.06f))
-                        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(15.dp))
-                        .clickable(onClick = onQuickEdit)
-                        .padding(horizontal = 20.dp, vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Tune,
-                        contentDescription = null,
-                        tint = Color(0xFFE0E0E0),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(9.dp))
-                    Text(
-                        text = "Quick edit what's shared",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFE0E0E0)
-                    )
+                if (isNexus) {
+                    // Small quick-edit control riding the card's top-right corner
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 10.dp, y = (-10).dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF161616))
+                            .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                            .clickable(onClick = onQuickEdit),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Quick edit what's shared",
+                            tint = Color(0xFFE0E0E0),
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
                 }
             }
+
+            EmulateRings(color = bright)
         }
     }
 }
