@@ -26,8 +26,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Nfc
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -103,8 +103,10 @@ fun EmulateOverlay(
                 storedColor = storedColor,
                 tag = tag,
                 glow = true,
-                topRightIcon = if (isNexus) Icons.Default.Tune else null,
+                // Identical glyph to the card at rest; regular cards carry nothing here
+                topRightIcon = if (isNexus) Icons.Default.Edit else null,
                 onTopRightClick = if (isNexus) onQuickEdit else null,
+                showTopRightGlyph = isNexus,
                 onQrClick = onShowQr,
                 modifier = Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
