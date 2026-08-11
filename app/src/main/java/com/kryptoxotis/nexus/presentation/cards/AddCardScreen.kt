@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -59,6 +60,10 @@ fun AddCardScreen(
     onNavigateBack: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf<CardType?>(null) }
+    // Network cards are CUSTOM cards carrying a standard WIFI: payload —
+    // the domain layer has no NETWORK type and is off-limits to this pass.
+    var networkMode by remember { mutableStateOf(false) }
+    var networkPassword by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var icon by remember { mutableStateOf("") }
@@ -92,6 +97,7 @@ fun AddCardScreen(
     // File picker state
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf<String?>(null) }
+    var selectedFileSize by remember { mutableStateOf<Long?>(null) }
     var fileUploadUrl by remember { mutableStateOf<String?>(null) }
 
     // Image picker state
@@ -108,13 +114,15 @@ fun AddCardScreen(
     ) { uri: Uri? ->
         if (uri != null) {
             selectedFileUri = uri
-            // Get filename from URI
+            // Get filename + size from URI
             val cursor = context.contentResolver.query(uri, null, null, null, null)
-            selectedFileName = cursor?.use {
+            cursor?.use {
                 val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                val sizeIndex = it.getColumnIndex(android.provider.OpenableColumns.SIZE)
                 it.moveToFirst()
-                if (nameIndex >= 0) it.getString(nameIndex) else uri.lastPathSegment
-            } ?: uri.lastPathSegment
+                selectedFileName = if (nameIndex >= 0) it.getString(nameIndex) else uri.lastPathSegment
+                selectedFileSize = if (sizeIndex >= 0 && !it.isNull(sizeIndex)) it.getLong(sizeIndex) else null
+            } ?: run { selectedFileName = uri.lastPathSegment }
         }
     }
 
@@ -198,7 +206,13 @@ fun AddCardScreen(
             else -> "New card"
         },
         subtitle = if (selectedType == null) "Choose a type" else "Details",
-        onBack = { if (selectedType == null) onNavigateBack() else selectedType = null },
+        onBack = {
+            if (selectedType == null) onNavigateBack()
+            else {
+                selectedType = null
+                networkMode = false
+            }
+        },
         bottomBar = false
     ) {
         if (selectedType == null) {
@@ -211,7 +225,7 @@ fun AddCardScreen(
                 verticalArrangement = Arrangement.spacedBy(Dimens.gap)
             ) {
                 if (!myCardOnly) {
-                    // Row 1: Link + Contact
+                    // Row 1: Link + File
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -224,43 +238,36 @@ fun AddCardScreen(
                             modifier = Modifier.weight(1f)
                         )
                         CardTypeOption(
-                            icon = Icons.Default.Contacts,
-                            title = "Contact",
-                            description = "Share your contact info card",
-                            onClick = { selectedType = CardType.CONTACT },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    // Row 2: Social Media + Nexus
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        CardTypeOption(
-                            icon = Icons.Default.Share,
-                            title = "Social Media",
-                            description = "Link to your social profile",
-                            onClick = { selectedType = CardType.SOCIAL_MEDIA },
-                            modifier = Modifier.weight(1f)
-                        )
-                        CardTypeOption(
-                            icon = Icons.Default.Badge,
-                            title = "Nexus",
-                            description = "Your digital identity card",
-                            onClick = { selectedType = CardType.BUSINESS_CARD },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    // Row 3: File only
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        CardTypeOption(
                             icon = Icons.Default.AttachFile,
                             title = "File",
                             description = "Upload a file to share",
                             onClick = { selectedType = CardType.FILE },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Row 2: Network + Custom
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CardTypeOption(
+                            icon = Icons.Default.Wifi,
+                            title = "Network",
+                            description = "Wifi password or Bluetooth pairing",
+                            onClick = {
+                                selectedType = CardType.CUSTOM
+                                networkMode = true
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        CardTypeOption(
+                            icon = Icons.Default.Notes,
+                            title = "Custom",
+                            description = "Custom text or data",
+                            onClick = {
+                                selectedType = CardType.CUSTOM
+                                networkMode = false
+                            },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -486,53 +493,26 @@ fun AddCardScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
                     }
+                } else if (networkMode) {
+                    NeuInput(value = title, onValueChange = { title = it }, label = "Network name (SSID) *")
+                    NeuInput(
+                        value = networkPassword,
+                        onValueChange = { networkPassword = it },
+                        label = "Password",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                    )
                 } else {
                     NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
                 }
 
                 if (selectedType == CardType.FILE) {
-                    // File picker UI
-                    OutlinedButton(
-                        onClick = { filePickerLauncher.launch("*/*") },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState !is CardUiState.Loading
-                    ) {
-                        Icon(
-                            Icons.Default.UploadFile,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(if (selectedFileName != null) "Change File" else "Choose File")
-                    }
-
-                    if (selectedFileName != null) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.InsertDriveFile,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = selectedFileName!!,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
+                    // Dashed drop-target row: tap to browse, shows chosen name + size
+                    FileDropTarget(
+                        fileName = selectedFileName,
+                        fileSize = selectedFileSize,
+                        enabled = uiState !is CardUiState.Loading,
+                        onClick = { filePickerLauncher.launch("*/*") }
+                    )
 
                     if (uiState is CardUiState.Loading) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -542,7 +522,7 @@ fun AddCardScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                } else if (selectedType != CardType.BUSINESS_CARD) {
+                } else if (selectedType != CardType.BUSINESS_CARD && !networkMode) {
                     // Standard content field for non-FILE, non-BUSINESS_CARD types
                     NeuInput(
                         value = content,
@@ -565,11 +545,13 @@ fun AddCardScreen(
 
                 // Live preview
                 val previewTitle = if (selectedType == CardType.BUSINESS_CARD) bcName else title
-                val previewSubtitle = when (selectedType) {
-                    CardType.BUSINESS_CARD -> listOfNotNull(
+                val previewSubtitle = when {
+                    selectedType == CardType.BUSINESS_CARD -> listOfNotNull(
                         bcJobTitle.ifBlank { null },
                         bcCompany.ifBlank { null }
                     ).joinToString(" at ")
+                    networkMode -> "Wifi network"
+                    selectedType == CardType.FILE -> selectedFileName ?: ""
                     else -> content
                 }
                 CardPreview(
@@ -810,10 +792,16 @@ fun AddCardScreen(
                             )
                         } else {
                             val type = selectedType ?: return@Button
+                            // Network cards carry the standard WIFI: payload NFC/QR readers understand
+                            val cardContent = if (networkMode) {
+                                "WIFI:T:WPA;S:${title.trim()};P:${networkPassword};;"
+                            } else {
+                                content.ifBlank { null }
+                            }
                             viewModel.addCard(
                                 cardType = type,
                                 title = title,
-                                content = content.ifBlank { null },
+                                content = cardContent,
                                 icon = icon.ifBlank { null },
                                 color = NexusCardColors.encode(selectedColorHex, isDarkMode),
                                 cardShape = cardShape
@@ -853,6 +841,83 @@ fun AddCardScreen(
             }
         }
     }
+}
+
+/** Dashed drop-target for the File card type — taps open the system picker. */
+@Composable
+private fun FileDropTarget(
+    fileName: String?,
+    fileSize: Long?,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(16.dp)
+    val borderColor = if (fileName != null) Color(0xFF037A68).copy(alpha = 0.6f) else Color(0xFF3A3A3A)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .drawBehind {
+                drawRoundRect(
+                    color = borderColor,
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                            floatArrayOf(10.dp.toPx() / 2, 8.dp.toPx() / 2)
+                        )
+                    )
+                )
+            }
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .neuInset(cornerRadius = 21.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (fileName != null) Icons.Default.InsertDriveFile else Icons.Default.UploadFile,
+                contentDescription = null,
+                tint = Color(0xFF037A68),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = fileName ?: "Choose a file",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFEEEEEE),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = if (fileName != null) formatFileSize(fileSize) else "Tap to browse — any file type",
+                fontSize = 12.sp,
+                color = Color(0xFF8A8A8A)
+            )
+        }
+        if (fileName != null) {
+            Text(
+                text = "Change",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF037A68)
+            )
+        }
+    }
+}
+
+private fun formatFileSize(bytes: Long?): String = when {
+    bytes == null -> "Unknown size"
+    bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
+    bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
+    else -> "$bytes B"
 }
 
 @Composable
