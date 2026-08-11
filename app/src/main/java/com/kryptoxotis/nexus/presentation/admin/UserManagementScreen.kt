@@ -15,6 +15,7 @@ import com.kryptoxotis.nexus.data.remote.dto.ProfileDto
 import androidx.compose.ui.graphics.Color
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
 import com.kryptoxotis.nexus.presentation.theme.NexusDeep
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusOrange
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.NexusTeal
@@ -79,32 +80,16 @@ fun UserManagementScreen(
         }
     }
 
-    Scaffold(
-        containerColor = NexusBackground,
-        topBar = {
-            TopAppBar(
-                title = { Text("User Management") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                containerColor = NexusTeal
-            ) {
-                Icon(Icons.Default.PersonAdd, contentDescription = "Add User", tint = Color.White)
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Users",
+        onBack = onNavigateBack,
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.PersonAdd to { showCreateDialog = true }
+        )
+    ) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize()
         ) {
             OutlinedTextField(
                 value = searchQuery,
@@ -165,6 +150,8 @@ fun UserManagementScreen(
                     }
                 }
             }
+        }
+        SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.R
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 private fun safeLaunchUrl(context: Context, rawUrl: String) {
@@ -51,29 +52,19 @@ fun ContactDetailScreen(
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Nexus") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Contact",
+        onBack = onNavigateBack,
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.Delete to { showDeleteDialog = true }
+        )
+    ) {
         val c = contact
         if (c == null) {
-            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Contact not found")
             }
-            return@Scaffold
+            return@NexusScaffold
         }
 
         // Build link entries
@@ -102,9 +93,9 @@ fun ContactDetailScreen(
         val style = resolveCardStyle(null)
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gap),
+            verticalArrangement = Arrangement.spacedBy(Dimens.gapSmall)
         ) {
             // Main card with name
             item {

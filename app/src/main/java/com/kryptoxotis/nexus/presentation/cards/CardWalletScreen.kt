@@ -31,6 +31,8 @@ import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.domain.model.PersonalCard
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
+import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusTeal
 
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
@@ -111,88 +113,24 @@ fun CardWalletScreen(
 
     val dragEnabled = searchQuery.isBlank()
 
-    Scaffold { paddingValues ->
+    val headerActions = buildList<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>> {
+        add(Icons.Default.People to onNavigateToContacts)
+        if (isAuthenticated) {
+            add(Icons.Default.Badge to onNavigateToBusinessPasses)
+            add(Icons.Default.AccountCircle to onNavigateToAccounts)
+        }
+    }
+    NexusScaffold(
+        title = "Nexus",
+        subtitle = accountType?.name?.lowercase()?.replaceFirstChar { it.uppercase() },
+        actions = headerActions
+    ) {
         LazyColumn(
             state = lazyListState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gapSmall),
+            verticalArrangement = Arrangement.spacedBy(Dimens.gap)
         ) {
-            // Header
-            item(key = "header") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            "Nexus",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (accountType != null) {
-                            Text(
-                                text = accountType.name.lowercase()
-                                    .replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .neuCircle(elevation = 6.dp)
-                                .clickable { onNavigateToContacts() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.People,
-                                contentDescription = "Contacts",
-                                tint = Color(0xFF777777),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        if (isAuthenticated) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .neuCircle(elevation = 6.dp)
-                                    .clickable { onNavigateToBusinessPasses() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Badge,
-                                    contentDescription = "Business Passes",
-                                    tint = Color(0xFF777777),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .neuCircle(elevation = 6.dp)
-                                    .clickable { onNavigateToAccounts() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.AccountCircle,
-                                    contentDescription = "Accounts",
-                                    tint = Color(0xFF777777),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             // Business request status banner
             if (businessRequest?.status == "pending") {
                 item {

@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.data.remote.dto.BusinessRequestDto
 import androidx.compose.ui.graphics.Color
+import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
@@ -40,25 +42,14 @@ fun BusinessRequestsScreen(
         }
     }
 
-    Scaffold(
-        containerColor = NexusBackground,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Business Requests") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Requests",
+        onBack = onNavigateBack
+    ) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         if (requests.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -78,11 +69,9 @@ fun BusinessRequestsScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gap),
+                verticalArrangement = Arrangement.spacedBy(Dimens.gap)
             ) {
                 item {
                     Text(
@@ -102,7 +91,8 @@ fun BusinessRequestsScreen(
                 }
             }
         }
-
+        SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+        }
     }
 }
 

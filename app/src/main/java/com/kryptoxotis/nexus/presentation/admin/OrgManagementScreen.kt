@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.data.remote.dto.OrganizationDto
 import com.kryptoxotis.nexus.data.remote.dto.ProfileDto
+import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
@@ -47,33 +49,17 @@ fun OrgManagementScreen(
         }
     }
 
-    Scaffold(
-        containerColor = NexusBackground,
-        topBar = {
-            TopAppBar(
-                title = { Text("Organizations") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Create Organization")
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Organizations",
+        onBack = onNavigateBack,
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.Add to { showCreateDialog = true }
+        )
+    ) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         if (organizations.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -99,11 +85,9 @@ fun OrgManagementScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gap),
+                verticalArrangement = Arrangement.spacedBy(Dimens.gapSmall)
             ) {
                 item {
                     Text(
@@ -128,6 +112,8 @@ fun OrgManagementScreen(
                     )
                 }
             }
+        }
+        SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 

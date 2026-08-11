@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.BusinessPass
 import com.kryptoxotis.nexus.domain.model.PassStatus
 import com.kryptoxotis.nexus.presentation.cards.CardPreview
+import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,28 +25,16 @@ fun BusinessPassListScreen(
 ) {
     val passes by viewModel.userPasses.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Business Passes") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToEnrollment) {
-                Icon(Icons.Default.Add, contentDescription = "Enroll")
-            }
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Passes",
+        subtitle = "Your memberships",
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.Add to onNavigateToEnrollment
+        )
+    ) {
         if (passes.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -69,11 +59,9 @@ fun BusinessPassListScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gap),
+                verticalArrangement = Arrangement.spacedBy(Dimens.gap)
             ) {
                 items(passes, key = { it.id }) { pass ->
                     BusinessPassItem(pass = pass)

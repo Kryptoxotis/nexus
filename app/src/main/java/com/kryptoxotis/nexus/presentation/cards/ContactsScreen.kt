@@ -27,6 +27,7 @@ import com.kryptoxotis.nexus.data.local.ReceivedCardEntity
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
 import com.kryptoxotis.nexus.presentation.theme.resolveCardAppearance
@@ -150,29 +151,16 @@ fun ContactsScreen(
         return
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Contacts") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToScanCard) {
-                Icon(Icons.Default.Nfc, contentDescription = "Scan Card")
-            }
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Contacts",
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.Nfc to onNavigateToScanCard
+        )
+    ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gap),
+            verticalArrangement = Arrangement.spacedBy(Dimens.gapSmall)
         ) {
             // ── My Card section ──
             item(key = "my_card_header") {

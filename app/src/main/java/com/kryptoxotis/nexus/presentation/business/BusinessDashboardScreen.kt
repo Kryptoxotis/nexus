@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
+import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,39 +33,20 @@ fun BusinessDashboardScreen(
         viewModel.loadMyOrganization()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Business Dashboard")
-                        if (myOrg != null) {
-                            Text(
-                                text = myOrg!!.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToCardWallet) {
-                        Icon(Icons.Default.CreditCard, contentDescription = "Card Wallet")
-                    }
-                    IconButton(onClick = onNavigateToAccounts) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Accounts")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Business",
+        subtitle = myOrg?.name,
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.CreditCard to onNavigateToCardWallet,
+            Icons.Default.AccountCircle to onNavigateToAccounts
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = Dimens.screenPadding)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(Dimens.gap)
         ) {
             if (myOrg == null) {
                 // No organization found — it should be auto-created on approval

@@ -41,40 +41,19 @@ fun AdminDashboardScreen(
         viewModel.loadOrganizations()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(NexusBackground)
-            .verticalScroll(rememberScrollState())
+    NexusScaffold(
+        title = "Admin",
+        subtitle = "Nexus control",
+        actions = listOf<Pair<ImageVector, () -> Unit>>(
+            Icons.Default.CreditCard to onNavigateToCardWallet,
+            Icons.Default.AccountCircle to onNavigateToAccounts
+        )
     ) {
-        // Header
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            // Back button placeholder (left)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NeuCircleButton(
-                    icon = Icons.Default.Close,
-                    onClick = onNavigateToCardWallet
-                )
-            }
-            // Right icons
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                NeuCircleButton(
-                    icon = Icons.Default.CreditCard,
-                    onClick = onNavigateToCardWallet
-                )
-                NeuCircleButton(
-                    icon = Icons.Default.AccountCircle,
-                    onClick = onNavigateToAccounts
-                )
-            }
-        }
-
         // Stats row
         Row(
             modifier = Modifier
@@ -130,27 +109,7 @@ fun AdminDashboardScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-@Composable
-private fun NeuCircleButton(
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(38.dp)
-            .neuCircle(elevation = 4.dp, surfaceColor = NexusSurface)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = Color(0xFF888888),
-            modifier = Modifier.size(18.dp)
-        )
+        }
     }
 }
 

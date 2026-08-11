@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
+import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neuInset
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
@@ -189,50 +191,25 @@ fun AddCardScreen(
         }
     }
 
-    Scaffold { paddingValues ->
+    NexusScaffold(
+        title = when {
+            selectedType == null && myCardOnly -> "Create My Nexus"
+            selectedType == null -> "Create card"
+            else -> "New card"
+        },
+        subtitle = if (selectedType == null) "Choose a type" else "Details",
+        onBack = { if (selectedType == null) onNavigateBack() else selectedType = null },
+        bottomBar = false
+    ) {
         if (selectedType == null) {
             // Type selector — 2-column grid
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp)
+                    .padding(horizontal = Dimens.screenPadding)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Dimens.gap)
             ) {
-                // Header with back button
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .neuCircle(elevation = 6.dp)
-                            .clickable { onNavigateBack() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color(0xFF777777),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            if (myCardOnly) "Create My Nexus" else "Create Card",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Choose a type",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
                 if (!myCardOnly) {
                     // Row 1: Link + Contact
                     Row(
@@ -302,37 +279,10 @@ fun AddCardScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp)
+                    .padding(horizontal = Dimens.screenPadding)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Dimens.gap)
             ) {
-                // Header with back button
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .neuCircle(elevation = 6.dp)
-                            .clickable { selectedType = null },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color(0xFF777777),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Text(
-                        text = "Add Card",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
                 if (selectedType == CardType.BUSINESS_CARD) {
                     // Field toggle icons with brand colors
                     data class FieldToggle(

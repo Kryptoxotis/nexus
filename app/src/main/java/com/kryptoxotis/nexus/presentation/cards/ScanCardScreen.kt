@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.business.BusinessUiState
 import com.kryptoxotis.nexus.presentation.business.BusinessViewModel
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 
 /**
  * Scan/Receive screen — puts this phone into NFC reader mode so it can
@@ -74,22 +75,14 @@ fun ScanCardScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Scan Card") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Scan",
+        onBack = onNavigateBack,
+        bottomBar = false
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

@@ -17,6 +17,8 @@ import com.kryptoxotis.nexus.data.remote.AuthManager
 import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
+import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,24 +42,14 @@ fun AccountSwitcherScreen(
     val businessRequest = authViewModel.businessRequest.collectAsState().value
     var showBusinessDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Accounts") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    NexusScaffold(
+        title = "Account",
+        onBack = onNavigateBack
+    ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = Dimens.screenPadding, vertical = Dimens.gap),
+            verticalArrangement = Arrangement.spacedBy(Dimens.gapSmall)
         ) {
             items(savedAccounts, key = { it.email }) { account ->
                 AccountItem(
