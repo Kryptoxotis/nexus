@@ -76,7 +76,7 @@ fun ContactDetailScreen(
         )
         val fields = buildList {
             if (c.phone.isNotBlank()) add(NexusField("Phone", c.phone, "tel:${c.phone}", Color(0xFF037A68), materialIcon = Icons.Default.Phone))
-            if (c.email.isNotBlank()) add(NexusField("Email", c.email, "mailto:${c.email}", Color(0xFFFA5700), materialIcon = Icons.Default.Email))
+            if (c.email.isNotBlank()) add(NexusField("Email", c.email, "mailto:${c.email}", Color(0xFF037A68), materialIcon = Icons.Default.Email))
             if (c.website.isNotBlank()) add(NexusField("Website", c.website, c.website, Color(0xFF037A68), materialIcon = Icons.Default.Language))
             if (c.instagram.isNotBlank()) add(NexusField("Instagram", c.instagram, c.instagram, Color(0xFFD62976), drawableRes = R.drawable.ic_social_instagram, gradientIcon = true))
             if (c.twitter.isNotBlank()) add(NexusField("X", c.twitter, c.twitter, Color(0xFFEFEFEF), drawableRes = R.drawable.ic_social_x))

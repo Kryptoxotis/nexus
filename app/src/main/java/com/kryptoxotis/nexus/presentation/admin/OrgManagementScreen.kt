@@ -16,6 +16,9 @@ import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.NexusTeal
+import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
+import com.kryptoxotis.nexus.presentation.theme.NexusTextTertiary
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,68 +142,19 @@ private fun OrgItem(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
-        colors = CardDefaults.cardColors(containerColor = NexusSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.Business,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = if (isActive) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outline
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = org.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                if (org.type != null) {
-                    Text(
-                        text = org.type,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                if (isActive) "Active" else "Inactive",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = if (isActive)
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.errorContainer
-                        )
-                    )
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                (org.enrollmentMode ?: "open").replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    )
-                }
-            }
-
+    // Status is the only pill that carries colour: teal = active, tertiary = inactive
+    AdminListRow(
+        icon = Icons.Default.Business,
+        title = org.name,
+        subtitle = org.type,
+        pills = listOf(
+            (if (isActive) "Active" else "Inactive") to (if (isActive) NexusTeal else NexusTextTertiary),
+            (org.enrollmentMode ?: "open").replaceFirstChar { it.uppercase() } to null
+        ),
+        trailing = {
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Actions")
+                    Icon(Icons.Default.MoreVert, contentDescription = "Actions", tint = NexusTextSecondary)
                 }
                 DropdownMenu(
                     expanded = showMenu,
@@ -237,7 +191,7 @@ private fun OrgItem(
                 }
             }
         }
-    }
+    )
 
     if (showDeleteConfirm) {
         AlertDialog(

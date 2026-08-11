@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -65,17 +66,18 @@ fun NexusEmptyState(
             Spacer(modifier = Modifier.height(Dimens.gap))
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = NexusTextPrimary,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = body,
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 13.sp,
                 color = NexusTextSecondary,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 280.dp)
             )
             if (actionLabel != null && onAction != null) {
                 Spacer(modifier = Modifier.height(Dimens.gap))

@@ -53,7 +53,14 @@ const val CARD_ASPECT_RATIO = 1.586f
 val COIN_SIZE = 140.dp
 
 /** Contact ("their Nexus") cards render thinner than full cards. */
-val CONTACT_CARD_HEIGHT = 118.dp
+private val CONTACT_CARD_HEIGHT = 118.dp
+
+/**
+ * The only sizing knob card call sites get. There is deliberately no height
+ * parameter — FULL is always ISO 1.586, COMPACT is the fixed contact height,
+ * COIN is the fixed 140dp circle. This is what keeps squat cards impossible.
+ */
+enum class CardVariant { FULL, COMPACT, COIN }
 
 private val CardBorderWidth = 2.5.dp
 private val DarkCardBackground = Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
@@ -115,9 +122,11 @@ fun CardPreview(
     tag: String? = null,
     glow: Boolean = false,
     placeholders: Boolean = false,
-    compact: Boolean = false,
+    variant: CardVariant? = null,
     onQrClick: (() -> Unit)? = null
 ) {
+    val resolvedVariant = variant ?: if (cardShape == "coin") CardVariant.COIN else CardVariant.FULL
+    val compact = resolvedVariant == CardVariant.COMPACT
     val style = remember(storedColor) { resolveCardStyle(storedColor) }
     val displayTitle = if (placeholders) title.ifBlank { "Card Title" } else title
     val displaySubtitle = if (placeholders) subtitle.ifBlank { "Subtitle" } else subtitle
@@ -128,7 +137,7 @@ fun CardPreview(
         "Card preview: $titleAnnouncement, $subtitleAnnouncement, $shapeLabel"
     }
 
-    if (cardShape == "coin") {
+    if (resolvedVariant == CardVariant.COIN) {
         Box(
             modifier = modifier
                 .fillMaxWidth()

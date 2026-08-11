@@ -19,6 +19,8 @@ import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusOrange
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.NexusTeal
+import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
+import com.kryptoxotis.nexus.presentation.theme.NexusTextTertiary
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 private sealed class UserRow {
@@ -173,57 +175,15 @@ private fun PendingItem(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    Card(
-            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
-            colors = CardDefaults.cardColors(containerColor = NexusSurface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.Email,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = NexusTeal
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = email.fullName ?: "Unknown",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = email.email,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = NexusOrange
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                email.accountType.replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = NexusTeal
-                            )
-                        },
-                        border = AssistChipDefaults.assistChipBorder(true, borderColor = NexusTeal)
-                    )
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text("Pending invite", style = MaterialTheme.typography.labelSmall, color = NexusOrange)
-                        },
-                        border = AssistChipDefaults.assistChipBorder(true, borderColor = NexusOrange),
-                        colors = AssistChipDefaults.assistChipColors(containerColor = Color.Transparent)
-                    )
-                }
-            }
-
+    AdminListRow(
+        icon = Icons.Default.Email,
+        title = email.fullName ?: "Unknown",
+        subtitle = email.email,
+        pills = listOf(
+            email.accountType.replaceFirstChar { it.uppercase() } to null,
+            "Pending invite" to null
+        ),
+        trailing = {
             IconButton(onClick = { showDeleteConfirm = true }) {
                 Icon(
                     Icons.Default.Delete,
@@ -232,7 +192,7 @@ private fun PendingItem(
                 )
             }
         }
-    }
+    )
 
     if (showDeleteConfirm) {
         AlertDialog(
@@ -266,75 +226,22 @@ private fun UserItem(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val isAdmin = user.accountType == "admin"
 
-    Card(
-            modifier = Modifier.fillMaxWidth().neuRaised(cornerRadius = 16.dp, surfaceColor = NexusSurface),
-            colors = CardDefaults.cardColors(containerColor = NexusSurface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.Person,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = NexusTeal
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = user.fullName ?: "Unknown",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = user.email ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = NexusOrange
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                user.accountType.lowercase().replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = NexusTeal
-                            )
-                        },
-                        border = AssistChipDefaults.assistChipBorder(true, borderColor = NexusTeal)
-                    )
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                user.status ?: "active",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (user.status == "suspended") MaterialTheme.colorScheme.error else NexusTeal
-                            )
-                        },
-                        border = AssistChipDefaults.assistChipBorder(
-                            true,
-                            borderColor = if (user.status == "suspended") MaterialTheme.colorScheme.error else NexusTeal
-                        ),
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = if (user.status == "suspended")
-                                MaterialTheme.colorScheme.errorContainer
-                            else
-                                Color.Transparent
-                        )
-                    )
-                }
-            }
-
+    // Status is the only pill that carries colour: teal = active, tertiary = inactive
+    val statusText = (user.status ?: "active").replaceFirstChar { it.uppercase() }
+    val statusColor = if (user.status == "suspended") NexusTextTertiary else NexusTeal
+    AdminListRow(
+        icon = Icons.Default.Person,
+        title = user.fullName ?: "Unknown",
+        subtitle = user.email,
+        pills = listOf(
+            user.accountType.lowercase().replaceFirstChar { it.uppercase() } to null,
+            statusText to statusColor
+        ),
+        trailing = {
             if (!isAdmin) {
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Actions", tint = NexusOrange)
+                        Icon(Icons.Default.MoreVert, contentDescription = "Actions", tint = NexusTextSecondary)
                     }
                     DropdownMenu(
                         expanded = showMenu,
@@ -390,7 +297,7 @@ private fun UserItem(
                 }
             }
         }
-    }
+    )
 
     if (showDeleteConfirm) {
         AlertDialog(

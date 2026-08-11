@@ -1,13 +1,15 @@
 package com.kryptoxotis.nexus.presentation.theme
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
@@ -39,54 +41,45 @@ data class NexusNavActions(
 
 val LocalNexusNav = staticCompositionLocalOf<NexusNavActions?> { null }
 
-private val BarBackground = Color(0xFF0D0D0D)
-private val BarBorder = Color(0xFF191919)
+private val PillSurface = Color(0xFF141414)
 
 /**
- * The bottom bar is NOT tabs — section switching happens in the home screen's
- * segmented switcher. This is a single raised Scan action that opens the QR scanner.
+ * Home's only bottom control: a single floating pill that opens the QR scanner.
+ * It floats over the page background like every other raised surface —
+ * no bar strip, no seam.
  */
 @Composable
 fun NexusBottomBar(nav: NexusNavActions) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(BarBorder)
-            .padding(top = 1.dp)
-            .background(BarBackground)
-            .padding(start = 24.dp, end = 24.dp, top = 14.dp, bottom = 22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(bottom = 18.dp, top = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // 32dp slot; the 58dp circle bottom-aligns so it overhangs 26dp above the bar
-        Box(
-            modifier = Modifier.size(width = 58.dp, height = 32.dp),
-            contentAlignment = Alignment.BottomCenter
+        Row(
+            modifier = Modifier
+                .height(52.dp)
+                .neuRaised(cornerRadius = 26.dp, surfaceColor = PillSurface)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { nav.navigate(NexusTabs.SCAN) }
+                .padding(horizontal = 26.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(58.dp)
-                    .neuInset(cornerRadius = 29.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { nav.navigate(NexusTabs.SCAN) },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Filled.QrCodeScanner,
-                    contentDescription = "Scan a card",
-                    tint = NexusTeal,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+            Icon(
+                Icons.Filled.QrCodeScanner,
+                contentDescription = null,
+                tint = NexusTeal,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "Scan a card",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFD0D0D0)
+            )
         }
-        Text(
-            text = "SCAN A CARD",
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 1.2.sp,
-            color = NexusTextTertiary,
-            modifier = Modifier.padding(top = 6.dp)
-        )
     }
 }

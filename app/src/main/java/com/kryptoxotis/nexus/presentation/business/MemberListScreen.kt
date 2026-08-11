@@ -34,16 +34,12 @@ fun MemberListScreen(
         onBack = onNavigateBack
     ) {
         if (members.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                NexusEmptyState(
-                    icon = Icons.Default.PeopleOutline,
-                    title = "No members yet",
-                    body = "Members appear here when they enroll."
-                )
-            }
+            // Empty wells sit directly under the header, not centred in the viewport
+            NexusEmptyState(
+                icon = Icons.Default.PeopleOutline,
+                title = "No members yet",
+                body = "Members appear here when they enroll."
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

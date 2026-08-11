@@ -37,7 +37,7 @@ fun NexusScaffold(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     actions: List<Pair<ImageVector, () -> Unit>> = emptyList(),
-    bottomBar: Boolean = true,
+    bottomBar: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(

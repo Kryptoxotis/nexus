@@ -49,16 +49,12 @@ fun BusinessRequestsScreen(
     ) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         if (requests.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                NexusEmptyState(
-                    icon = Icons.Default.CheckCircle,
-                    title = "No pending requests",
-                    body = "Business requests you need to review show up here."
-                )
-            }
+            // Empty wells sit directly under the header, not centred in the viewport
+            NexusEmptyState(
+                icon = Icons.Default.CheckCircle,
+                title = "No pending requests",
+                body = "Business requests you need to review show up here."
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

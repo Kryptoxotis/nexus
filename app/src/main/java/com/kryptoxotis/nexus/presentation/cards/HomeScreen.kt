@@ -189,7 +189,8 @@ fun HomeScreen(
                 subtitle = accountType?.name?.lowercase()?.replaceFirstChar { it.uppercase() },
                 actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
                     Icons.Default.AccountCircle to onNavigateToAccounts
-                )
+                ),
+                bottomBar = true
             ) {
                 HomeTabSwitcher(tab = tab, onTab = { tab = it })
 
@@ -647,7 +648,7 @@ private fun NexusTabContent(
                     cardShape = "card",
                     storedColor = null,
                     tag = "Nexus",
-                    compact = true,
+                    variant = CardVariant.COMPACT,
                     modifier = Modifier.combinedClickable(
                         onClick = { onOpenContact(contact.id) },
                         onLongClick = { onHoldContact(contact.id) }
@@ -763,7 +764,7 @@ private fun SheetActionRow(
 internal fun rememberNexusQuickEditFields(data: BusinessCardData): List<QuickEditField> = remember(data) {
     listOf(
         QuickEditField("phone", "Phone", data.phone, Color(0xFF0A7968), materialIcon = Icons.Default.Phone),
-        QuickEditField("email", "Email", data.email, Color(0xFFF95B1A), materialIcon = Icons.Default.Email),
+        QuickEditField("email", "Email", data.email, Color(0xFF0A7968), materialIcon = Icons.Default.Email),
         QuickEditField("website", "Website", data.website, Color(0xFF0A7968), materialIcon = Icons.Default.Language),
         QuickEditField("linkedin", "LinkedIn", data.linkedin, Color(0xFF0A66C2), drawableRes = R.drawable.ic_social_linkedin),
         QuickEditField("instagram", "Instagram", data.instagram, Color(0xFFD62976), drawableRes = R.drawable.ic_social_instagram, gradientIcon = true),

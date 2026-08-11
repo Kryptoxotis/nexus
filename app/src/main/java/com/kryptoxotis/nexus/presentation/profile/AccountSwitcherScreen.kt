@@ -17,8 +17,17 @@ import com.kryptoxotis.nexus.data.remote.AuthManager
 import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
+import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
+import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,6 +191,27 @@ fun AccountSwitcherScreen(
                 }
             }
 
+            // ── Settings ──
+            item(key = "settings_header") {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "SETTINGS",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.4.sp,
+                    color = NexusTextSecondary
+                )
+            }
+            item(key = "settings_rows") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SettingsRow(Icons.Default.Palette, "Appearance", "Dark")
+                    SettingsRow(Icons.Default.Nfc, "NFC & sharing", "On")
+                    SettingsRow(Icons.Default.Notifications, "Notifications", null)
+                    SettingsRow(Icons.Default.Lock, "Privacy", null)
+                    SettingsRow(Icons.Default.HelpOutline, "Help", null)
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -320,6 +350,45 @@ fun AccountSwitcherScreen(
                 }
             }
         )
+    }
+}
+
+/** Settings group row: neuRaised #141414 at 14dp radius, icon + label + optional value. */
+@Composable
+private fun SettingsRow(
+    icon: ImageVector,
+    label: String,
+    value: String?
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .neuRaised(cornerRadius = 14.dp, surfaceColor = Color(0xFF141414))
+            .clickable { /* placeholder — settings screens land in a later pass */ }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = NexusTextSecondary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = Color(0xFFD0D0D0),
+            modifier = Modifier.weight(1f)
+        )
+        if (value != null) {
+            Text(
+                text = value,
+                fontSize = 12.sp,
+                color = Color(0xFF7D7D7D)
+            )
+        }
     }
 }
 

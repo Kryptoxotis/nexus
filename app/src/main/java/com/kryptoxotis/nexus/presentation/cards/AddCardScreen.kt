@@ -301,7 +301,7 @@ fun AddCardScreen(
                         FieldToggle("jobTitle", "Job Title", Color(0xFFB0BEC5), materialIcon = Icons.Default.Work),
                         FieldToggle("company", "Company", Color(0xFF90A4AE), materialIcon = Icons.Default.Business),
                         FieldToggle("phone", "Phone", Color(0xFF037A68), materialIcon = Icons.Default.Phone),
-                        FieldToggle("email", "Email", Color(0xFFFA5700), materialIcon = Icons.Default.Email),
+                        FieldToggle("email", "Email", Color(0xFF037A68), materialIcon = Icons.Default.Email),
                         FieldToggle("website", "Website", Color(0xFF037A68), materialIcon = Icons.Default.Language),
                         FieldToggle("linkedin", "LinkedIn", Color(0xFF0A66C2), drawableRes = R.drawable.ic_social_linkedin),
                         FieldToggle("instagram", "Instagram", Color(0xFFD62976), drawableRes = R.drawable.ic_social_instagram, gradientIcon = true),
