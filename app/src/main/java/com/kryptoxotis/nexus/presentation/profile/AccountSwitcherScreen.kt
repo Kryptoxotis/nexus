@@ -24,7 +24,8 @@ import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 @Composable
 fun AccountSwitcherScreen(
     authViewModel: AuthViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToAdmin: () -> Unit = {}
 ) {
     val savedAccounts by authViewModel.savedAccounts.collectAsState()
     val authState by authViewModel.authState.collectAsState()
@@ -61,6 +62,44 @@ fun AccountSwitcherScreen(
                         }
                     }
                 )
+            }
+
+            // Admin entry — admin is not a tab, it lives here
+            if (accountType == AccountType.ADMIN) {
+                item(key = "admin_row") {
+                    Card(
+                        onClick = onNavigateToAdmin,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.AdminPanelSettings,
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Admin dashboard", style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    text = "Requests, users and organizations",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
             // Upgrade to Business card

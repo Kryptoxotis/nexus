@@ -111,5 +111,9 @@ fun NexusScaffold(
                 .fillMaxWidth(),
             content = content
         )
+        val nav = LocalNexusNav.current
+        if (bottomBar && nav != null) {
+            NexusBottomBar(nav)
+        }
     }
 }

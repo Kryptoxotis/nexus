@@ -34,8 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kryptoxotis.nexus.presentation.theme.LocalNexusNav
+import com.kryptoxotis.nexus.presentation.theme.NexusNavActions
 import com.kryptoxotis.nexus.data.local.NexusDatabase
 import com.kryptoxotis.nexus.data.remote.AuthManager
 import com.kryptoxotis.nexus.data.remote.SupabaseClientProvider
@@ -174,6 +177,17 @@ class MainActivity : ComponentActivity() {
                 // Compute once — LaunchedEffect handles subsequent navigation
                 val startDestination = remember { "login" }
 
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val nexusNav = remember(backStackEntry) {
+                    NexusNavActions(
+                        currentRoute = backStackEntry?.destination?.route,
+                        navigate = { route ->
+                            navController.navigate(route) { launchSingleTop = true }
+                        }
+                    )
+                }
+
+                CompositionLocalProvider(LocalNexusNav provides nexusNav) {
                 NavHost(
                     navController = navController,
                     startDestination = startDestination
@@ -455,8 +469,14 @@ class MainActivity : ComponentActivity() {
                     composable("accounts") {
                         AccountSwitcherScreen(
                             authViewModel = authViewModel,
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToAdmin = { navController.navigate("admin_dashboard") }
                         )
+                    }
+
+                    composable("share_card") {
+                        // Filled in by the tap-to-share step
+                        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
                     }
 
                     composable("share_link") {
@@ -484,6 +504,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                }
                 }
 
                 // Navigate to share screen when a URL is shared
