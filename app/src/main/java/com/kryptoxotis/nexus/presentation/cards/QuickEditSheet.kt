@@ -53,9 +53,16 @@ data class QuickEditField(
     val gradientIcon: Boolean = false
 )
 
-private val TileBackground = Brush.linearGradient(listOf(Color(0xFF191919), Color(0xFF111111)))
-private val OffBorder = Color(0xFF242424)
-private val OffTint = Color(0xFF6A6A6A)
+private val TileBackground: Brush
+    get() = if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) {
+        Brush.linearGradient(listOf(Color(0xFF191919), Color(0xFF111111)))
+    } else {
+        Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF1EFE9)))
+    }
+private val OffBorder: Color
+    get() = if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) Color(0xFF242424) else Color(0xFFDDD9D2)
+private val OffTint: Color
+    get() = if (com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) Color(0xFF6A6A6A) else Color(0xFFA39E96)
 
 /**
  * Eye-toggle tiles for what the My Nexus card transmits. Sharing is paused

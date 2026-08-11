@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusAppearance
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
 
@@ -63,7 +65,17 @@ private val CONTACT_CARD_HEIGHT = 118.dp
 enum class CardVariant { FULL, COMPACT, COIN }
 
 private val CardBorderWidth = 2.5.dp
-private val DarkCardBackground = Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
+
+/** Dark-style cards sit near-black on the dark theme, near-white on light. */
+private val DarkCardBackground: Brush
+    get() = if (NexusAppearance.dark) {
+        Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
+    } else {
+        Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF1EFE9)))
+    }
+
+/** Ink used on light-style (colored fill) cards when the app theme is light. */
+private val LightThemeCardInk = Color(0xFF262420)
 private val ImageScrimColor = Color.Black.copy(alpha = 0.6f)
 private val ImagePlaceholder = ColorPainter(Color.DarkGray)
 private val ImageErrorPainter = ColorPainter(Color(0xFF3A1A1A))
@@ -78,28 +90,42 @@ data class NexusCardStyle(
     val gradient: Brush,
     val isDark: Boolean
 ) {
+    private val ink: Color get() = if (NexusAppearance.dark) Color.White else LightThemeCardInk
     /** Tag/category text color (top-left). */
-    val tagColor: Color get() = if (isDark) bright.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.65f)
+    val tagColor: Color get() = if (isDark) bright.copy(alpha = 0.75f) else ink.copy(alpha = 0.65f)
     /** NFC glyph tint (top-right). */
-    val nfcColor: Color get() = if (isDark) bright.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.7f)
+    val nfcColor: Color get() = if (isDark) bright.copy(alpha = 0.85f) else ink.copy(alpha = 0.7f)
     /** Subtitle color. */
-    val subtitleColor: Color get() = if (isDark) bright.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.75f)
+    val subtitleColor: Color get() = if (isDark) bright.copy(alpha = 0.55f) else ink.copy(alpha = 0.75f)
     /** QR glyph tint (bottom-right). */
-    val qrColor: Color get() = if (isDark) bright.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.9f)
-    /** Solid title color for light mode; dark mode titles use [titleBrush]. */
-    val titleColor: Color get() = if (isDark) bright else Color.White
-    /** Gradient brush for dark-mode titles (bright -> dark), null in light mode. */
+    val qrColor: Color get() = if (isDark) bright.copy(alpha = 0.9f) else ink.copy(alpha = 0.9f)
+    /** Solid title color for light-style cards; dark-style titles use [titleBrush]. */
+    val titleColor: Color get() = if (isDark) bright else ink
+    /** Gradient brush for dark-style titles (bright -> dark), null on light-style. */
     val titleBrush: Brush? get() = if (isDark) gradient else null
 }
 
-/** Resolve a stored color string ("#RRGGBB" or "#RRGGBB:dark") into a [NexusCardStyle]. */
+/**
+ * Resolve a stored color string ("#RRGGBB" or "#RRGGBB:dark") into a
+ * [NexusCardStyle]. The palette diverges by app theme: neon-true on dark,
+ * pastel (blended toward white) on light.
+ */
 fun resolveCardStyle(storedColor: String?): NexusCardStyle {
     val (hex, isDark) = NexusCardColors.parse(storedColor)
     val entry = NexusCardColors.findByHex(hex) ?: NexusCardColors.palette[0]
+    val bright: Color
+    val dark: Color
+    if (NexusAppearance.dark) {
+        bright = entry.bright
+        dark = entry.dark
+    } else {
+        bright = lerp(entry.bright, Color.White, 0.30f)
+        dark = lerp(entry.dark, Color.White, 0.30f)
+    }
     return NexusCardStyle(
-        bright = entry.bright,
-        dark = entry.dark,
-        gradient = entry.gradient,
+        bright = bright,
+        dark = dark,
+        gradient = Brush.linearGradient(listOf(bright, dark)),
         isDark = isDark
     )
 }
@@ -129,7 +155,7 @@ fun CardPreview(
 ) {
     val resolvedVariant = variant ?: if (cardShape == "coin") CardVariant.COIN else CardVariant.FULL
     val compact = resolvedVariant == CardVariant.COMPACT
-    val style = remember(storedColor) { resolveCardStyle(storedColor) }
+    val style = remember(storedColor, NexusAppearance.dark) { resolveCardStyle(storedColor) }
     val displayTitle = if (placeholders) title.ifBlank { "Card Title" } else title
     val displaySubtitle = if (placeholders) subtitle.ifBlank { "Subtitle" } else subtitle
     val shapeLabel = if (cardShape == "coin") "coin shaped" else "card shaped"

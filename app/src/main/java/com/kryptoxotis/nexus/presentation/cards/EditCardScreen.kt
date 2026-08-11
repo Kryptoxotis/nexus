@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.kryptoxotis.nexus.R
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.Dimens
@@ -65,6 +66,37 @@ fun EditCardScreen(
     var bcInstagram by remember(card.id) { mutableStateOf(initialBc.instagram) }
     var bcTwitter by remember(card.id) { mutableStateOf(initialBc.twitter) }
     var bcGithub by remember(card.id) { mutableStateOf(initialBc.github) }
+    var bcFacebook by remember(card.id) { mutableStateOf(initialBc.facebook) }
+    var bcYoutube by remember(card.id) { mutableStateOf(initialBc.youtube) }
+    var bcTiktok by remember(card.id) { mutableStateOf(initialBc.tiktok) }
+    var bcDiscord by remember(card.id) { mutableStateOf(initialBc.discord) }
+    var bcTwitch by remember(card.id) { mutableStateOf(initialBc.twitch) }
+    var bcWhatsapp by remember(card.id) { mutableStateOf(initialBc.whatsapp) }
+
+    // Which fields the card carries — same toggles as the create form. Fields
+    // that already have a value start enabled; toggling one off drops it on save.
+    var enabledFields by remember(card.id) {
+        mutableStateOf(
+            buildSet {
+                add("name")
+                if (initialBc.jobTitle.isNotBlank()) add("jobTitle")
+                if (initialBc.company.isNotBlank()) add("company")
+                if (initialBc.phone.isNotBlank()) add("phone")
+                if (initialBc.email.isNotBlank()) add("email")
+                if (initialBc.website.isNotBlank()) add("website")
+                if (initialBc.linkedin.isNotBlank()) add("linkedin")
+                if (initialBc.instagram.isNotBlank()) add("instagram")
+                if (initialBc.twitter.isNotBlank()) add("twitter")
+                if (initialBc.github.isNotBlank()) add("github")
+                if (initialBc.facebook.isNotBlank()) add("facebook")
+                if (initialBc.youtube.isNotBlank()) add("youtube")
+                if (initialBc.tiktok.isNotBlank()) add("tiktok")
+                if (initialBc.discord.isNotBlank()) add("discord")
+                if (initialBc.twitch.isNotBlank()) add("twitch")
+                if (initialBc.whatsapp.isNotBlank()) add("whatsapp")
+            }
+        )
+    }
 
     // Navigate back on successful update
     LaunchedEffect(uiState) {
@@ -95,16 +127,100 @@ fun EditCardScreen(
             )
 
             if (card.cardType == CardType.BUSINESS_CARD) {
+                // Same eye toggles as the create form — turn a field off here and
+                // it comes off the card, no quick-edit needed
+                data class FieldToggle(
+                    val key: String, val label: String, val brandColor: Color,
+                    val materialIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+                    val drawableRes: Int = 0, val gradientIcon: Boolean = false
+                )
+                val fieldOptions = listOf(
+                    FieldToggle("jobTitle", "Job Title", Color(0xFFB0BEC5), materialIcon = Icons.Default.Work),
+                    FieldToggle("company", "Company", Color(0xFF90A4AE), materialIcon = Icons.Default.Business),
+                    FieldToggle("phone", "Phone", Color(0xFF037A68), materialIcon = Icons.Default.Phone),
+                    FieldToggle("email", "Email", Color(0xFF037A68), materialIcon = Icons.Default.Email),
+                    FieldToggle("website", "Website", Color(0xFF037A68), materialIcon = Icons.Default.Language),
+                    FieldToggle("linkedin", "LinkedIn", Color(0xFF0A66C2), drawableRes = R.drawable.ic_social_linkedin),
+                    FieldToggle("instagram", "Instagram", Color(0xFFD62976), drawableRes = R.drawable.ic_social_instagram, gradientIcon = true),
+                    FieldToggle("twitter", "Twitter / X", Color(0xFFEFEFEF), drawableRes = R.drawable.ic_social_x),
+                    FieldToggle("github", "GitHub", Color(0xFFEFEFEF), drawableRes = R.drawable.ic_social_github),
+                    FieldToggle("facebook", "Facebook", Color(0xFF1877F2), drawableRes = R.drawable.ic_social_facebook),
+                    FieldToggle("youtube", "YouTube", Color(0xFFFF0000), drawableRes = R.drawable.ic_social_youtube, gradientIcon = true),
+                    FieldToggle("tiktok", "TikTok", Color(0xFFEE1D52), drawableRes = R.drawable.ic_social_tiktok),
+                    FieldToggle("discord", "Discord", Color(0xFF5865F2), drawableRes = R.drawable.ic_social_discord, gradientIcon = true),
+                    FieldToggle("twitch", "Twitch", Color(0xFF9146FF), drawableRes = R.drawable.ic_social_twitch, gradientIcon = true),
+                    FieldToggle("whatsapp", "WhatsApp", Color(0xFF25D366), drawableRes = R.drawable.ic_social_whatsapp)
+                )
+                Text(
+                    text = "Fields to include",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    fieldOptions.forEach { field ->
+                        val isOn = field.key in enabledFields
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (isOn) field.brandColor.copy(alpha = 0.15f)
+                                    else com.kryptoxotis.nexus.presentation.theme.NexusSurface
+                                )
+                                .then(
+                                    if (isOn) Modifier.border(1.dp, field.brandColor.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                                    else Modifier
+                                )
+                                .clickable {
+                                    enabledFields = if (isOn) enabledFields - field.key else enabledFields + field.key
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val iconTint = when {
+                                !isOn -> com.kryptoxotis.nexus.presentation.theme.NexusMutedText
+                                field.gradientIcon -> Color.Unspecified
+                                else -> field.brandColor
+                            }
+                            if (field.drawableRes != 0) {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(field.drawableRes),
+                                    contentDescription = field.label,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = iconTint
+                                )
+                            } else if (field.materialIcon != null) {
+                                Icon(
+                                    imageVector = field.materialIcon,
+                                    contentDescription = field.label,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = iconTint
+                                )
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(value = bcName, onValueChange = { bcName = it }, label = { Text("Full Name *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcJobTitle, onValueChange = { bcJobTitle = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcCompany, onValueChange = { bcCompany = it }, label = { Text("Company") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcPhone, onValueChange = { bcPhone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
-                OutlinedTextField(value = bcEmail, onValueChange = { bcEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
-                OutlinedTextField(value = bcWebsite, onValueChange = { bcWebsite = it }, label = { Text("Website") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-                OutlinedTextField(value = bcLinkedin, onValueChange = { bcLinkedin = it }, label = { Text("LinkedIn") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcInstagram, onValueChange = { bcInstagram = it }, label = { Text("Instagram") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcTwitter, onValueChange = { bcTwitter = it }, label = { Text("Twitter / X") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = bcGithub, onValueChange = { bcGithub = it }, label = { Text("GitHub") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("jobTitle" in enabledFields) OutlinedTextField(value = bcJobTitle, onValueChange = { bcJobTitle = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("company" in enabledFields) OutlinedTextField(value = bcCompany, onValueChange = { bcCompany = it }, label = { Text("Company") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("phone" in enabledFields) OutlinedTextField(value = bcPhone, onValueChange = { bcPhone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+                if ("email" in enabledFields) OutlinedTextField(value = bcEmail, onValueChange = { bcEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+                if ("website" in enabledFields) OutlinedTextField(value = bcWebsite, onValueChange = { bcWebsite = it }, label = { Text("Website") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
+                if ("linkedin" in enabledFields) OutlinedTextField(value = bcLinkedin, onValueChange = { bcLinkedin = it }, label = { Text("LinkedIn") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("instagram" in enabledFields) OutlinedTextField(value = bcInstagram, onValueChange = { bcInstagram = it }, label = { Text("Instagram") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("twitter" in enabledFields) OutlinedTextField(value = bcTwitter, onValueChange = { bcTwitter = it }, label = { Text("Twitter / X") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("github" in enabledFields) OutlinedTextField(value = bcGithub, onValueChange = { bcGithub = it }, label = { Text("GitHub") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("facebook" in enabledFields) OutlinedTextField(value = bcFacebook, onValueChange = { bcFacebook = it }, label = { Text("Facebook") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("youtube" in enabledFields) OutlinedTextField(value = bcYoutube, onValueChange = { bcYoutube = it }, label = { Text("YouTube") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("tiktok" in enabledFields) OutlinedTextField(value = bcTiktok, onValueChange = { bcTiktok = it }, label = { Text("TikTok") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("discord" in enabledFields) OutlinedTextField(value = bcDiscord, onValueChange = { bcDiscord = it }, label = { Text("Discord") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("twitch" in enabledFields) OutlinedTextField(value = bcTwitch, onValueChange = { bcTwitch = it }, label = { Text("Twitch") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                if ("whatsapp" in enabledFields) OutlinedTextField(value = bcWhatsapp, onValueChange = { bcWhatsapp = it }, label = { Text("WhatsApp") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
             } else {
                 OutlinedTextField(
                     value = title,
@@ -271,11 +387,25 @@ fun EditCardScreen(
                             viewModel.setError("Invalid URL scheme in one of the link fields")
                             return@Button
                         }
+                        // Only enabled fields make it onto the card
                         val bcData = BusinessCardData(
-                            name = bcName, jobTitle = bcJobTitle, company = bcCompany,
-                            phone = bcPhone, email = bcEmail, website = bcWebsite,
-                            linkedin = bcLinkedin, instagram = bcInstagram,
-                            twitter = bcTwitter, github = bcGithub
+                            name = bcName,
+                            jobTitle = if ("jobTitle" in enabledFields) bcJobTitle else "",
+                            company = if ("company" in enabledFields) bcCompany else "",
+                            phone = if ("phone" in enabledFields) bcPhone else "",
+                            email = if ("email" in enabledFields) bcEmail else "",
+                            website = if ("website" in enabledFields) bcWebsite else "",
+                            linkedin = if ("linkedin" in enabledFields) bcLinkedin else "",
+                            instagram = if ("instagram" in enabledFields) bcInstagram else "",
+                            twitter = if ("twitter" in enabledFields) bcTwitter else "",
+                            github = if ("github" in enabledFields) bcGithub else "",
+                            facebook = if ("facebook" in enabledFields) bcFacebook else "",
+                            youtube = if ("youtube" in enabledFields) bcYoutube else "",
+                            tiktok = if ("tiktok" in enabledFields) bcTiktok else "",
+                            discord = if ("discord" in enabledFields) bcDiscord else "",
+                            twitch = if ("twitch" in enabledFields) bcTwitch else "",
+                            whatsapp = if ("whatsapp" in enabledFields) bcWhatsapp else "",
+                            organizationId = initialBc.organizationId
                         )
                         viewModel.updateCard(
                             cardId = card.id,

@@ -73,8 +73,13 @@ private val ImageCardAppearance = CardAppearance(
     neonColor = NexusPrimary
 )
 
-/** Cached gradient for dark-mode cards — slightly lighter than app background so cards are visible */
-private val DarkCardGradient = Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
+/** Gradient for dark-style cards — near-black on the dark theme, near-white on light */
+private val DarkCardGradient: Brush
+    get() = if (NexusAppearance.dark) {
+        Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
+    } else {
+        Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF1EFE9)))
+    }
 
 /** Regex for validating hex color strings before passing to native parseColor */
 private val HEX_COLOR_REGEX = Regex("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$")

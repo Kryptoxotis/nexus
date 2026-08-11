@@ -2,6 +2,7 @@ package com.kryptoxotis.nexus.presentation.cards
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -391,6 +393,9 @@ fun HomeScreen(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Section accents: Cards teal, Nexus purple (the brand favorite), Passes teal
+private val SectionAccents = listOf(NexusTeal, Color(0xFFB388FF), NexusTeal)
+
 @Composable
 private fun HomePagerDots(count: Int, current: Int, onDot: (Int) -> Unit) {
     Row(
@@ -406,7 +411,10 @@ private fun HomePagerDots(count: Int, current: Int, onDot: (Int) -> Unit) {
                     .padding(horizontal = 4.dp)
                     .size(width = if (i == current) 18.dp else 7.dp, height = 7.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (i == current) NexusTeal else NexusDotInactive)
+                    .background(
+                        if (i == current) SectionAccents.getOrElse(current) { NexusTeal }
+                        else NexusDotInactive
+                    )
                     .clickable { onDot(i) }
             )
         }
@@ -487,29 +495,7 @@ private fun CardsTabContent(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, tint = NexusTeal, modifier = Modifier.size(20.dp))
                 }
-                Column {
-                    Text("Create a card", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = NexusTextPrimary)
-                    Text("A link, a file or custom data to send", fontSize = 12.sp, color = NexusTextSecondary)
-                }
-            }
-        }
-
-        item(key = "saved_header") {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = "SAVED CARDS",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.4.sp,
-                    color = NexusTextSecondary,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${walletCards.size} cards",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = NexusMutedText
-                )
+                Text("Create a card", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = NexusTextPrimary)
             }
         }
 
@@ -541,20 +527,13 @@ private fun CardsTabContent(
                     storedColor = card.color,
                     imageUri = card.imageUrl,
                     tag = card.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
+                    topRightIcon = Icons.Default.Edit,
+                    onTopRightClick = { onHoldCard(card) },
                     onQrClick = { onQrCard(card) },
                     modifier = Modifier.combinedClickable(
                         onClick = { onTapCard(card) },
                         onLongClick = { onHoldCard(card) }
                     )
-                )
-            }
-            item(key = "cards_hint") {
-                Text(
-                    text = "Tap a card to share · hold to edit",
-                    fontSize = 11.5.sp,
-                    color = NexusMutedText,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
         }
@@ -583,6 +562,17 @@ private fun CardDeck(
             modifier = Modifier
                 .fillMaxWidth()
                 .height((230 + (n - 1).coerceAtMost(4) * stackStep).dp)
+                // Swipe left/right to cycle through the deck
+                .pointerInput(n) {
+                    var total = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { total = 0f },
+                        onDragEnd = {
+                            if (total < -70f) frontState = (frontState + 1) % n
+                            else if (total > 70f) frontState = (frontState - 1 + n) % n
+                        }
+                    ) { _, dragAmount -> total += dragAmount }
+                }
         ) {
             // Draw back cards first, the front card last (on top)
             val order = (0 until n).filter { it != front } + front
@@ -601,6 +591,8 @@ private fun CardDeck(
                     imageUri = card.imageUrl,
                     tag = card.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
                     glow = isFront,
+                    topRightIcon = if (isFront) Icons.Default.Edit else null,
+                    onTopRightClick = if (isFront) ({ onHoldFront(card) }) else null,
                     onQrClick = if (isFront) ({ onQrFront(card) }) else null,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -634,15 +626,6 @@ private fun CardDeck(
                 )
             }
         }
-        Text(
-            text = "Tap a dot to bring a card forward",
-            fontSize = 11.5.sp,
-            color = NexusMutedText,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 6.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
     }
 }
 
@@ -675,6 +658,8 @@ private fun NexusTabContent(
                     storedColor = myCard.color,
                     tag = "My Nexus",
                     glow = true,
+                    topRightIcon = Icons.Default.Edit,
+                    onTopRightClick = onEditMyNexus,
                     onQrClick = onMyNexusQr,
                     modifier = Modifier.combinedClickable(
                         onClick = onEmulateMyNexus,

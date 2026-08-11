@@ -64,7 +64,7 @@ fun EmulateOverlay(
     onShowQr: () -> Unit,
     onQuickEdit: () -> Unit
 ) {
-    val style = remember(storedColor) { resolveCardStyle(storedColor) }
+    val style = remember(storedColor, com.kryptoxotis.nexus.presentation.theme.NexusAppearance.dark) { resolveCardStyle(storedColor) }
     val bright = style.bright
 
     Box(
@@ -100,7 +100,6 @@ fun EmulateOverlay(
                 subtitle = subtitle,
                 cardShape = "card",
                 storedColor = storedColor,
-                tag = "Sharing now",
                 glow = true,
                 topRightIcon = if (isNexus) Icons.Default.Tune else null,
                 onTopRightClick = if (isNexus) onQuickEdit else null,
