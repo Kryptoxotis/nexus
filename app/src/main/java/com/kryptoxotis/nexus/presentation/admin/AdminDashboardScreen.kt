@@ -63,18 +63,21 @@ fun AdminDashboardScreen(
         ) {
             StatCard(
                 icon = Icons.Default.ChatBubble,
+                label = "Requests",
                 value = "${pendingRequests.size}",
                 color = NexusOrange,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 icon = Icons.Default.People,
+                label = "Users",
                 value = "${users.size}",
                 color = NexusTeal,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 icon = Icons.Default.GridView,
+                label = "Orgs",
                 value = "${organizations.size}",
                 color = NexusOrange,
                 modifier = Modifier.weight(1f)
@@ -84,25 +87,29 @@ fun AdminDashboardScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         // Menu items
+        val adminCount = users.count { it.accountType.equals("admin", ignoreCase = true) }
         Column(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             MenuItem(
                 icon = Icons.Default.ChatBubble,
-                title = "Business\nRequests",
+                title = "Business requests",
+                subtitle = "${pendingRequests.size} pending",
                 iconColor = NexusOrange,
                 onClick = onNavigateToRequests
             )
             MenuItem(
                 icon = Icons.Default.People,
-                title = "User\nManagement",
+                title = "User management",
+                subtitle = "${users.size} users · $adminCount admin",
                 iconColor = NexusTeal,
                 onClick = onNavigateToUsers
             )
             MenuItem(
                 icon = Icons.Default.GridView,
                 title = "Organizations",
+                subtitle = "${organizations.size} registered",
                 iconColor = NexusOrange,
                 onClick = onNavigateToOrgs
             )
@@ -116,6 +123,7 @@ fun AdminDashboardScreen(
 @Composable
 private fun StatCard(
     icon: ImageVector,
+    label: String,
     value: String,
     color: Color,
     modifier: Modifier = Modifier
@@ -129,7 +137,7 @@ private fun StatCard(
             modifier = Modifier.padding(vertical = 18.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Inset icon circle
+            // Inset icon circle — color lives on the icon only
             Box(
                 modifier = Modifier
                     .size(42.dp)
@@ -148,8 +156,15 @@ private fun StatCard(
                 text = value,
                 fontSize = 40.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = color,
+                color = NexusTextPrimary,
                 lineHeight = 40.sp
+            )
+            Text(
+                text = label.uppercase(),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.2.sp,
+                color = NexusTextSecondary
             )
         }
     }
@@ -159,6 +174,7 @@ private fun StatCard(
 private fun MenuItem(
     icon: ImageVector,
     title: String,
+    subtitle: String,
     iconColor: Color,
     onClick: () -> Unit
 ) {
@@ -187,14 +203,21 @@ private fun MenuItem(
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = title,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF666666),
-                lineHeight = 22.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NexusTextPrimary,
+                    maxLines = 1
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 12.sp,
+                    color = NexusTextSecondary,
+                    maxLines = 1
+                )
+            }
             Icon(
                 Icons.Default.ChevronRight,
                 contentDescription = null,
