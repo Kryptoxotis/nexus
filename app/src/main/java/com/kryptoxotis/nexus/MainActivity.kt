@@ -58,7 +58,6 @@ import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
 import com.kryptoxotis.nexus.presentation.auth.LoginScreen
 import com.kryptoxotis.nexus.presentation.business.BusinessDashboardScreen
-import com.kryptoxotis.nexus.presentation.business.BusinessPassListScreen
 import com.kryptoxotis.nexus.presentation.business.BusinessViewModel
 import com.kryptoxotis.nexus.presentation.business.CreateOrgScreen
 import com.kryptoxotis.nexus.presentation.business.EnrollmentScreen
@@ -71,9 +70,7 @@ import com.kryptoxotis.nexus.widget.NexusCardWidget
 import androidx.glance.appwidget.updateAll
 import com.kryptoxotis.nexus.presentation.cards.AddCardScreen
 import com.kryptoxotis.nexus.presentation.cards.CardDetailScreen
-import com.kryptoxotis.nexus.presentation.cards.CardWalletScreen
 import com.kryptoxotis.nexus.presentation.cards.ContactDetailScreen
-import com.kryptoxotis.nexus.presentation.cards.ContactsScreen
 import com.kryptoxotis.nexus.presentation.cards.EditCardScreen
 import com.kryptoxotis.nexus.presentation.cards.ScanCardScreen
 import com.kryptoxotis.nexus.presentation.cards.PersonalCardViewModel
@@ -283,19 +280,27 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // ===== Individual screens =====
-                    composable("card_wallet") {
-                        CardWalletScreen(
-                            viewModel = cardViewModel,
+                    // ===== Home (Cards · Nexus · Passes) =====
+                    // The old wallet/contacts/passes routes all land on the one home
+                    // screen with the matching tab preselected, so every existing
+                    // navigate() call keeps working.
+                    val homeScreen: @Composable (String) -> Unit = { initialTab ->
+                        com.kryptoxotis.nexus.presentation.cards.HomeScreen(
+                            initialTab = initialTab,
+                            cardViewModel = cardViewModel,
+                            receivedCardViewModel = receivedCardViewModel,
+                            businessViewModel = businessViewModel,
                             authViewModel = authViewModel,
                             onNavigateToAddCard = { navController.navigate("add_card") },
-                            onNavigateToCardDetail = { id -> navController.navigate("card_detail/$id") },
+                            onNavigateToCreateMyCard = { navController.navigate("add_card?myCard=true") },
                             onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") },
+                            onNavigateToContactDetail = { id -> navController.navigate("contact_detail/$id") },
                             onNavigateToAccounts = { navController.navigate("accounts") },
-                            onNavigateToBusinessPasses = { navController.navigate("business_passes") },
-                            onNavigateToContacts = { navController.navigate("contacts") }
+                            onNavigateToEnrollment = { navController.navigate("enrollment") },
+                            onNavigateToBusinessDashboard = { navController.navigate("business_dashboard") }
                         )
                     }
+                    composable("card_wallet") { homeScreen("cards") }
 
                     composable(
                         "add_card?myCard={myCard}",
@@ -337,18 +342,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable("contacts") {
-                        ContactsScreen(
-                            viewModel = receivedCardViewModel,
-                            personalCardViewModel = cardViewModel,
-                            onNavigateBack = { navController.popBackStack() },
-                            onNavigateToDetail = { id -> navController.navigate("contact_detail/$id") },
-                            onNavigateToScanCard = { navController.navigate("scan_card") },
-                            onNavigateToCreateMyCard = { navController.navigate("add_card?myCard=true") },
-                            onNavigateToEditCard = { id -> navController.navigate("edit_card/$id") },
-                            onNavigateToCardDetail = { id -> navController.navigate("card_detail/$id") }
-                        )
-                    }
+                    composable("contacts") { homeScreen("nexus") }
 
                     composable("contact_detail/{contactId}") { backStackEntry ->
                         val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
@@ -376,13 +370,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    composable("business_passes") {
-                        BusinessPassListScreen(
-                            viewModel = businessViewModel,
-                            onNavigateBack = { navController.popBackStack() },
-                            onNavigateToEnrollment = { navController.navigate("enrollment") }
-                        )
-                    }
+                    composable("business_passes") { homeScreen("passes") }
 
                     composable("enrollment") {
                         EnrollmentScreen(
@@ -471,13 +459,6 @@ class MainActivity : ComponentActivity() {
                             authViewModel = authViewModel,
                             onNavigateBack = { navController.popBackStack() },
                             onNavigateToAdmin = { navController.navigate("admin_dashboard") }
-                        )
-                    }
-
-                    composable("share_card") {
-                        com.kryptoxotis.nexus.presentation.cards.ShareCardScreen(
-                            viewModel = cardViewModel,
-                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
 

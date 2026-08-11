@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -50,6 +51,9 @@ const val CARD_ASPECT_RATIO = 1.586f
 
 /** Fixed coin diameter from the prototype. */
 val COIN_SIZE = 140.dp
+
+/** Contact ("their Nexus") cards render thinner than full cards. */
+val CONTACT_CARD_HEIGHT = 118.dp
 
 private val CardBorderWidth = 2.5.dp
 private val DarkCardBackground = Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFF111111)))
@@ -111,6 +115,7 @@ fun CardPreview(
     tag: String? = null,
     glow: Boolean = false,
     placeholders: Boolean = false,
+    compact: Boolean = false,
     onQrClick: (() -> Unit)? = null
 ) {
     val style = remember(storedColor) { resolveCardStyle(storedColor) }
@@ -176,7 +181,10 @@ fun CardPreview(
             glow = glow,
             modifier = modifier
                 .fillMaxWidth()
-                .aspectRatio(CARD_ASPECT_RATIO)
+                .then(
+                    if (compact) Modifier.height(CONTACT_CARD_HEIGHT)
+                    else Modifier.aspectRatio(CARD_ASPECT_RATIO)
+                )
                 .semantics(mergeDescendants = true) { contentDescription = contentDesc }
         ) {
             if (imageUri != null) ImageOverlay(imageUri)
@@ -206,7 +214,7 @@ fun CardPreview(
                 }
                 Row(verticalAlignment = Alignment.Bottom) {
                     Column(modifier = Modifier.weight(1f)) {
-                        CardTitleText(displayTitle, style, fontSize = 20)
+                        CardTitleText(displayTitle, style, fontSize = if (compact) 16 else 20)
                         if (displaySubtitle.isNotBlank()) {
                             Text(
                                 text = displaySubtitle,

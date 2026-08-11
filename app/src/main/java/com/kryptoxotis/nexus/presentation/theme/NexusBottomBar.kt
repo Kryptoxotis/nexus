@@ -5,22 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Nfc
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.Badge
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,20 +18,20 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Tab identifiers matched against the current nav route. */
+/** Routes the shell needs to know about. */
 object NexusTabs {
-    const val WALLET = "card_wallet"
-    const val CONTACTS = "contacts"
-    const val PASSES = "business_passes"
+    const val HOME_CARDS = "card_wallet"
+    const val HOME_NEXUS = "contacts"
+    const val HOME_PASSES = "business_passes"
     const val ACCOUNT = "accounts"
-    const val SHARE = "share_card"
+    const val SCAN = "scan_card"
 }
 
-/** Navigation handles the bottom bar needs; provided by MainActivity around the NavHost. */
+/** Navigation handles for the shell; provided by MainActivity around the NavHost. */
 data class NexusNavActions(
     val currentRoute: String?,
     val navigate: (String) -> Unit
@@ -54,109 +43,50 @@ private val BarBackground = Color(0xFF0D0D0D)
 private val BarBorder = Color(0xFF191919)
 
 /**
- * Four destinations plus the raised NFC share action in the center:
- * Wallet · Contacts · [share] · Passes · Account. Admin is NOT a tab —
- * it lives as a row inside the Account screen.
+ * The bottom bar is NOT tabs — section switching happens in the home screen's
+ * segmented switcher. This is a single raised Scan action that opens the QR scanner.
  */
 @Composable
 fun NexusBottomBar(nav: NexusNavActions) {
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BarBorder)
-                .padding(top = 1.dp)
-                .background(BarBackground)
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            NexusBarItem(
-                label = "Wallet",
-                filled = Icons.Filled.CreditCard,
-                outlined = Icons.Outlined.CreditCard,
-                selected = nav.currentRoute == NexusTabs.WALLET,
-                onClick = { nav.navigate(NexusTabs.WALLET) },
-                modifier = Modifier.weight(1f)
-            )
-            NexusBarItem(
-                label = "Contacts",
-                filled = Icons.Filled.People,
-                outlined = Icons.Outlined.People,
-                selected = nav.currentRoute == NexusTabs.CONTACTS,
-                onClick = { nav.navigate(NexusTabs.CONTACTS) },
-                modifier = Modifier.weight(1f)
-            )
-            // Center slot reserved for the raised share button
-            Box(modifier = Modifier.weight(1f))
-            NexusBarItem(
-                label = "Passes",
-                filled = Icons.Filled.Badge,
-                outlined = Icons.Outlined.Badge,
-                selected = nav.currentRoute == NexusTabs.PASSES,
-                onClick = { nav.navigate(NexusTabs.PASSES) },
-                modifier = Modifier.weight(1f)
-            )
-            NexusBarItem(
-                label = "Account",
-                filled = Icons.Filled.AccountCircle,
-                outlined = Icons.Outlined.AccountCircle,
-                selected = nav.currentRoute == NexusTabs.ACCOUNT,
-                onClick = { nav.navigate(NexusTabs.ACCOUNT) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        // Raised NFC share action — sits above the bar
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-24).dp)
-                .size(58.dp)
-                .neuCircle(elevation = 8.dp, surfaceColor = NexusTeal)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { nav.navigate(NexusTabs.SHARE) },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Filled.Nfc,
-                contentDescription = "Tap to share",
-                tint = Color.White,
-                modifier = Modifier.size(26.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun NexusBarItem(
-    label: String,
-    filled: ImageVector,
-    outlined: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
     Column(
-        modifier = modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(BarBorder)
+            .padding(top = 1.dp)
+            .background(BarBackground)
+            .padding(start = 24.dp, end = 24.dp, top = 14.dp, bottom = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            if (selected) filled else outlined,
-            contentDescription = label,
-            tint = if (selected) NexusTeal else NexusTextTertiary,
-            modifier = Modifier.size(24.dp)
-        )
+        // 32dp slot; the 58dp circle bottom-aligns so it overhangs 26dp above the bar
+        Box(
+            modifier = Modifier.size(width = 58.dp, height = 32.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(58.dp)
+                    .neuInset(cornerRadius = 29.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { nav.navigate(NexusTabs.SCAN) },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.QrCodeScanner,
+                    contentDescription = "Scan a card",
+                    tint = NexusTeal,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+        }
         Text(
-            text = label,
+            text = "SCAN A CARD",
             fontSize = 10.sp,
-            color = if (selected) NexusTeal else NexusTextTertiary
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 1.2.sp,
+            color = NexusTextTertiary,
+            modifier = Modifier.padding(top = 6.dp)
         )
     }
 }
