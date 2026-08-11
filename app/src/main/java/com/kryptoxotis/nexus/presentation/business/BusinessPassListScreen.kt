@@ -14,6 +14,7 @@ import com.kryptoxotis.nexus.domain.model.BusinessPass
 import com.kryptoxotis.nexus.domain.model.PassStatus
 import com.kryptoxotis.nexus.presentation.cards.CardPreview
 import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusEmptyState
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,25 +38,13 @@ fun BusinessPassListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.Badge,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No business passes",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Text(
-                        text = "Tap + to enroll in an organization",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+                NexusEmptyState(
+                    icon = Icons.Default.Badge,
+                    title = "No passes yet",
+                    body = "Enroll in an organization to get your first pass.",
+                    actionLabel = "Enroll",
+                    onAction = onNavigateToEnrollment
+                )
             }
         } else {
             LazyColumn(

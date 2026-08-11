@@ -27,6 +27,7 @@ import com.kryptoxotis.nexus.data.local.ReceivedCardEntity
 import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusEmptyState
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
@@ -403,18 +404,13 @@ fun ContactsScreen(
 
             if (contacts.isEmpty()) {
                 item(key = "contacts_empty") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No contacts yet. Scan a card to add one.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
+                    NexusEmptyState(
+                        icon = Icons.Default.People,
+                        title = "No contacts yet",
+                        body = "Cards people share with you land here.",
+                        actionLabel = "Scan a card",
+                        onAction = onNavigateToScanCard
+                    )
                 }
             } else {
                 items(contacts, key = { it.id }) { contact ->

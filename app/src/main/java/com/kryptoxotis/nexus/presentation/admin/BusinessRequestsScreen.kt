@@ -14,6 +14,7 @@ import com.kryptoxotis.nexus.data.remote.dto.BusinessRequestDto
 import androidx.compose.ui.graphics.Color
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusBackground
+import com.kryptoxotis.nexus.presentation.theme.NexusEmptyState
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
@@ -52,20 +53,11 @@ fun BusinessRequestsScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No pending requests",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+                NexusEmptyState(
+                    icon = Icons.Default.CheckCircle,
+                    title = "No pending requests",
+                    body = "Business requests you need to review show up here."
+                )
             }
         } else {
             LazyColumn(

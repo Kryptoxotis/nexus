@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.kryptoxotis.nexus.domain.model.BusinessPass
 import com.kryptoxotis.nexus.domain.model.PassStatus
 import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusEmptyState
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,25 +38,11 @@ fun MemberListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.PeopleOutline,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No members yet",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Text(
-                        text = "Members will appear here when they enroll",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+                NexusEmptyState(
+                    icon = Icons.Default.PeopleOutline,
+                    title = "No members yet",
+                    body = "Members appear here when they enroll."
+                )
             }
         } else {
             LazyColumn(
