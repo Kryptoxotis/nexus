@@ -909,14 +909,14 @@ private fun FileDropTarget(
                 text = fileName ?: "Choose a file",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFFEEEEEE),
+                color = com.kryptoxotis.nexus.presentation.theme.NexusTextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = if (fileName != null) formatFileSize(fileSize) else "Tap to browse — any file type",
                 fontSize = 12.sp,
-                color = Color(0xFF8A8A8A)
+                color = com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
             )
         }
         if (fileName != null) {
@@ -952,7 +952,7 @@ private fun NeuInput(
     val hasAsterisk = "*" in label
     val cleanLabel = label.replace(" *", "").replace("*", "").trim()
     val labelColor by animateColorAsState(
-        if (isFocused) Color(0xFF037A68) else Color(0xFF666666), label = "lc"
+        if (isFocused) Color(0xFF037A68) else com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary, label = "lc"
     )
     val labelSize by animateFloatAsState(if (isActive) 11f else 14f, label = "ls")
     val shape = RoundedCornerShape(16.dp)
@@ -972,7 +972,7 @@ private fun NeuInput(
             )
             .onFocusChanged { isFocused = it.isFocused }
             .padding(horizontal = 16.dp, vertical = 14.dp),
-        textStyle = TextStyle(color = Color(0xFFD4D4D4), fontSize = 15.sp),
+        textStyle = TextStyle(color = com.kryptoxotis.nexus.presentation.theme.NexusControlText, fontSize = 15.sp),
         keyboardOptions = keyboardOptions,
         cursorBrush = SolidColor(Color(0xFF037A68)),
         decorationBox = { innerTextField ->
@@ -1010,7 +1010,7 @@ private fun CardTypeOption(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF0C0C0C)),
+                    .background(com.kryptoxotis.nexus.presentation.theme.NexusDeep),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

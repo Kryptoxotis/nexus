@@ -27,6 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
+import com.kryptoxotis.nexus.presentation.theme.NexusBorder
+import com.kryptoxotis.nexus.presentation.theme.NexusControlText
+import com.kryptoxotis.nexus.presentation.theme.NexusMutedText
+import com.kryptoxotis.nexus.presentation.theme.NexusPillSurface
+import com.kryptoxotis.nexus.presentation.theme.NexusRaised
 import com.kryptoxotis.nexus.presentation.theme.NexusTeal
 import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
 import com.kryptoxotis.nexus.presentation.theme.neuInset
@@ -409,7 +414,7 @@ private fun SettingsChoiceRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .neuRaised(cornerRadius = 14.dp, surfaceColor = Color(0xFF141414))
+            .neuRaised(cornerRadius = 14.dp, surfaceColor = NexusRaised)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -418,7 +423,7 @@ private fun SettingsChoiceRow(
         Text(
             text = label,
             fontSize = 14.sp,
-            color = Color(0xFFD0D0D0),
+            color = NexusControlText,
             modifier = Modifier.weight(1f)
         )
         Row(
@@ -433,14 +438,14 @@ private fun SettingsChoiceRow(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) Color(0xFF1E1E1E) else Color.Transparent)
+                        .background(if (isSelected) NexusPillSurface else Color.Transparent)
                         .clickable { onSelect(optionValue) }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = optionLabel,
                         fontSize = 12.sp,
-                        color = if (isSelected) NexusTeal else Color(0xFF6F6F6F)
+                        color = if (isSelected) NexusTeal else NexusMutedText
                     )
                 }
             }
@@ -460,7 +465,7 @@ private fun SettingsToggleRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .neuRaised(cornerRadius = 14.dp, surfaceColor = Color(0xFF141414))
+            .neuRaised(cornerRadius = 14.dp, surfaceColor = NexusRaised)
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -469,7 +474,7 @@ private fun SettingsToggleRow(
         Text(
             text = label,
             fontSize = 14.sp,
-            color = Color(0xFFD0D0D0),
+            color = NexusControlText,
             modifier = Modifier.weight(1f)
         )
         Switch(
@@ -478,9 +483,9 @@ private fun SettingsToggleRow(
             colors = SwitchDefaults.colors(
                 checkedTrackColor = NexusTeal,
                 checkedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFF2A2A2A),
-                uncheckedThumbColor = Color(0xFF6F6F6F),
-                uncheckedBorderColor = Color(0xFF3A3A3A)
+                uncheckedTrackColor = NexusPillSurface,
+                uncheckedThumbColor = NexusMutedText,
+                uncheckedBorderColor = NexusBorder
             )
         )
     }
@@ -497,7 +502,7 @@ private fun SettingsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .neuRaised(cornerRadius = 14.dp, surfaceColor = Color(0xFF141414))
+            .neuRaised(cornerRadius = 14.dp, surfaceColor = NexusRaised)
             .clickable { /* placeholder — settings screens land in a later pass */ }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -512,7 +517,7 @@ private fun SettingsRow(
         Text(
             text = label,
             fontSize = 14.sp,
-            color = Color(0xFFD0D0D0),
+            color = NexusControlText,
             modifier = Modifier.weight(1f)
         )
         if (value != null) {

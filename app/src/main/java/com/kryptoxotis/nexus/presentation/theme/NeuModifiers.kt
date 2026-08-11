@@ -33,7 +33,7 @@ fun Modifier.neuRaised(
                 val oy = e * 0.6f * frac
                 val blur = e * 1.2f * frac
                 drawRoundRect(
-                    color = Color.Black.copy(alpha = 0.03f),
+                    color = NexusShadow.copy(alpha = 0.03f),
                     topLeft = Offset(ox, oy),
                     size = Size(size.width + blur * 0.3f, size.height + blur * 0.3f),
                     cornerRadius = CornerRadius(cr)
@@ -46,7 +46,7 @@ fun Modifier.neuRaised(
                 val ox = e * 0.35f * frac
                 val oy = e * 0.4f * frac
                 drawRoundRect(
-                    color = Color(0xFF2A2A2A).copy(alpha = 0.04f),
+                    color = NexusHighlight.copy(alpha = 0.04f),
                     topLeft = Offset(-ox, -oy),
                     size = Size(size.width + ox * 0.5f, size.height + oy * 0.5f),
                     cornerRadius = CornerRadius(cr)
@@ -70,8 +70,8 @@ fun Modifier.neuRaised(
             drawRoundRect(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.055f),
-                        Color.White.copy(alpha = 0.01f),
+                        NexusHighlight.copy(alpha = 0.055f),
+                        NexusHighlight.copy(alpha = 0.01f),
                         Color.Transparent,
                         Color.Transparent
                     ),
@@ -101,7 +101,7 @@ fun Modifier.neuInset(
                 val t = i / 5f
                 val offset = 2.5f * d * t
                 drawRoundRect(
-                    color = Color.Black.copy(alpha = 0.06f * (1f - t)),
+                    color = NexusShadow.copy(alpha = 0.06f * (1f - t)),
                     topLeft = Offset(offset, offset),
                     size = Size(size.width - offset * 0.5f, size.height - offset * 0.5f),
                     cornerRadius = CornerRadius(cr)
@@ -112,7 +112,7 @@ fun Modifier.neuInset(
                 val t = i / 3f
                 val offset = 1.5f * d * t
                 drawRoundRect(
-                    color = Color(0xFF2A2A2A).copy(alpha = 0.03f * (1f - t)),
+                    color = NexusHighlight.copy(alpha = 0.03f * (1f - t)),
                     topLeft = Offset(-offset, -offset),
                     size = Size(size.width + offset * 0.3f, size.height + offset * 0.3f),
                     cornerRadius = CornerRadius(cr)
@@ -122,9 +122,9 @@ fun Modifier.neuInset(
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.06f),
+                        NexusShadow.copy(alpha = 0.06f),
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.01f)
+                        NexusHighlight.copy(alpha = 0.01f)
                     )
                 ),
                 cornerRadius = CornerRadius(cr)
@@ -171,7 +171,7 @@ fun Modifier.neuCircle(
                 val t = i / 8f
                 val off = e * 0.5f * t
                 drawCircle(
-                    color = Color.Black.copy(alpha = 0.03f),
+                    color = NexusShadow.copy(alpha = 0.03f),
                     radius = r + e * 0.15f * t,
                     center = center + Offset(off, off)
                 )
@@ -181,7 +181,7 @@ fun Modifier.neuCircle(
                 val t = i / 6f
                 val off = e * 0.35f * t
                 drawCircle(
-                    color = Color(0xFF2A2A2A).copy(alpha = 0.04f),
+                    color = NexusHighlight.copy(alpha = 0.04f),
                     radius = r + e * 0.1f * t,
                     center = center + Offset(-off, -off)
                 )
@@ -202,7 +202,7 @@ fun Modifier.neuCircle(
             drawCircle(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.045f),
+                        NexusHighlight.copy(alpha = 0.045f),
                         Color.Transparent
                     ),
                     start = center + Offset(-r, -r),

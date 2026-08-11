@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -71,10 +72,16 @@ import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
 import com.kryptoxotis.nexus.presentation.business.BusinessViewModel
 import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.presentation.theme.Dimens
+import com.kryptoxotis.nexus.presentation.theme.NexusAppearance
 import com.kryptoxotis.nexus.presentation.theme.NexusEmptyState
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusSurface
+import com.kryptoxotis.nexus.presentation.theme.NexusControlText
+import com.kryptoxotis.nexus.presentation.theme.NexusDotInactive
+import com.kryptoxotis.nexus.presentation.theme.NexusMutedText
+import com.kryptoxotis.nexus.presentation.theme.NexusPillSurface
 import com.kryptoxotis.nexus.presentation.theme.NexusTeal
+import com.kryptoxotis.nexus.presentation.theme.NexusTextTertiary
 import com.kryptoxotis.nexus.presentation.theme.NexusTextPrimary
 import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
 import com.kryptoxotis.nexus.presentation.theme.neuInset
@@ -158,6 +165,11 @@ fun HomeScreen(
     ).toVCard()
 
     fun startEmulating(card: PersonalCard, isNexus: Boolean) {
+        if (!NexusAppearance.nfcSharing) {
+            // NFC sharing is off — QR becomes the share path
+            qrCard = card
+            return
+        }
         if (isNexus && myCardData != null) {
             cardViewModel.activateCardWithOverride(
                 card.id, isUri = false, nfcContent = filteredNexusVcard(myCardData), context = context
@@ -318,7 +330,7 @@ fun HomeScreen(
                     icon = Icons.Default.Edit,
                     label = "Edit card",
                     tint = NexusTeal,
-                    labelColor = Color(0xFFE0E0E0)
+                    labelColor = NexusControlText
                 ) {
                     editSheetCard = null
                     onNavigateToEditCard(editCard.id)
@@ -394,7 +406,7 @@ private fun HomePagerDots(count: Int, current: Int, onDot: (Int) -> Unit) {
                     .padding(horizontal = 4.dp)
                     .size(width = if (i == current) 18.dp else 7.dp, height = 7.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (i == current) NexusTeal else Color(0xFF333333))
+                    .background(if (i == current) NexusTeal else NexusDotInactive)
                     .clickable { onDot(i) }
             )
         }
@@ -431,7 +443,7 @@ private fun CardsTabContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 14.dp, vertical = 12.dp),
-                    textStyle = TextStyle(color = Color(0xFFD4D4D4), fontSize = 13.sp),
+                    textStyle = TextStyle(color = NexusControlText, fontSize = 13.sp),
                     singleLine = true,
                     cursorBrush = SolidColor(NexusTeal),
                     decorationBox = { innerTextField ->
@@ -442,12 +454,12 @@ private fun CardsTabContent(
                             Icon(
                                 Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color(0xFF4A4A4A),
+                                tint = NexusMutedText,
                                 modifier = Modifier.size(18.dp)
                             )
                             Box(modifier = Modifier.weight(1f)) {
                                 if (searchQuery.isEmpty()) {
-                                    Text("Search cards", color = Color(0xFF7D7D7D), fontSize = 13.sp)
+                                    Text("Search cards", color = NexusTextTertiary, fontSize = 13.sp)
                                 }
                                 innerTextField()
                             }
@@ -496,7 +508,7 @@ private fun CardsTabContent(
                     text = "${walletCards.size} cards",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF444444)
+                    color = NexusMutedText
                 )
             }
         }
@@ -509,6 +521,15 @@ private fun CardsTabContent(
                     body = "Create a card to share a link, file or data over NFC.",
                     actionLabel = "Create a card",
                     onAction = onCreate
+                )
+            }
+        } else if (NexusAppearance.deckView) {
+            item(key = "deck") {
+                CardDeck(
+                    cards = walletCards,
+                    onTapFront = onTapCard,
+                    onHoldFront = onHoldCard,
+                    onQrFront = onQrCard
                 )
             }
         } else {
@@ -531,12 +552,97 @@ private fun CardsTabContent(
                 Text(
                     text = "Tap a card to share · hold to edit",
                     fontSize = 11.5.sp,
-                    color = Color(0xFF5A5A5A),
+                    color = NexusMutedText,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
         }
+    }
+}
+
+/**
+ * Deck view: cards stacked with the front card on top. Tap a back card (or
+ * its dot) to bring it forward; tap the front card to share it.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CardDeck(
+    cards: List<PersonalCard>,
+    onTapFront: (PersonalCard) -> Unit,
+    onHoldFront: (PersonalCard) -> Unit,
+    onQrFront: (PersonalCard) -> Unit
+) {
+    var frontState by remember(cards.map { it.id }) { mutableStateOf(0) }
+    val n = cards.size
+    val front = frontState.coerceIn(0, n - 1)
+    val stackStep = 26
+
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height((230 + (n - 1).coerceAtMost(4) * stackStep).dp)
+        ) {
+            // Draw back cards first, the front card last (on top)
+            val order = (0 until n).filter { it != front } + front
+            order.forEach { cardIdx ->
+                val card = cards[cardIdx]
+                val isFront = cardIdx == front
+                // Depth 0 = front; back cards peek above the front card
+                val depth = if (isFront) 0 else (
+                    order.indexOf(cardIdx).let { drawPos -> (n - 1 - drawPos).coerceAtMost(4) }
+                )
+                CardPreview(
+                    title = card.title,
+                    subtitle = "",
+                    cardShape = "card",
+                    storedColor = card.color,
+                    imageUri = card.imageUrl,
+                    tag = card.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
+                    glow = isFront,
+                    onQrClick = if (isFront) ({ onQrFront(card) }) else null,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = (((n - 1).coerceAtMost(4) - depth) * stackStep).dp)
+                        .graphicsLayer {
+                            val s = 1f - depth * 0.04f
+                            scaleX = s
+                            scaleY = s
+                            alpha = 1f - depth * 0.12f
+                        }
+                        .combinedClickable(
+                            onClick = { if (isFront) onTapFront(card) else frontState = cardIdx },
+                            onLongClick = { if (isFront) onHoldFront(card) }
+                        )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(Dimens.gapSmall))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(n) { i ->
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(width = if (i == front) 18.dp else 7.dp, height = 7.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (i == front) NexusTeal else NexusDotInactive)
+                        .clickable { frontState = i }
+                )
+            }
+        }
+        Text(
+            text = "Tap a dot to bring a card forward",
+            fontSize = 11.5.sp,
+            color = NexusMutedText,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
 
@@ -731,7 +837,7 @@ private fun SheetActionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF1E1E1E))
+            .background(NexusPillSurface)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,

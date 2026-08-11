@@ -2,11 +2,11 @@ package com.kryptoxotis.nexus.presentation.profile
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.kryptoxotis.nexus.presentation.theme.NexusAppearance
 
 /**
- * Local UI preferences. Stored on-device only — none of these sync.
- * Appearance and card view are recorded now and take visual effect
- * when their features land (light theme, deck view).
+ * Local UI preferences, persisted on-device and mirrored into
+ * [NexusAppearance] snapshot state so the UI reacts instantly.
  */
 object SettingsStore {
     private const val PREFS = "nexus_ui_settings"
@@ -19,27 +19,42 @@ object SettingsStore {
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun appearance(context: Context): String =
-        prefs(context).getString("appearance", APPEARANCE_DARK) ?: APPEARANCE_DARK
+    /** Load persisted values into live state. Call once from MainActivity. */
+    fun init(context: Context) {
+        val p = prefs(context)
+        NexusAppearance.dark = (p.getString("appearance", APPEARANCE_DARK) ?: APPEARANCE_DARK) == APPEARANCE_DARK
+        NexusAppearance.deckView = (p.getString("card_view", CARD_VIEW_LIST) ?: CARD_VIEW_LIST) == CARD_VIEW_DECK
+        NexusAppearance.nfcSharing = p.getBoolean("nfc_sharing", true)
+        NexusAppearance.notifications = p.getBoolean("notifications", true)
+    }
 
-    fun setAppearance(context: Context, value: String) =
+    fun appearance(context: Context): String =
+        if (NexusAppearance.dark) APPEARANCE_DARK else APPEARANCE_LIGHT
+
+    fun setAppearance(context: Context, value: String) {
+        NexusAppearance.dark = value == APPEARANCE_DARK
         prefs(context).edit().putString("appearance", value).apply()
+    }
 
     fun cardView(context: Context): String =
-        prefs(context).getString("card_view", CARD_VIEW_LIST) ?: CARD_VIEW_LIST
+        if (NexusAppearance.deckView) CARD_VIEW_DECK else CARD_VIEW_LIST
 
-    fun setCardView(context: Context, value: String) =
+    fun setCardView(context: Context, value: String) {
+        NexusAppearance.deckView = value == CARD_VIEW_DECK
         prefs(context).edit().putString("card_view", value).apply()
+    }
 
-    fun nfcSharing(context: Context): Boolean =
-        prefs(context).getBoolean("nfc_sharing", true)
+    fun nfcSharing(context: Context): Boolean = NexusAppearance.nfcSharing
 
-    fun setNfcSharing(context: Context, value: Boolean) =
+    fun setNfcSharing(context: Context, value: Boolean) {
+        NexusAppearance.nfcSharing = value
         prefs(context).edit().putBoolean("nfc_sharing", value).apply()
+    }
 
-    fun notifications(context: Context): Boolean =
-        prefs(context).getBoolean("notifications", true)
+    fun notifications(context: Context): Boolean = NexusAppearance.notifications
 
-    fun setNotifications(context: Context, value: Boolean) =
+    fun setNotifications(context: Context, value: Boolean) {
+        NexusAppearance.notifications = value
         prefs(context).edit().putBoolean("notifications", value).apply()
+    }
 }

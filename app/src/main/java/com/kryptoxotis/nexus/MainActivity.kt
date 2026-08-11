@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
 
         checkNfcSupport()
         initSupabase()
+        com.kryptoxotis.nexus.presentation.profile.SettingsStore.init(applicationContext)
 
         val database = NexusDatabase.getDatabase(applicationContext)
         cardRepository = PersonalCardRepository(database.personalCardDao())

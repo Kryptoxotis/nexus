@@ -24,14 +24,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kryptoxotis.nexus.presentation.theme.NexusControlText
+import com.kryptoxotis.nexus.presentation.theme.NexusPillSurface
+import com.kryptoxotis.nexus.presentation.theme.NexusRaised
 import com.kryptoxotis.nexus.presentation.theme.NexusTextPrimary
 import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
 import com.kryptoxotis.nexus.presentation.theme.neuInset
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
-private val RowSurface = Color(0xFF141414)
-private val PillSurface = Color(0xFF1F1F1F)
-private val PillText = Color(0xFFB0B0B0)
+private val RowSurface get() = NexusRaised
+private val PillSurface get() = NexusPillSurface
+private val PillText get() = NexusControlText
 
 /**
  * Small filled pill for role/status. Body pills stay neutral; pass [color]

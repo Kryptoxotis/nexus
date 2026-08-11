@@ -43,7 +43,7 @@ fun NexusBottomBar(nav: NexusNavActions) {
         modifier = Modifier
             .padding(bottom = 18.dp)
             .size(56.dp)
-            .neuCircle(elevation = 8.dp, surfaceColor = Color(0xFF141414), neonColor = NexusTeal)
+            .neuCircle(elevation = 8.dp, surfaceColor = NexusRaised, neonColor = NexusTeal)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
