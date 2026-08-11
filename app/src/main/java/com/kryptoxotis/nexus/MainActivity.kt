@@ -213,9 +213,10 @@ class MainActivity : ComponentActivity() {
                                 }
                                 when (state) {
                                     is AuthState.Authenticated -> {
+                                        // Admins land on home like everyone else and reach
+                                        // the dashboard through Account
                                         val dest = when (state.accountType) {
                                             AccountType.BUSINESS -> "business_dashboard"
-                                            AccountType.ADMIN -> "admin_dashboard"
                                             else -> "card_wallet"
                                         }
                                         navController.navigate(dest) {

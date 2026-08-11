@@ -123,6 +123,8 @@ fun CardPreview(
     glow: Boolean = false,
     placeholders: Boolean = false,
     variant: CardVariant? = null,
+    topRightIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onTopRightClick: (() -> Unit)? = null,
     onQrClick: (() -> Unit)? = null
 ) {
     val resolvedVariant = variant ?: if (cardShape == "coin") CardVariant.COIN else CardVariant.FULL
@@ -215,10 +217,15 @@ fun CardPreview(
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     Icon(
-                        Icons.Default.Nfc,
-                        contentDescription = null,
+                        topRightIcon ?: Icons.Default.Nfc,
+                        contentDescription = if (onTopRightClick != null) "Card action" else null,
                         tint = style.nfcColor,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier
+                            .size(22.dp)
+                            .then(
+                                if (onTopRightClick != null) Modifier.clickable(onClick = onTopRightClick)
+                                else Modifier
+                            )
                     )
                 }
                 Row(verticalAlignment = Alignment.Bottom) {

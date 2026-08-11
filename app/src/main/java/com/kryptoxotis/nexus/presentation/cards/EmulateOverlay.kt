@@ -93,42 +93,23 @@ fun EmulateOverlay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
-            Box {
-                CardPreview(
-                    title = title,
-                    subtitle = subtitle,
-                    cardShape = "card",
-                    storedColor = storedColor,
-                    tag = "Sharing now",
-                    glow = true,
-                    onQrClick = onShowQr,
-                    modifier = Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { /* consume — only outside taps dismiss */ }
-                )
-                if (isNexus) {
-                    // Small quick-edit control riding the card's top-right corner
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 10.dp, y = (-10).dp)
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF161616))
-                            .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
-                            .clickable(onClick = onQuickEdit),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Tune,
-                            contentDescription = "Quick edit what's shared",
-                            tint = Color(0xFFE0E0E0),
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
-            }
+            // On My Nexus the card's own top-right glyph IS the quick-edit control —
+            // no separate floating button
+            CardPreview(
+                title = title,
+                subtitle = subtitle,
+                cardShape = "card",
+                storedColor = storedColor,
+                tag = "Sharing now",
+                glow = true,
+                topRightIcon = if (isNexus) Icons.Default.Tune else null,
+                onTopRightClick = if (isNexus) onQuickEdit else null,
+                onQrClick = onShowQr,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* consume — only outside taps dismiss */ }
+            )
 
             EmulateRings(color = bright)
         }

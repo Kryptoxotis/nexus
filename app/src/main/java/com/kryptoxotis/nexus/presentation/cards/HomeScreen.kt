@@ -196,11 +196,11 @@ fun HomeScreen(
                 ),
                 bottomBar = true
             ) {
-                HomeTabSwitcher(
-                    tab = tabs[pagerState.currentPage],
-                    onTab = { t ->
-                        scope.launch { pagerState.animateScrollToPage(tabs.indexOf(t)) }
-                    }
+                // Swiping is the navigation — just dots to stay oriented
+                HomePagerDots(
+                    count = tabs.size,
+                    current = pagerState.currentPage,
+                    onDot = { i -> scope.launch { pagerState.animateScrollToPage(i) } }
                 )
 
                 androidx.compose.foundation.pager.HorizontalPager(
@@ -380,55 +380,24 @@ fun HomeScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeTabSwitcher(tab: String, onTab: (String) -> Unit) {
+private fun HomePagerDots(count: Int, current: Int, onDot: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Dimens.screenPadding)
-            .padding(bottom = Dimens.gap)
-            .neuInset(cornerRadius = 16.dp)
-            .padding(5.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        HomeTabSegment("Cards", Icons.Default.Link, tab == HomeTab.CARDS, Modifier.weight(1f)) { onTab(HomeTab.CARDS) }
-        HomeTabSegment("Nexus", Icons.Default.Badge, tab == HomeTab.NEXUS, Modifier.weight(1f)) { onTab(HomeTab.NEXUS) }
-        HomeTabSegment("Passes", Icons.Default.ConfirmationNumber, tab == HomeTab.PASSES, Modifier.weight(1f)) { onTab(HomeTab.PASSES) }
-    }
-}
-
-@Composable
-private fun HomeTabSegment(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .then(
-                if (selected) Modifier.neuRaised(cornerRadius = 12.dp, elevation = 6.dp, surfaceColor = Color(0xFF1E1E1E))
-                else Modifier
-            )
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
+            .padding(bottom = Dimens.gapSmall),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = if (selected) NexusTextPrimary else Color(0xFF6F6F6F),
-            modifier = Modifier.size(17.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (selected) NexusTextPrimary else Color(0xFF6F6F6F)
-        )
+        repeat(count) { i ->
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(width = if (i == current) 18.dp else 7.dp, height = 7.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (i == current) NexusTeal else Color(0xFF333333))
+                    .clickable { onDot(i) }
+            )
+        }
     }
 }
 

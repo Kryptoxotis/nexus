@@ -17,6 +17,7 @@ import com.kryptoxotis.nexus.data.remote.AuthManager
 import com.kryptoxotis.nexus.domain.model.AccountType
 import com.kryptoxotis.nexus.presentation.auth.AuthState
 import com.kryptoxotis.nexus.presentation.auth.AuthViewModel
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -26,7 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
+import com.kryptoxotis.nexus.presentation.theme.NexusTeal
 import com.kryptoxotis.nexus.presentation.theme.NexusTextSecondary
+import com.kryptoxotis.nexus.presentation.theme.neuInset
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -203,10 +206,50 @@ fun AccountSwitcherScreen(
                 )
             }
             item(key = "settings_rows") {
+                var appearance by remember { mutableStateOf(SettingsStore.appearance(context)) }
+                var cardView by remember { mutableStateOf(SettingsStore.cardView(context)) }
+                var nfcSharing by remember { mutableStateOf(SettingsStore.nfcSharing(context)) }
+                var notifications by remember { mutableStateOf(SettingsStore.notifications(context)) }
+
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SettingsRow(Icons.Default.Palette, "Appearance", "Dark")
-                    SettingsRow(Icons.Default.Nfc, "NFC & sharing", "On")
-                    SettingsRow(Icons.Default.Notifications, "Notifications", null)
+                    SettingsChoiceRow(
+                        icon = Icons.Default.Palette,
+                        label = "Appearance",
+                        options = listOf("Dark" to SettingsStore.APPEARANCE_DARK, "Light" to SettingsStore.APPEARANCE_LIGHT),
+                        selected = appearance,
+                        onSelect = {
+                            appearance = it
+                            SettingsStore.setAppearance(context, it)
+                        }
+                    )
+                    SettingsChoiceRow(
+                        icon = Icons.Default.Style,
+                        label = "Card view",
+                        options = listOf("List" to SettingsStore.CARD_VIEW_LIST, "Deck" to SettingsStore.CARD_VIEW_DECK),
+                        selected = cardView,
+                        onSelect = {
+                            cardView = it
+                            SettingsStore.setCardView(context, it)
+                        }
+                    )
+                    SettingsToggleRow(
+                        icon = Icons.Default.Nfc,
+                        label = "NFC & sharing",
+                        checked = nfcSharing,
+                        onToggle = {
+                            nfcSharing = it
+                            SettingsStore.setNfcSharing(context, it)
+                        }
+                    )
+                    SettingsToggleRow(
+                        icon = Icons.Default.Notifications,
+                        label = "Notifications",
+                        checked = notifications,
+                        onToggle = {
+                            notifications = it
+                            SettingsStore.setNotifications(context, it)
+                        }
+                    )
                     SettingsRow(Icons.Default.Lock, "Privacy", null)
                     SettingsRow(Icons.Default.HelpOutline, "Help", null)
                 }
@@ -349,6 +392,96 @@ fun AccountSwitcherScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+}
+
+/** Settings row with an inline two-option choice (e.g. Dark / Light). */
+@Composable
+private fun SettingsChoiceRow(
+    icon: ImageVector,
+    label: String,
+    options: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .neuRaised(cornerRadius = 14.dp, surfaceColor = Color(0xFF141414))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = NexusTextSecondary, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = Color(0xFFD0D0D0),
+            modifier = Modifier.weight(1f)
+        )
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .neuInset(cornerRadius = 10.dp)
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            options.forEach { (optionLabel, optionValue) ->
+                val isSelected = optionValue == selected
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) Color(0xFF1E1E1E) else Color.Transparent)
+                        .clickable { onSelect(optionValue) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = optionLabel,
+                        fontSize = 12.sp,
+                        color = if (isSelected) NexusTeal else Color(0xFF6F6F6F)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Settings row with a switch. */
+@Composable
+private fun SettingsToggleRow(
+    icon: ImageVector,
+    label: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .neuRaised(cornerRadius = 14.dp, surfaceColor = Color(0xFF141414))
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = NexusTextSecondary, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = Color(0xFFD0D0D0),
+            modifier = Modifier.weight(1f)
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onToggle,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = NexusTeal,
+                checkedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFF2A2A2A),
+                uncheckedThumbColor = Color(0xFF6F6F6F),
+                uncheckedBorderColor = Color(0xFF3A3A3A)
+            )
         )
     }
 }
