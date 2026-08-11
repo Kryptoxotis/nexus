@@ -475,8 +475,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("share_card") {
-                        // Filled in by the tap-to-share step
-                        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
+                        com.kryptoxotis.nexus.presentation.cards.ShareCardScreen(
+                            viewModel = cardViewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
                     }
 
                     composable("share_link") {

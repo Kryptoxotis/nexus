@@ -475,7 +475,7 @@ private fun CardEditSheet(
 }
 
 @Composable
-private fun CardQrSheet(card: PersonalCard) {
+internal fun CardQrSheet(card: PersonalCard) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
