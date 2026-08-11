@@ -12,6 +12,12 @@
         android:name="android.hardware.nfc.hce"
         android:required="false" />
 
+    <!-- Camera for in-app QR scanning (no-NFC fallback) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

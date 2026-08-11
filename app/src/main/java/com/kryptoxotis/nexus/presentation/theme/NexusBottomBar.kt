@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -51,8 +51,8 @@ fun NexusBottomBar(nav: NexusNavActions) {
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            Icons.Filled.QrCodeScanner,
-            contentDescription = "Scan a card",
+            Icons.Filled.Nfc,
+            contentDescription = "Tap to receive",
             tint = NexusTeal,
             modifier = Modifier.size(26.dp)
         )

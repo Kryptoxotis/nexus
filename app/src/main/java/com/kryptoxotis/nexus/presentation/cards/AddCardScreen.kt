@@ -37,6 +37,8 @@ import com.kryptoxotis.nexus.domain.model.BusinessCardData
 import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.displayBright
+import com.kryptoxotis.nexus.presentation.theme.displayDark
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neuInset
@@ -60,9 +62,10 @@ fun AddCardScreen(
     onNavigateBack: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf<CardType?>(null) }
-    // Network cards are CUSTOM cards carrying a standard WIFI: payload —
-    // the domain layer has no NETWORK type and is off-limits to this pass.
-    var networkMode by remember { mutableStateOf(false) }
+    // Custom cards choose what they carry: free text, wifi credentials,
+    // a phone number, an email, or a location. All are CUSTOM-typed cards
+    // whose content is the matching standard payload (WIFI:/tel:/mailto:/maps).
+    var customMode by remember { mutableStateOf("text") }
     var networkPassword by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
@@ -210,7 +213,7 @@ fun AddCardScreen(
             if (selectedType == null) onNavigateBack()
             else {
                 selectedType = null
-                networkMode = false
+                customMode = "text"
             }
         },
         bottomBar = false
@@ -245,14 +248,14 @@ fun AddCardScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    // Row 2: Custom (wifi, Bluetooth and free text live inside it)
+                    // Row 2: Custom (wifi, phone, email, location and free text live inside it)
                     CardTypeOption(
                         icon = Icons.Default.Notes,
                         title = "Custom",
-                        description = "Wifi, Bluetooth or any text or data you want to send",
+                        description = "Wifi, phone, email, location or any text you want to send",
                         onClick = {
                             selectedType = CardType.CUSTOM
-                            networkMode = false
+                            customMode = "text"
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -479,46 +482,70 @@ fun AddCardScreen(
                         )
                     }
                 } else {
-                    // Custom hosts wifi/Bluetooth/free-text — the point of Custom is you
-                    // choose what it carries
+                    // Custom hosts wifi/phone/email/location/free-text — the point of
+                    // Custom is you choose what it carries
                     if (selectedType == CardType.CUSTOM) {
                         Text(
                             text = "What it carries",
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Row(
+                        val customOptions = listOf(
+                            "text" to "Text",
+                            "wifi" to "Wifi",
+                            "phone" to "Phone",
+                            "email" to "Email",
+                            "location" to "Location"
+                        )
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .then(if (!networkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
-                                    .clickable { networkMode = false }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) { Text("Text", color = MaterialTheme.colorScheme.onSurface) }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .then(if (networkMode) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
-                                    .clickable { networkMode = true }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) { Text("Wifi network", color = MaterialTheme.colorScheme.onSurface) }
+                            customOptions.forEach { (key, label) ->
+                                val selected = customMode == key
+                                Box(
+                                    modifier = Modifier
+                                        .then(if (selected) Modifier.neuInset(cornerRadius = 12.dp) else Modifier.neuRaised(cornerRadius = 12.dp))
+                                        .clickable { customMode = key }
+                                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { Text(label, color = MaterialTheme.colorScheme.onSurface) }
+                            }
                         }
                     }
-                    if (networkMode) {
-                        NeuInput(value = title, onValueChange = { title = it }, label = "Network name (SSID) *")
-                        NeuInput(
-                            value = networkPassword,
-                            onValueChange = { networkPassword = it },
-                            label = "Password",
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                        )
-                    } else {
-                        NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                    when {
+                        selectedType == CardType.CUSTOM && customMode == "wifi" -> {
+                            NeuInput(value = title, onValueChange = { title = it }, label = "Network name (SSID) *")
+                            NeuInput(
+                                value = networkPassword,
+                                onValueChange = { networkPassword = it },
+                                label = "Password",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                            )
+                        }
+                        selectedType == CardType.CUSTOM && customMode == "phone" -> {
+                            NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                            NeuInput(
+                                value = content, onValueChange = { content = it }, label = "Phone number *",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                            )
+                        }
+                        selectedType == CardType.CUSTOM && customMode == "email" -> {
+                            NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                            NeuInput(
+                                value = content, onValueChange = { content = it }, label = "Email address *",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                            )
+                        }
+                        selectedType == CardType.CUSTOM && customMode == "location" -> {
+                            NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                            NeuInput(value = content, onValueChange = { content = it }, label = "Address or place *")
+                        }
+                        else -> {
+                            NeuInput(value = title, onValueChange = { title = it }, label = "Title *")
+                        }
                     }
                 }
 
@@ -539,7 +566,9 @@ fun AddCardScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                } else if (selectedType != CardType.BUSINESS_CARD && !networkMode) {
+                } else if (selectedType != CardType.BUSINESS_CARD &&
+                    (selectedType != CardType.CUSTOM || customMode == "text")
+                ) {
                     // Standard content field for non-FILE, non-BUSINESS_CARD types
                     NeuInput(
                         value = content,
@@ -567,7 +596,10 @@ fun AddCardScreen(
                         bcJobTitle.ifBlank { null },
                         bcCompany.ifBlank { null }
                     ).joinToString(" at ")
-                    networkMode -> "Wifi network"
+                    selectedType == CardType.CUSTOM && customMode == "wifi" -> "Wifi network"
+                    selectedType == CardType.CUSTOM && customMode == "phone" -> "Phone"
+                    selectedType == CardType.CUSTOM && customMode == "email" -> "Email"
+                    selectedType == CardType.CUSTOM && customMode == "location" -> "Location"
                     selectedType == CardType.FILE -> selectedFileName ?: ""
                     else -> content
                 }
@@ -652,11 +684,11 @@ fun AddCardScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .then(
-                                    if (isSelected) Modifier.neonGlow(entry.bright, cornerRadius = 10.dp, elevation = 8.dp)
+                                    if (isSelected) Modifier.neonGlow(entry.displayBright, cornerRadius = 10.dp, elevation = 8.dp)
                                     else Modifier
                                 )
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Brush.linearGradient(listOf(entry.bright, entry.dark)))
+                                .background(Brush.linearGradient(listOf(entry.displayBright, entry.displayDark)))
                                 .then(
                                     if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(10.dp))
                                     else Modifier
@@ -809,9 +841,16 @@ fun AddCardScreen(
                             )
                         } else {
                             val type = selectedType ?: return@Button
-                            // Network cards carry the standard WIFI: payload NFC/QR readers understand
-                            val cardContent = if (networkMode) {
-                                "WIFI:T:WPA;S:${title.trim()};P:${networkPassword};;"
+                            // Custom cards carry the standard payload for their mode —
+                            // WIFI:/tel:/mailto:/maps links that NFC and QR readers understand
+                            val cardContent = if (type == CardType.CUSTOM) {
+                                when (customMode) {
+                                    "wifi" -> "WIFI:T:WPA;S:${title.trim()};P:${networkPassword};;"
+                                    "phone" -> "tel:${content.trim()}"
+                                    "email" -> "mailto:${content.trim()}"
+                                    "location" -> "https://maps.google.com/?q=" + java.net.URLEncoder.encode(content.trim(), "UTF-8")
+                                    else -> content.ifBlank { null }
+                                }
                             } else {
                                 content.ifBlank { null }
                             }

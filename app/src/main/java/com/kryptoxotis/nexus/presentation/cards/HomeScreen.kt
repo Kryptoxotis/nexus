@@ -241,6 +241,7 @@ fun HomeScreen(
                         )
                         else -> CardsTabContent(
                             walletCards = walletCards,
+                            totalCards = cards.count { it.cardType != CardType.BUSINESS_CARD },
                             searchQuery = searchQuery,
                             onSearchChange = { searchQuery = it },
                             onCreate = onNavigateToAddCard,
@@ -260,6 +261,9 @@ fun HomeScreen(
                 title = if (isNexusCard) (myCardData?.name ?: emCard.title) else emCard.title,
                 subtitle = if (isNexusCard) (myCardData?.subtitle() ?: "") else "",
                 storedColor = emCard.color,
+                // Same tag as the card shows at rest — activated and idle look identical
+                tag = if (isNexusCard) "My Nexus"
+                      else emCard.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
                 isNexus = isNexusCard,
                 onDismiss = { stopEmulating() },
                 onShowQr = { qrCard = emCard },
@@ -394,7 +398,7 @@ fun HomeScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Section accents: Cards teal, Nexus purple (the brand favorite), Passes teal
-private val SectionAccents = listOf(NexusTeal, Color(0xFFB388FF), NexusTeal)
+private val SectionAccents get() = listOf(NexusTeal, com.kryptoxotis.nexus.presentation.theme.NexusPurple, NexusTeal)
 
 @Composable
 private fun HomePagerDots(count: Int, current: Int, onDot: (Int) -> Unit) {
@@ -427,6 +431,7 @@ private fun HomePagerDots(count: Int, current: Int, onDot: (Int) -> Unit) {
 @Composable
 private fun CardsTabContent(
     walletCards: List<PersonalCard>,
+    totalCards: Int,
     searchQuery: String,
     onSearchChange: (String) -> Unit,
     onCreate: () -> Unit,
@@ -439,7 +444,8 @@ private fun CardsTabContent(
         contentPadding = PaddingValues(start = Dimens.screenPadding, end = Dimens.screenPadding, bottom = 92.dp),
         verticalArrangement = Arrangement.spacedBy(Dimens.gap)
     ) {
-        item(key = "search") {
+        // Search only earns its place once there are enough cards to lose one
+        if (totalCards > 6) item(key = "search") {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -591,7 +597,8 @@ private fun CardDeck(
                     imageUri = card.imageUrl,
                     tag = card.cardType.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
                     glow = isFront,
-                    topRightIcon = if (isFront) Icons.Default.Edit else null,
+                    // Same edit glyph on every card in the stack; only the front one is live
+                    topRightIcon = Icons.Default.Edit,
                     onTopRightClick = if (isFront) ({ onHoldFront(card) }) else null,
                     onQrClick = if (isFront) ({ onQrFront(card) }) else null,
                     modifier = Modifier

@@ -25,6 +25,8 @@ import com.kryptoxotis.nexus.domain.model.CardType
 import com.kryptoxotis.nexus.presentation.theme.Dimens
 import com.kryptoxotis.nexus.presentation.theme.NexusScaffold
 import com.kryptoxotis.nexus.presentation.theme.NexusCardColors
+import com.kryptoxotis.nexus.presentation.theme.displayBright
+import com.kryptoxotis.nexus.presentation.theme.displayDark
 import com.kryptoxotis.nexus.presentation.theme.neuRaised
 import com.kryptoxotis.nexus.presentation.theme.neuInset
 import com.kryptoxotis.nexus.presentation.theme.neonGlow
@@ -343,11 +345,11 @@ fun EditCardScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .then(
-                                if (isSelected) Modifier.neonGlow(entry.bright, cornerRadius = 10.dp, elevation = 8.dp)
+                                if (isSelected) Modifier.neonGlow(entry.displayBright, cornerRadius = 10.dp, elevation = 8.dp)
                                 else Modifier
                             )
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Brush.linearGradient(listOf(entry.bright, entry.dark)))
+                            .background(Brush.linearGradient(listOf(entry.displayBright, entry.displayDark)))
                             .then(
                                 if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(10.dp))
                                 else Modifier

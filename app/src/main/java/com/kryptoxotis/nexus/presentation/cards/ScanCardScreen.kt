@@ -75,9 +75,31 @@ fun ScanCardScreen(
         }
     }
 
+    // Camera QR scanning — same result path as an NFC read, for phones without NFC
+    val qrScanLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        com.journeyapps.barcodescanner.ScanContract()
+    ) { result ->
+        if (result.contents != null) {
+            scanResult = result.contents
+            isScanning = false
+        }
+    }
+
     NexusScaffold(
         title = "Scan",
         onBack = onNavigateBack,
+        actions = listOf<Pair<androidx.compose.ui.graphics.vector.ImageVector, () -> Unit>>(
+            Icons.Default.QrCodeScanner to {
+                qrScanLauncher.launch(
+                    com.journeyapps.barcodescanner.ScanOptions().apply {
+                        setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
+                        setPrompt("Point at a Nexus QR code")
+                        setBeepEnabled(false)
+                        setOrientationLocked(true)
+                    }
+                )
+            }
+        ),
         bottomBar = false
     ) {
         Column(

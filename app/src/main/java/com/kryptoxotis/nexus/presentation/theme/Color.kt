@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 /**
  * Live UI preferences. Snapshot-state backed so every composable (and draw
@@ -17,16 +18,24 @@ object NexusAppearance {
     var notifications by mutableStateOf(true)
 }
 
-// Primary palette - Kryptoxotis Teal (same hue family in both themes)
-val NexusTeal = Color(0xFF037A68)
+// Primary palette - Kryptoxotis Teal. Accents go pastel on the light theme
+// like everything else — neon on black, soft on white.
+private val TealBase = Color(0xFF037A68)
+private val OrangeBase = Color(0xFFFA5700)
+private val PurpleBase = Color(0xFFB388FF)
+
+val NexusTeal: Color get() = if (NexusAppearance.dark) TealBase else lerp(TealBase, Color.White, 0.22f)
 val NexusTealLight = Color(0xFF0AD7A5)
 val NexusTealDark = Color(0xFF025E50)
 val NexusTealGlow = Color(0x59037A68) // 35% alpha
 
 // Accent orange (admin/business contexts only)
-val NexusOrange = Color(0xFFFA5700)
+val NexusOrange: Color get() = if (NexusAppearance.dark) OrangeBase else lerp(OrangeBase, Color.White, 0.25f)
 val NexusOrangeLight = Color(0xFFFF8C4A)
 val NexusOrangeDark = Color(0xFFC44500)
+
+// Purple accent (section identity)
+val NexusPurple: Color get() = if (NexusAppearance.dark) PurpleBase else lerp(PurpleBase, Color.White, 0.25f)
 
 // ── Dynamic surfaces: dark neumorphic black / pastel light ──
 val NexusBackground: Color get() = if (NexusAppearance.dark) Color(0xFF0A0A0A) else Color(0xFFF3F1EC)
@@ -36,7 +45,7 @@ val NexusRaised: Color get() = if (NexusAppearance.dark) Color(0xFF141414) else 
 val NexusSurfaceVariant: Color get() = if (NexusAppearance.dark) Color(0xFF383838) else Color(0xFFD8D4CD)
 
 // Alias for brand primary (used by CardColors, NeuModifiers)
-val NexusPrimary = NexusTeal
+val NexusPrimary: Color get() = NexusTeal
 
 // ── Dynamic text ──
 val NexusTextPrimary: Color get() = if (NexusAppearance.dark) Color(0xFFEEEEEE) else Color(0xFF1F1E1B)

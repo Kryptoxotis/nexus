@@ -2,6 +2,7 @@ package com.kryptoxotis.nexus.presentation.theme
 
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import kotlin.math.pow
 
 /**
@@ -17,6 +18,10 @@ data class NexusCardColor(
     val brightHex: String,
     val gradient: Brush = Brush.linearGradient(listOf(bright, dark))
 )
+
+/** How a palette entry looks in the current theme: neon-true on dark, pastel on light. */
+val NexusCardColor.displayBright: Color get() = if (NexusAppearance.dark) bright else lerp(bright, Color.White, 0.30f)
+val NexusCardColor.displayDark: Color get() = if (NexusAppearance.dark) dark else lerp(dark, Color.White, 0.30f)
 
 object NexusCardColors {
 

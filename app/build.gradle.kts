@@ -40,7 +40,8 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = (project.findProperty("buildNumber") as? String)?.toIntOrNull() ?: 1
-        versionName = "1.0.${(project.findProperty("buildNumber") as? String) ?: "0"}"
+        // 1.x = testing, 2.x = beta, 3.x = release; middle number moves with fix rounds
+        versionName = "1.5.${(project.findProperty("buildNumber") as? String) ?: "0"}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -126,6 +127,8 @@ dependencies {
 
     // QR Code generation
     implementation("com.google.zxing:core:3.5.3")
+    // In-app QR scanning (camera fallback when the other phone has no NFC)
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Image loading (Coil)
     implementation("io.coil-kt:coil-compose:2.6.0")
